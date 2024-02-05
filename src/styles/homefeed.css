@@ -1,0 +1,143 @@
+/* CSS Reset */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Main Container */
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        'navbar navbar navbar'
+        'trending trending topc'
+        'item item topc'
+        'item item topc'
+        'loading loading topc';
+    grid-gap: 1rem;
+    width: 90vw;
+    margin: auto;
+}
+
+/* Navbar */
+
+.item-1 {
+    grid-area: navbar;
+}
+
+.navend {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+/* Trending Bar */
+
+.item-2 {
+    grid-area: trending;
+    padding: 0.5rem;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+/* Aside */
+
+.item-3 {
+    grid-area: topc;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0.9rem;
+}
+
+.aside-item {
+    margin-top: 1rem;
+}
+
+/* Footer */
+
+.asidefootermain {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.asidefooterbadges {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.asidetopc {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.footercontent {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+}
+
+/* Loading */
+
+.item-4 {
+    grid-area: loading;
+}
+
+/* Posts */
+
+.posts {
+    grid-area: item;
+    display: flex;
+    flex-direction: column;
+    flex: wrap;
+}
+
+.post {
+    margin: 1rem;
+}
+
+.postbody {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    text-wrap: balance;
+}
+
+.imgpost {
+    height: max-content;
+    width: 18px;
+}
+
+@media screen and (max-width: 735px) {
+    .container {
+        grid-template-areas:
+            'navbar navbar navbar navbar'
+            'trending trending trending trending'
+            'item item item item';
+    }
+
+    .navend .navbtn {
+        display: none;
+    }
+
+    .item-3 {
+        display: none;
+    }
+}
+
+.hello {
+    background-color: red;
+}
