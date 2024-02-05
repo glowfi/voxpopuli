@@ -1570,7 +1570,7 @@ const postArray = [
         src: "Everyone on our team is slated to look at the query performance bug. For some reason, no one has yet to determine why, after several sprints, our database just seems to sleep for 15 seconds when we want to get a list, but only sometimes and it can't be reproduced on local no matter what we try. Whoever finds the bug will go down in history on the team and probably other people's at the company as well. So what are your bug bounties?",
         author: 'PhantomThiefJoker',
         time: '2 days ago',
-        subreddit: 'programmerhumor',
+        subreddit: 'programmerHumor',
         upvotes: '2',
         awards: [],
         comments: [
@@ -1650,7 +1650,7 @@ const postArray = [
         src: '../../resources/images/Communities/programmerHumor/29.png',
         author: 'CrankyBear',
         time: '3 days ago',
-        subreddit: 'programmerhumor',
+        subreddit: 'programmerHumor',
         upvotes: '416',
         awards: ['gold'],
         comments: [
@@ -1717,7 +1717,7 @@ const postArray = [
         src: 'I’m especially drawn to customizing the aesthetics of my coding environment exactly when facing a shit ton of actual work. Realized that’s precisely the same phenomenon as suddenly having all the energy in the world to squeaky-clean the apartment when you should be studying for an exam. Next time you feel like tweaking your color theme; trying out a new terminal or IDE for some insignificant minor benefit; etc; I invite you to ask yourself: am I really just stressed out and what would be an actually constructive next step? 😏',
         author: 'dudelsson',
         time: '5 days ago',
-        subreddit: 'programmerhumor',
+        subreddit: 'programmerHumor',
         upvotes: '11',
         awards: ['wholesome'],
         comments: [
@@ -1772,7 +1772,7 @@ const postArray = [
         src: '../../resources/images/Communities/programmerHumor/27.png',
         author: 'iBudder3',
         time: '7 hours ago',
-        subreddit: 'programmerhumor',
+        subreddit: 'programmerHumor',
         upvotes: '2.6k',
         awards: ['gold', 'silver'],
         comments: [
@@ -1815,7 +1815,7 @@ const postArray = [
         src: '../../resources/images/Communities/programmerHumor/29.png',
         author: 'Shaggy_Pop',
         time: '4 hours ago',
-        subreddit: 'programmerhumor',
+        subreddit: 'programmerHumor',
         upvotes: '399',
         awards: ['wholesome'],
         comments: [

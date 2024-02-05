@@ -5,7 +5,7 @@ function App() {
     return (
         <Card className="max-w-[400px]">
             <CardBody>
-                <div className="footercontent px-3 py-3 md:hello">
+                <div className="footercontent px-1 py-2">
                     <div>
                         <Link isExternal href="">
                             Help
@@ -23,7 +23,7 @@ function App() {
                     </div>
                 </div>
                 <Divider />
-                <div className="footercontent px-3 py-3">
+                <div className="footercontent px-3 py-4">
                     <div>
                         <Link isExternal href="">
                             User Agreement
@@ -46,7 +46,7 @@ function App() {
                     </div>
                 </div>
                 <Divider />
-                <div className="footercontent px-3 py-3">
+                <div className="footercontent px-2 py-3">
                     <div>
                         <Link isExternal href="">
                             English
@@ -83,8 +83,16 @@ function App() {
             <CardFooter
                 className={'flex flex-col gap-3 items-center justify-center'}
             >
-                No rights reserved. Built for educational purposes.
-                <Link isExternal href="https://github.com/glowfi/voxpopuli">
+                <div>
+                    <p className="text-center">
+                        No rights reserved. Built for educational purposes.
+                    </p>
+                </div>
+                <Link
+                    isExternal
+                    href="https://github.com/glowfi/voxpopuli"
+                    showAnchorIcon
+                >
                     Visit source code on GitHub.
                 </Link>
             </CardFooter>

@@ -9,9 +9,12 @@ import {
     CardHeader,
     Chip,
     Divider,
-    Image
+    Image,
+    Link
 } from '@nextui-org/react';
 import React, { useState } from 'react';
+
+import subredditArray from '../../data/subredditArray';
 
 interface Props {
     cname: string;
@@ -19,6 +22,9 @@ interface Props {
 
 function App({ cname }: Props) {
     const [selectedKeys, setSelectedKeys] = useState<any>(new Set(['-1']));
+
+    const [top5, setTop5] = useState(subredditArray.slice(0, 5));
+    const [rest5, setRest5] = useState(subredditArray.slice(5));
 
     return (
         <Card className={`max-w-[400px] ${cname}`}>
@@ -36,65 +42,29 @@ function App({ cname }: Props) {
             </CardHeader>
             <Divider />
             <CardBody>
-                <div className="flex gap-1 asidetopc">
-                    <Avatar
-                        isBordered
-                        src="https://i.pravatar.cc/150?u=a042581f4e29026024d"
-                    />
+                {top5.map((obj, idx) => {
+                    return (
+                        <div key={idx}>
+                            <div className="flex gap-1 asidetopc">
+                                <Avatar isBordered src={obj.logo} />
 
-                    <p className="px-3">r/community_name</p>
-                    <Button size="sm" color="primary">
-                        Join
-                    </Button>
-                </div>
-                <Divider />
-                <div className="flex gap-1 asidetopc">
-                    <Avatar
-                        isBordered
-                        src="https://i.pravatar.cc/150?u=a04258a2462d826712d"
-                    />
-
-                    <p className="px-3">r/community_name</p>
-                    <Button size="sm" color="primary">
-                        Join
-                    </Button>
-                </div>
-                <Divider />
-                <div className="flex gap-1 asidetopc">
-                    <Avatar
-                        isBordered
-                        src="https://i.pravatar.cc/150?u=a04258114e29026302d"
-                    />
-
-                    <p className="px-3">r/community_name</p>
-                    <Button size="sm" color="primary">
-                        Join
-                    </Button>
-                </div>
-                <Divider />
-                <div className="flex gap-2 asidetopc">
-                    <Avatar
-                        isBordered
-                        src="https://i.pravatar.cc/150?u=a04258114e29026702d"
-                    />
-
-                    <p className="px-3">r/community_name</p>
-                    <Button size="sm" color="primary">
-                        Join
-                    </Button>
-                </div>
-                <Divider />
-                <div className="flex gap-1 asidetopc">
-                    <Avatar
-                        isBordered
-                        src="https://i.pravatar.cc/150?u=a04258114e29026708c"
-                    />
-
-                    <p className="px-3">r/community_name</p>
-                    <Button size="sm" color="primary">
-                        Join
-                    </Button>
-                </div>
+                                <p className="px-3">
+                                    <Link
+                                        href=""
+                                        color="foreground"
+                                        underline="hover"
+                                    >
+                                        r/{obj.title}
+                                    </Link>
+                                </p>
+                                <Button size="sm" color="primary">
+                                    Join
+                                </Button>
+                            </div>
+                            <Divider />
+                        </div>
+                    );
+                })}
             </CardBody>
             <Divider />
             <CardFooter className={'asidefootermain'}>
@@ -108,39 +78,29 @@ function App({ cname }: Props) {
                         title="View All Communities"
                         className={'text-center'}
                     >
-                        <div className="flex gap-1 asidetopc">
-                            <Avatar
-                                isBordered
-                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
-                            />
+                        {rest5.map((obj, idx) => {
+                            return (
+                                <div key={idx}>
+                                    <div className="flex gap-1 asidetopc">
+                                        <Avatar isBordered src={obj.logo} />
 
-                            <p className="px-3">r/community_name</p>
-                            <Button size="sm" color="primary">
-                                Join
-                            </Button>
-                        </div>
-                        <div className="flex gap-1 asidetopc">
-                            <Avatar
-                                isBordered
-                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
-                            />
-
-                            <p className="px-3">r/community_name</p>
-                            <Button size="sm" color="primary">
-                                Join
-                            </Button>
-                        </div>
-                        <div className="flex gap-1 asidetopc">
-                            <Avatar
-                                isBordered
-                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
-                            />
-
-                            <p className="px-3">r/community_name</p>
-                            <Button size="sm" color="primary">
-                                Join
-                            </Button>
-                        </div>
+                                        <p className="px-3">
+                                            <Link
+                                                href=""
+                                                color="foreground"
+                                                underline="hover"
+                                            >
+                                                r/{obj.title}
+                                            </Link>
+                                        </p>
+                                        <Button size="sm" color="primary">
+                                            Join
+                                        </Button>
+                                    </div>
+                                    <Divider />
+                                </div>
+                            );
+                        })}
                     </AccordionItem>
                 </Accordion>
                 <div className="asidefooterbadges">

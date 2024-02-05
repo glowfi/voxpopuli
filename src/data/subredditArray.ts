@@ -620,9 +620,9 @@ const subredditArray = [
         bySize: 'Top 1%'
     },
     {
-        title: 'programmerhumor',
+        title: 'programmerHumor',
         officialTitle: 'Memes and jokes about everything programming and CS',
-        logo: '../../resources/images/Communities/programmerhumor/icon.png',
+        logo: '../../resources/images/Communities/programmerHumor/icon.png',
         category: 'Entertainment',
         favorite: false,
         joined: true,
@@ -725,7 +725,7 @@ const subredditArray = [
         blackText: true,
         backgroundColor: '#edeff1',
         bannerUrl:
-            '../../resources/images/Communities/programmerhumor/banner.jpg',
+            '../../resources/images/Communities/programmerHumor/banner.jpg',
         bySize: 'Top 1%'
     },
     {

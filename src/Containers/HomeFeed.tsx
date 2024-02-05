@@ -1,4 +1,4 @@
-import { CircularProgress, Divider } from '@nextui-org/react';
+import { Divider } from '@nextui-org/react';
 import Footer from '../Components/HomeFeed/Footer';
 import GetPremium from '../Components/HomeFeed/GetPremium';
 import HomePost from '../Components/HomeFeed/HomePost';
@@ -23,9 +23,6 @@ const App = () => {
                 </div>
                 <div className="items posts">
                     <Post cname="post" />
-                </div>
-                <div className="item-4">
-                    <CircularProgress label="Loading..." />
                 </div>
             </div>
         </>
