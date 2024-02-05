@@ -33,7 +33,7 @@ const App = () => {
                     <Post cname="post" />
                     <Post cname="post" />
                 </div>
-                <div className="progress item-4 flex justify-center">
+                <div className="item-4">
                     <CircularProgress label="Loading..." />
                 </div>
             </div>
