@@ -23,15 +23,6 @@ const App = () => {
                 </div>
                 <div className="items posts">
                     <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
-                    <Post cname="post" />
                 </div>
                 <div className="item-4">
                     <CircularProgress label="Loading..." />

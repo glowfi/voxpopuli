@@ -1,6 +1,7 @@
 import { Card, CardBody, CardFooter, Divider, Link } from '@nextui-org/react';
+import React from 'react';
 
-export default function App() {
+function App() {
     return (
         <Card className="max-w-[400px]">
             <CardBody>
@@ -83,10 +84,12 @@ export default function App() {
                 className={'flex flex-col gap-3 items-center justify-center'}
             >
                 No rights reserved. Built for educational purposes.
-                <Link isExternal href="https://github.com/nextui-org/nextui">
+                <Link isExternal href="https://github.com/glowfi/voxpopuli">
                     Visit source code on GitHub.
                 </Link>
             </CardFooter>
         </Card>
     );
 }
+
+export default React.memo(App);

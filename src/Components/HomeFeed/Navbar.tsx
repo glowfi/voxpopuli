@@ -14,8 +14,9 @@ import {
     NavbarMenuItem,
     NavbarMenuToggle
 } from '@nextui-org/react';
+import React from 'react';
 
-export default function App() {
+function App() {
     const menuItems = [
         'Profile',
         'Dashboard',
@@ -37,7 +38,9 @@ export default function App() {
                 <NavbarContent justify="start">
                     <NavbarBrand className="mr-2">
                         <p className="sm:block font-bold text-inherit">
-                            VoxPopuli
+                            <Link href="" color="foreground">
+                                VoxPopuli
+                            </Link>
                         </p>
                     </NavbarBrand>
                 </NavbarContent>
@@ -140,3 +143,5 @@ export default function App() {
         </Navbar>
     );
 }
+
+export default React.memo(App);

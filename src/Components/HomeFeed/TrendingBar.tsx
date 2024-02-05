@@ -1,4 +1,5 @@
 import { Button } from '@nextui-org/react';
+import React from 'react';
 
 const TrendingBar = () => {
     return (
@@ -37,4 +38,4 @@ const TrendingBar = () => {
     );
 };
 
-export default TrendingBar;
+export default React.memo(TrendingBar);

@@ -1,4 +1,6 @@
 import {
+    Accordion,
+    AccordionItem,
     Avatar,
     Button,
     Card,
@@ -9,12 +11,17 @@ import {
     Divider,
     Image
 } from '@nextui-org/react';
+import React, { useState } from 'react';
 
 interface Props {
     cname: string;
 }
 
-export default function App({ cname }: Props) {
+function App({ cname }: Props) {
+    const [selectedKeys, setSelectedKeys] = useState(new Set(['-1']));
+
+    const defaultContent =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
     return (
         <Card className={`max-w-[400px] ${cname}`}>
             <CardHeader className="flex gap-3">
@@ -93,9 +100,51 @@ export default function App({ cname }: Props) {
             </CardBody>
             <Divider />
             <CardFooter className={'asidefootermain'}>
-                <Button color="primary" fullWidth={true}>
-                    View All
-                </Button>
+                <Accordion
+                    selectedKeys={selectedKeys}
+                    onSelectionChange={setSelectedKeys}
+                >
+                    <AccordionItem
+                        key="1"
+                        aria-label="Accordion 1"
+                        title="View All Communities"
+                        className={'text-center'}
+                    >
+                        <div className="flex gap-1 asidetopc">
+                            <Avatar
+                                isBordered
+                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
+                            />
+
+                            <p className="px-3">r/community_name</p>
+                            <Button size="sm" color="primary">
+                                Join
+                            </Button>
+                        </div>
+                        <div className="flex gap-1 asidetopc">
+                            <Avatar
+                                isBordered
+                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
+                            />
+
+                            <p className="px-3">r/community_name</p>
+                            <Button size="sm" color="primary">
+                                Join
+                            </Button>
+                        </div>
+                        <div className="flex gap-1 asidetopc">
+                            <Avatar
+                                isBordered
+                                src="https://i.pravatar.cc/150?u=a04258114e29026708c"
+                            />
+
+                            <p className="px-3">r/community_name</p>
+                            <Button size="sm" color="primary">
+                                Join
+                            </Button>
+                        </div>
+                    </AccordionItem>
+                </Accordion>
                 <div className="asidefooterbadges">
                     <Chip size="sm">Crypto</Chip>
                     <Chip size="sm">Books</Chip>
@@ -106,3 +155,5 @@ export default function App({ cname }: Props) {
         </Card>
     );
 }
+
+export default React.memo(App);
