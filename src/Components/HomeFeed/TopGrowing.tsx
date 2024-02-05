@@ -18,10 +18,8 @@ interface Props {
 }
 
 function App({ cname }: Props) {
-    const [selectedKeys, setSelectedKeys] = useState(new Set(['-1']));
+    const [selectedKeys, setSelectedKeys] = useState<any>(new Set(['-1']));
 
-    const defaultContent =
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
     return (
         <Card className={`max-w-[400px] ${cname}`}>
             <CardHeader className="flex gap-3">
