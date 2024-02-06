@@ -30,7 +30,7 @@ function App() {
         'Log Out'
     ];
     return (
-        <Navbar isBordered>
+        <Navbar isBordered position="sticky">
             <NavbarContent as="div" className="items-center" justify="end">
                 <NavbarContent className="sm:hidden" justify="start">
                     <NavbarMenuToggle />

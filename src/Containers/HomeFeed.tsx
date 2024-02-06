@@ -1,4 +1,4 @@
-import { Divider } from '@nextui-org/react';
+import { Button, Divider } from '@nextui-org/react';
 import Footer from '../Components/HomeFeed/Footer';
 import GetPremium from '../Components/HomeFeed/GetPremium';
 import HomePost from '../Components/HomeFeed/HomePost';

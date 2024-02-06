@@ -1,5 +1,4 @@
 /* CSS Reset */
-
 * {
     margin: 0;
     padding: 0;
@@ -69,6 +68,12 @@
 
 /* Footer */
 
+.footer {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+}
+
 .asidefootermain {
     display: flex;
     flex-direction: column;
@@ -80,6 +85,11 @@
     margin-top: 0.5rem;
     display: flex;
     gap: 0.5rem;
+}
+
+.asidebadges:hover {
+    opacity: 0.7;
+    cursor: pointer;
 }
 
 .asidetopc {
@@ -136,10 +146,6 @@
     cursor: pointer;
 }
 
-.postheading {
-    color: whitesmoke;
-}
-
 .postfoot:hover {
     opacity: 0.7;
 }
@@ -148,7 +154,12 @@
     opacity: 0.7;
 }
 
+.postheading {
+    color: #fbdda6;
+}
+
 .postfootertxt {
+    color: #c7c7c7;
     font-size: 1rem;
     font-weight: 700;
 }
