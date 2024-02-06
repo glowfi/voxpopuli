@@ -23,7 +23,9 @@ interface Props {
 function App({ cname }: Props) {
     const [selectedKeys, setSelectedKeys] = useState<any>(new Set(['-1']));
 
+    //@ts-ignore
     const [top5, setTop5] = useState(subredditArray.slice(0, 5));
+    //@ts-ignore
     const [rest5, setRest5] = useState(subredditArray.slice(5));
 
     return (
@@ -61,7 +63,7 @@ function App({ cname }: Props) {
                                     Join
                                 </Button>
                             </div>
-                            <Divider />
+                            {idx == 4 ? '' : <Divider />}
                         </div>
                     );
                 })}
