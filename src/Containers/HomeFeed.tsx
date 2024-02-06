@@ -7,7 +7,7 @@ import TopGrowing from '../Components/HomeFeed/TopGrowing';
 import TrendingBar from '../Components/HomeFeed/TrendingBar';
 import '../styles/homefeed.css';
 
-const App = () => {
+const App = ({ theme }) => {
     return (
         <>
             <div className="container">
@@ -19,7 +19,7 @@ const App = () => {
                     <Footer />
                 </div>
                 <div className="items posts">
-                    <Post cname="post" />
+                    <Post cname="post" theme={theme} />
                 </div>
             </div>
         </>

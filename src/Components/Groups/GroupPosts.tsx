@@ -18,17 +18,17 @@ import { useNavigate } from 'react-router-dom';
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import postsarr from '../../data/postsArray';
 import { Post } from '../../types/types';
-import 'react-toastify/dist/ReactToastify.css';
 
 interface Props {
     cname: string;
+    gname: string;
     theme: string;
 }
 
-function App({ cname, theme }: Props) {
+function App({ cname, gname, theme }: Props) {
     const [posts, setPosts] = useState<[] | Post[]>([]);
     const [hasmore, setHasmore] = useState<Boolean>(true);
-    const [idx, setIdx] = useState(0);
+    // const [idx, setIdx] = useState(0);
     const ref = useRef<HTMLElement | any>(null);
     const navigate = useNavigate();
 
@@ -36,23 +36,26 @@ function App({ cname, theme }: Props) {
         const firstEntry = entries[0];
         const offset = 10;
         if (firstEntry.isIntersecting && hasmore) {
-            let endidx = idx + offset + 1;
+            // let endidx = idx + offset + 1;
 
-            // Handle limit
-            if (endidx > postsarr.length) {
-                endidx = postsarr.length;
-                setHasmore(() => false);
-                setIdx(postsarr.length);
-            } else {
-                setHasmore(true);
-                setIdx(idx + offset + 1);
-            }
+            // // Handle limit
+            // if (endidx > postsarr.length) {
+            //     endidx = postsarr.length;
+            //     setHasmore(() => false);
+            //     setIdx(postsarr.length);
+            // } else {
+            //     setHasmore(true);
+            //     setIdx(idx + offset + 1);
+            // }
+
+            let newArr = postsarr.filter((p) => p.subreddit == gname);
+            setHasmore(() => false);
 
             // Get Posts
-            let newArr = [...posts, ...postsarr.slice(idx, endidx)]
-                .map((value) => ({ value, sort: Math.random() }))
-                .sort((a, b) => a.sort - b.sort)
-                .map(({ value }) => value);
+            // let newArr = [...posts, ...postsarr.slice(idx, endidx)]
+            //     .map((value) => ({ value, sort: Math.random() }))
+            //     .sort((a, b) => a.sort - b.sort)
+            //     .map(({ value }) => value);
 
             setPosts(() => [...newArr]);
         }
@@ -123,7 +126,7 @@ function App({ cname, theme }: Props) {
                                     </h5>
                                 </div>
                             </div>
-                            <div className="flex gap-3 upvotebtn">
+                            <div className="flex gap-3 upvotebtng">
                                 <Button
                                     size="sm"
                                     radius="sm"
@@ -149,18 +152,18 @@ function App({ cname, theme }: Props) {
                         </CardHeader>
                         <CardBody className="px-3 py-0 text-small text-default-400">
                             <div
-                                className="postbody"
+                                className="postbodyg"
                                 onClick={() => {
                                     console.log('hello');
                                     navigate(`/g/${obj.subreddit}/${obj.id}`);
                                 }}
                             >
                                 <div className="flex flex-row gap-3">
-                                    <p className="text-xl postheading">
+                                    <p className="text-xl postheadingg">
                                         {obj.title}
                                     </p>
                                     <Chip
-                                        className="text-default-400 font-semibold flairpost"
+                                        className="text-default-400 font-semibold flairpostg"
                                         variant="shadow"
                                         style={{
                                             backgroundColor: obj.flair.color,
@@ -181,14 +184,14 @@ function App({ cname, theme }: Props) {
                                         src={obj.src.toString()}
                                     />
                                 ) : (
-                                    <p className="postfootertxt">
+                                    <p className="postfootertxtg">
                                         {obj.src.slice(25)} ...
                                     </p>
                                 )}
                             </div>
                         </CardBody>
-                        <CardFooter className="gap-3 postfooter">
-                            <div className="flex gap-3 postfoot items-center justify-center mt-3">
+                        <CardFooter className="gap-3 postfooterg">
+                            <div className="flex gap-3 postfootg items-center justify-center mt-3">
                                 <p className="font-semibold text-default-400 text-small">
                                     <FaComment size={'1.3rem'} />
                                 </p>
@@ -202,7 +205,7 @@ function App({ cname, theme }: Props) {
                                     {obj.comments.length} comments
                                 </Link>
                             </div>
-                            <div className="flex gap-3 postfoot items-center justify-center">
+                            <div className="flex gap-3 postfootg items-center justify-center">
                                 <p className="font-semibold text-default-400 text-small">
                                     <FaAward size={'1.3rem'} />
                                 </p>
@@ -218,7 +221,7 @@ function App({ cname, theme }: Props) {
                             </div>
 
                             <div
-                                className="flex gap-3 postfoot items-center justify-center"
+                                className="flex gap-3 postfootg items-center justify-center"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     navigator.clipboard.writeText(
@@ -264,7 +267,7 @@ function App({ cname, theme }: Props) {
                                     transition={Bounce}
                                 />
                             </div>
-                            <div className="flex gap-3 postfoot items-center justify-center">
+                            <div className="flex gap-3 postfootg items-center justify-center">
                                 <p className="font-semibold text-default-400 text-small">
                                     <FaRegBookmark size={'1.3rem'} />
                                 </p>

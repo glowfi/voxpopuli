@@ -7,11 +7,13 @@ import NotFound from './Containers/NotFound';
 import Person from './Containers/Person';
 import Post from './Containers/Post';
 import Submit from './Containers/Submit';
-import { useCallback, useState } from 'react';
+import { createContext, useCallback, useState } from 'react';
 
 const App = () => {
     const navigate = useNavigate();
+
     const [theme, setTheme] = useState('dark');
+
     const changeTheme = useCallback(() => {
         setTheme(() => (theme == 'light' ? 'dark' : 'light'));
         document.documentElement.setAttribute(
@@ -25,9 +27,12 @@ const App = () => {
                 <Nav changeTheme={changeTheme} theme={theme} />
                 <Divider className="my-5" />
                 <Routes>
-                    <Route path="/" element={<HomeFeed />} />
+                    <Route path="/" element={<HomeFeed theme={theme} />} />
                     <Route path="/g">
-                        <Route path=":name" element={<Groups />} />
+                        <Route
+                            path=":name"
+                            element={<Groups theme={theme} />}
+                        />
                         <Route path=":name/:id" element={<Post />} />
                     </Route>
                     <Route path="/p">

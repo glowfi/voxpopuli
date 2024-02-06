@@ -33,11 +33,9 @@ function App({ cname }: Props) {
 
     return (
         <Card className={`max-w-[400px] ${cname} w-full`}>
-            <CardHeader className="flex gap-3">
+            <CardHeader className="topg">
                 <FaPeopleGroup size={'1.8rem'} />
-                <div className="flex flex-col">
-                    <p className="text-md">Today's Top Growing Communities</p>
-                </div>
+                <p className="text-md">Today's Top Growing Communities</p>
             </CardHeader>
             <Divider />
             <CardBody>
