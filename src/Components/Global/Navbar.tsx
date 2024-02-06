@@ -15,6 +15,7 @@ import {
     NavbarMenuToggle
 } from '@nextui-org/react';
 import React from 'react';
+import '../../styles/navbar.css';
 
 function App() {
     const menuItems = [
@@ -38,7 +39,7 @@ function App() {
                 <NavbarContent justify="start">
                     <NavbarBrand className="mr-2">
                         <p className="sm:block font-bold text-inherit">
-                            <Link href="" color="foreground">
+                            <Link href="/" color="foreground">
                                 VoxPopuli
                             </Link>
                         </p>

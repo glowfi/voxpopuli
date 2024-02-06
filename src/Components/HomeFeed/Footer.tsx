@@ -3,7 +3,7 @@ import React from 'react';
 
 function App() {
     return (
-        <Card className="max-w-[400px]">
+        <Card className="max-w-[400px] w-full">
             <CardBody>
                 <div className="footercontent px-1 py-2">
                     <div>

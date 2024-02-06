@@ -9,13 +9,13 @@ import {
     CardHeader,
     Chip,
     Divider,
-    Image,
     Link
 } from '@nextui-org/react';
 import React, { useState } from 'react';
 
-import subredditArray from '../../data/subredditArray';
 import { FaPeopleGroup } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
+import subredditArray from '../../data/subredditArray';
 
 interface Props {
     cname: string;
@@ -29,8 +29,10 @@ function App({ cname }: Props) {
     //@ts-ignore
     const [rest5, setRest5] = useState(subredditArray.slice(5));
 
+    const navigate = useNavigate();
+
     return (
-        <Card className={`max-w-[400px] ${cname}`}>
+        <Card className={`max-w-[400px] ${cname} w-full`}>
             <CardHeader className="flex gap-3">
                 <FaPeopleGroup size={'1.8rem'} />
                 <div className="flex flex-col">
@@ -42,19 +44,25 @@ function App({ cname }: Props) {
                 {top5.map((obj, idx) => {
                     return (
                         <div key={idx}>
-                            <div className="flex gap-1 asidetopc">
+                            <div className="flex gap-1 asidetopc justify-center items-center">
                                 <Avatar isBordered src={obj.logo} />
 
                                 <p className="px-3">
                                     <Link
-                                        href=""
+                                        href={`/g/${obj.title}`}
                                         color="foreground"
                                         underline="hover"
                                     >
-                                        r/{obj.title}
+                                        g/{obj.title}
                                     </Link>
                                 </p>
-                                <Button size="sm" color="primary">
+                                <Button
+                                    size="sm"
+                                    color="primary"
+                                    onClick={() => {
+                                        navigate(`/g/${obj.title}`);
+                                    }}
+                                >
                                     Join
                                 </Button>
                             </div>
@@ -78,19 +86,25 @@ function App({ cname }: Props) {
                         {rest5.map((obj, idx) => {
                             return (
                                 <div key={idx}>
-                                    <div className="flex gap-1 asidetopc">
+                                    <div className="flex gap-1 asidetopc justify-center">
                                         <Avatar isBordered src={obj.logo} />
 
                                         <p className="px-3">
                                             <Link
-                                                href=""
+                                                href={`/g/${obj.title}`}
                                                 color="foreground"
                                                 underline="hover"
                                             >
-                                                r/{obj.title}
+                                                g/{obj.title}
                                             </Link>
                                         </p>
-                                        <Button size="sm" color="primary">
+                                        <Button
+                                            size="sm"
+                                            color="primary"
+                                            onClick={() => {
+                                                navigate(`/g/${obj.title}`);
+                                            }}
+                                        >
                                             Join
                                         </Button>
                                     </div>

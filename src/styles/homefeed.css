@@ -9,9 +9,7 @@
 
 .container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(1fr, 1.5fr));
     grid-template-areas:
-        'navbar navbar navbar'
         'trending trending topc'
         'item item topc'
         'item item topc'
@@ -25,18 +23,6 @@
     margin-right: auto;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
-}
-
-/* Navbar */
-
-.item-1 {
-    grid-area: navbar;
-}
-
-.navend {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
 }
 
 /* Trending Bar */
@@ -211,10 +197,9 @@
 @media screen and (max-width: 1005px) {
     .container {
         grid-template-areas:
-            'navbar navbar navbar navbar'
-            'trending trending trending trending'
-            'item item item item'
-            'loading loading loading loading';
+            'trending trending trending'
+            'item item item'
+            'loading loading loading';
     }
 
     .navend .navbtn {

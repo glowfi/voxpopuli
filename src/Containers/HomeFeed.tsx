@@ -1,8 +1,7 @@
-import { Button, Divider } from '@nextui-org/react';
+import React from 'react';
 import Footer from '../Components/HomeFeed/Footer';
 import GetPremium from '../Components/HomeFeed/GetPremium';
 import HomePost from '../Components/HomeFeed/HomePost';
-import Nav from '../Components/HomeFeed/Navbar';
 import Post from '../Components/HomeFeed/Post';
 import TopGrowing from '../Components/HomeFeed/TopGrowing';
 import TrendingBar from '../Components/HomeFeed/TrendingBar';
@@ -11,14 +10,12 @@ import '../styles/homefeed.css';
 const App = () => {
     return (
         <>
-            <Nav />
-            <Divider className="my-5" />
             <div className="container">
                 <TrendingBar />
                 <div className="item-3 items">
                     <TopGrowing cname="aside-item" />
-                    <GetPremium />
                     <HomePost />
+                    <GetPremium />
                     <Footer />
                 </div>
                 <div className="items posts">
@@ -29,4 +26,4 @@ const App = () => {
     );
 };
 
-export default App;
+export default React.memo(App);

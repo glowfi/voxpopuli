@@ -12,10 +12,11 @@ import {
 } from '@nextui-org/react';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { BiDownvote, BiUpvote } from 'react-icons/bi';
+import { FaAward, FaComment, FaRegBookmark, FaShare } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import postsarr from '../../data/postsArray';
 import { Post } from '../../types/types';
-import { BiDownvote, BiUpvote } from 'react-icons/bi';
-import { FaComment, FaAward, FaShare, FaRegBookmark } from 'react-icons/fa';
 
 interface Props {
     cname: string;
@@ -26,6 +27,7 @@ function App({ cname }: Props) {
     const [hasmore, setHasmore] = useState<Boolean>(true);
     const [idx, setIdx] = useState(0);
     const ref = useRef<HTMLElement | any>(null);
+    const navigate = useNavigate();
 
     const onIntersection = (entries: any) => {
         const firstEntry = entries[0];
@@ -71,7 +73,13 @@ function App({ cname }: Props) {
             {posts.map((obj: Post, idx) => {
                 return (
                     <Card className={`max-w-[340px] ${cname}`} key={idx}>
-                        <CardHeader className="justify-between">
+                        <CardHeader
+                            className="justify-between"
+                            onClick={() => {
+                                console.log('hello');
+                                navigate(`/g/${obj.subreddit}/${obj.id}`);
+                            }}
+                        >
                             <div className="flex gap-5">
                                 <Avatar
                                     isBordered
@@ -82,20 +90,20 @@ function App({ cname }: Props) {
                                 <div className="flex flex-col gap-1 items-start justify-center">
                                     <h4 className="text-small font-semibold leading-none text-default-600 px-3">
                                         <Link
-                                            href=""
+                                            href={`/g/${obj.subreddit}`}
                                             color="foreground"
                                             underline="hover"
                                         >
-                                            r/{obj.subreddit}
+                                            g/{obj.subreddit}
                                         </Link>
                                     </h4>
                                     <h5 className="text-small tracking-tight text-default-400 px-3">
                                         <Link
-                                            href=""
+                                            href={`/p/${obj.author}`}
                                             color="foreground"
                                             underline="hover"
                                         >
-                                            Posted by u/{obj.author}
+                                            Posted by p/{obj.author}
                                         </Link>
                                         <div className="time-awards flex flex-row gap-1">
                                             <p>{obj.time}</p>
@@ -137,7 +145,13 @@ function App({ cname }: Props) {
                             </div>
                         </CardHeader>
                         <CardBody className="px-3 py-0 text-small text-default-400">
-                            <div className="postbody">
+                            <div
+                                className="postbody"
+                                onClick={() => {
+                                    console.log('hello');
+                                    navigate(`/g/${obj.subreddit}/${obj.id}`);
+                                }}
+                            >
                                 <div className="flex flex-row gap-3">
                                     <p className="text-xl postheading">
                                         {obj.title}
@@ -176,7 +190,9 @@ function App({ cname }: Props) {
                                     <FaComment size={'1.3rem'} />
                                 </p>
                                 <Link
-                                    href=""
+                                    href={`/g/${obj.subreddit}/${parseInt(
+                                        obj.id
+                                    )}`}
                                     color="foreground"
                                     underline="hover"
                                 >
@@ -188,7 +204,9 @@ function App({ cname }: Props) {
                                     <FaAward size={'1.3rem'} />
                                 </p>
                                 <Link
-                                    href=""
+                                    href={`/g/${obj.subreddit}/${parseInt(
+                                        obj.id
+                                    )}`}
                                     color="foreground"
                                     underline="hover"
                                 >
@@ -201,7 +219,9 @@ function App({ cname }: Props) {
                                     <FaShare size={'1.3rem'} />
                                 </p>
                                 <Link
-                                    href=""
+                                    href={`/g/${obj.subreddit}/${parseInt(
+                                        obj.id
+                                    )}`}
                                     color="foreground"
                                     underline="hover"
                                 >
@@ -214,7 +234,9 @@ function App({ cname }: Props) {
                                 </p>
                                 <p className="text-default-400 text-small">
                                     <Link
-                                        href=""
+                                        href={`/g/${obj.subreddit}/${parseInt(
+                                            obj.id
+                                        )}`}
                                         color="foreground"
                                         underline="hover"
                                     >
