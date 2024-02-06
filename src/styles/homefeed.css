@@ -5,6 +5,18 @@
     box-sizing: border-box;
 }
 
+/* CSS Variables */
+
+html[data-theme='dark'] {
+    --postheadcolor: #f871a0;
+    --paracolor: white;
+}
+
+html[data-theme='light'] {
+    --postheadcolor: #c20e4d;
+    --paracolor: #3f3f46;
+}
+
 /* Main Container */
 
 .container {
@@ -30,7 +42,6 @@
 .item-2 {
     grid-area: trending;
     padding: 0.5rem;
-    border: 1px solid black;
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -141,13 +152,15 @@
 }
 
 .postheading {
-    color: #fbdda6;
+    /* color: #fbdda6; */
+    color: var(--postheadcolor);
 }
 
 .postfootertxt {
-    color: #c7c7c7;
+    color: var(--paracolor);
     font-size: 1rem;
     font-weight: 700;
+    text-wrap: stable;
 }
 
 /* Media Queries */

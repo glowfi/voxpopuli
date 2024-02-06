@@ -12,12 +12,15 @@ import {
     NavbarContent,
     NavbarMenu,
     NavbarMenuItem,
-    NavbarMenuToggle
+    NavbarMenuToggle,
+    Switch
 } from '@nextui-org/react';
 import React from 'react';
+import { FaMoon } from 'react-icons/fa';
+import { IoMdSunny } from 'react-icons/io';
 import '../../styles/navbar.css';
 
-function App() {
+function App({ changeTheme, theme }: any) {
     const menuItems = [
         'Profile',
         'Dashboard',
@@ -58,6 +61,18 @@ function App() {
                     type="search"
                 />
                 <div className="navend">
+                    <Switch
+                        defaultSelected
+                        size="sm"
+                        color="success"
+                        endContent={<IoMdSunny />}
+                        startContent={<FaMoon />}
+                        onClick={() => {
+                            changeTheme();
+                        }}
+                    >
+                        {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                    </Switch>
                     <Button
                         className="navbtn"
                         as={Link}

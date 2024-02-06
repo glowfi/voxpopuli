@@ -168,9 +168,9 @@ function App({ cname }: Props) {
                                     </Chip>
                                 </div>
                                 {obj.src.includes('.png') ||
-                                obj.src.includes('.PNG') ||
-                                obj.src.includes('.jpg') ||
-                                obj.src.includes('.jpeg') ? (
+                                    obj.src.includes('.PNG') ||
+                                    obj.src.includes('.jpg') ||
+                                    obj.src.includes('.jpeg') ? (
                                     <Image
                                         width={600}
                                         height={350}
