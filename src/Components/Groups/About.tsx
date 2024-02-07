@@ -32,7 +32,8 @@ export default function App({ gname }: any) {
         <Card className="max-w-[400px] w-full aside-item">
             <div
                 className="aboutcl"
-                style={{ backgroundColor: groupData.headerColor }}
+                //@ts-ignore
+                style={{ backgroundColor: groupData?.headerColor }}
             >
                 <h1 className="text-center text-white abouthead">
                     About Community
@@ -40,12 +41,15 @@ export default function App({ gname }: any) {
             </div>
             <Divider />
             <CardHeader className="flex gap-3">
-                <Image className="imgpostg" src={groupData.logo} />
+                {/* @ts-ignore */}
+                <Image className="imgpostg" src={groupData?.logo} />
                 <div className="flex flex-row gap-3 justify-center items-center flex-wrap">
+                    {/* @ts-ignore */}
                     <p className="text-md">{groupData?.title}</p>
                     <Button
                         size="sm"
-                        style={{ backgroundColor: groupData.headerColor }}
+                        //@ts-ignore
+                        style={{ backgroundColor: groupData?.headerColor }}
                         variant="flat"
                         onClick={() => {}}
                     >
@@ -56,7 +60,8 @@ export default function App({ gname }: any) {
             <div className="created">
                 <FaCalendarAlt />
                 <p className="text-center text-md">
-                    Created {groupData.creationDate}
+                    {/* @ts-ignore */}
+                    Created {groupData?.creationDate}
                 </p>
             </div>
             <Divider />
@@ -66,14 +71,16 @@ export default function App({ gname }: any) {
                         <IoPeopleSharp />
                         Members
                     </div>
-                    {groupData.members}
+                    {/* @ts-ignore */}
+                    {groupData?.members}
                 </div>
                 <div className="online">
                     <div className="info">
                         <GoDotFill color={'#46d160'} />
                         <p>Online</p>
                     </div>
-                    {groupData.online}
+                    {/* @ts-ignore */}
+                    {groupData?.online}
                 </div>
                 <div className="rank">
                     <p>Rank</p>
@@ -84,6 +91,7 @@ export default function App({ gname }: any) {
             </div>
             <Divider />
             <CardBody>
+                {/* @ts-ignore */}
                 <p>{groupData?.about}</p>
             </CardBody>
             <Divider />
@@ -92,7 +100,8 @@ export default function App({ gname }: any) {
                     variant="flat"
                     size="md"
                     style={{
-                        backgroundColor: groupData.headerColor,
+                        // @ts-ignore *
+                        backgroundColor: groupData?.headerColor,
                         width: '90%'
                     }}
                 >

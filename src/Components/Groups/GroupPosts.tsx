@@ -34,7 +34,7 @@ function App({ cname, gname, theme }: Props) {
 
     const onIntersection = (entries: any) => {
         const firstEntry = entries[0];
-        const offset = 10;
+        // const offset = 10;
         if (firstEntry.isIntersecting && hasmore) {
             // let endidx = idx + offset + 1;
 

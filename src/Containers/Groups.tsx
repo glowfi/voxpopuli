@@ -1,14 +1,18 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import '../styles/group.css';
-import GroupPosts from '../Components/Groups/GroupPosts';
-import TrendingBar from '../Components/Groups/TrendingBar';
 import About from '../Components/Groups/About';
 import Banner from '../Components/Groups/Banner';
-import Rules from '../Components/Groups/Rules';
 import Flairs from '../Components/Groups/Flairs';
+import GroupPosts from '../Components/Groups/GroupPosts';
+import Rules from '../Components/Groups/Rules';
+import TrendingBar from '../Components/Groups/TrendingBar';
+import '../styles/group.css';
 
-const Groups = ({ theme }) => {
+interface Props {
+    theme: string;
+}
+
+const Groups = ({ theme }: Props) => {
     const params = useParams();
     return (
         <div className="containerg">
@@ -20,6 +24,7 @@ const Groups = ({ theme }) => {
                 <Flairs gname={params.name} />
             </div>
             <div className="postsg">
+                {/* @ts-ignore */}
                 <GroupPosts cname="postg" gname={params.name} theme={theme} />
             </div>
         </div>

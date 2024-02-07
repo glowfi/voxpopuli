@@ -30,7 +30,6 @@ import { IoMdSunny } from 'react-icons/io';
 import { IoMoonSharp } from 'react-icons/io5';
 import { MdOutlinePassword } from 'react-icons/md';
 import '../../styles/navbar.css';
-import { useParams } from 'react-router-dom';
 const animals = [
     {
         label: 'Cat',

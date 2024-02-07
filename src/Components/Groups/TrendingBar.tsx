@@ -14,6 +14,7 @@ const TrendingBar = () => {
     });
     const handleClick = useCallback(
         (args: any) => {
+            //@ts-ignore
             const type = args;
             let cp = { ...colorstatus };
             for (const key in cp) {

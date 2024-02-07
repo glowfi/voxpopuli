@@ -7,7 +7,10 @@ import TopGrowing from '../Components/HomeFeed/TopGrowing';
 import TrendingBar from '../Components/HomeFeed/TrendingBar';
 import '../styles/homefeed.css';
 
-const App = ({ theme }) => {
+interface Props {
+    theme: string;
+}
+const App = ({ theme }: Props) => {
     return (
         <>
             <div className="container">

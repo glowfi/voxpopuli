@@ -1,4 +1,5 @@
 import { Divider, NextUIProvider } from '@nextui-org/react';
+import { useCallback, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Nav from './Components/Global/Navbar';
 import Groups from './Containers/Groups';
@@ -7,7 +8,6 @@ import NotFound from './Containers/NotFound';
 import Person from './Containers/Person';
 import Post from './Containers/Post';
 import Submit from './Containers/Submit';
-import { createContext, useCallback, useState } from 'react';
 
 const App = () => {
     const navigate = useNavigate();

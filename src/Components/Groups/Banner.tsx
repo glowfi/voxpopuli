@@ -25,6 +25,7 @@ const Banner = ({ gname }: any) => {
                     }
                 />
                 <div className="anchors">
+                    {/* @ts-ignore */}
                     {groupData?.anchors?.map(({ title }: any, idx) => {
                         return (
                             <Link href="#" color="foreground" key={idx}>

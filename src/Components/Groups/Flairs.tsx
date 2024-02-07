@@ -18,6 +18,7 @@ const Flairs = ({ gname }: any) => {
         <Card className="max-w-[400px] w-full aside-item">
             <div
                 className="aboutcl"
+                //@ts-ignore
                 style={{ backgroundColor: groupData?.headerColor }}
             >
                 <h1 className="text-center text-white abouthead">
@@ -26,6 +27,7 @@ const Flairs = ({ gname }: any) => {
             </div>
             <CardFooter>
                 <div className="flairs flex flex-row gap-2 flex-wrap">
+                    {/* @ts-ignore  */}
                     {groupData?.flairs?.map(({ title, color }, idx) => {
                         return (
                             <Chip

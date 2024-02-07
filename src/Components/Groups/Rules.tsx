@@ -17,17 +17,20 @@ export default function App({ gname }: any) {
         <Card className="max-w-[400px] w-full aside-item">
             <div
                 className="aboutcl"
+                //@ts-ignore
                 style={{ backgroundColor: groupData?.headerColor }}
             >
                 <h1 className="text-center text-white abouthead">
+                    {/* @ts-ignore */}
                     g/{groupData?.title} Rules
                 </h1>
             </div>
             <Divider />
             <div className="accord">
                 <Accordion variant="shadow">
+                    {/* @ts-ignore  */}
                     {groupData?.rules?.map(
-                        ({ number, title, desc }: any, idx) => {
+                        ({ number, title, desc }: any, idx: any) => {
                             return (
                                 <AccordionItem
                                     key={idx}
