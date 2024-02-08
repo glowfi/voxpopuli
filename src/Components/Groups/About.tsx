@@ -66,7 +66,7 @@ export default function App({ gname }: any) {
             </div>
             <Divider />
             <div className="stats">
-                <div className="members">
+                <div className="members flex flex-col justify-center items-center gap-1">
                     <div className="info ">
                         <IoPeopleSharp />
                         Members
@@ -74,7 +74,7 @@ export default function App({ gname }: any) {
                     {/* @ts-ignore */}
                     {groupData?.members}
                 </div>
-                <div className="online">
+                <div className="online flex flex-col justify-center items-center gap-1">
                     <div className="info">
                         <GoDotFill color={'#46d160'} />
                         <p>Online</p>
@@ -82,7 +82,7 @@ export default function App({ gname }: any) {
                     {/* @ts-ignore */}
                     {groupData?.online}
                 </div>
-                <div className="rank">
+                <div className="rank flex flex-col justify-center items-center gap-1">
                     <p>Rank</p>
                     <div className="info ">
                         <FaHashtag />2

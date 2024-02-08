@@ -33,7 +33,10 @@ const App = () => {
                             path=":name"
                             element={<Groups theme={theme} />}
                         />
-                        <Route path=":name/:id" element={<Post />} />
+                        <Route
+                            path=":name/:id"
+                            element={<Post theme={theme} />}
+                        />
                     </Route>
                     <Route path="/p">
                         <Route path=":name" element={<Person />} />
