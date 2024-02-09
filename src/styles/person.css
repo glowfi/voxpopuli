@@ -24,14 +24,15 @@ html[data-theme='light'] {
 
 .containerpe {
     display: grid;
-    /* grid-template-columns: repeat(1, m); */
-    /* grid-template-rows: auto auto 1fr; */
     grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-auto-flow: none;
     grid-template-areas:
         'over over over over'
         'postspe postspe postspe asidepe'
         'commentspe commentspe commentspe .';
     grid-gap: 1.3rem;
+    grid-auto-flow: dense;
+
     align-items: flex-start;
     justify-content: center;
 
@@ -40,29 +41,49 @@ html[data-theme='light'] {
     margin-right: auto;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
-    align-content: stretch;
-    /* border: 1px solid red; */
+    border: 1px solid red;
+}
+
+.containerpe2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-auto-flow: none;
+    grid-template-areas:
+        'over over over over'
+        'commentspe commentspe commentspe asidepe';
+    grid-gap: 1.3rem;
+    grid-auto-flow: dense;
+
+    align-items: flex-start;
+    justify-content: center;
+
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border: 1px solid red;
 }
 
 .over {
     grid-area: over;
     margin-top: 1rem;
-    /* border: 1px solid red; */
+    border: 1px solid red;
 }
 
 .asidepe {
     grid-area: asidepe;
-    /* border: 1px solid red; */
+    border: 1px solid red;
 }
 
 .postspe {
     grid-area: postspe;
-    /* border: 1px solid red; */
+    border: 1px solid red;
 }
 
 .commentspe {
     grid-area: commentspe;
-    /* border: 1px solid red; */
+    border: 1px solid red;
 }
 
 /* Aside */
@@ -143,48 +164,55 @@ html[data-theme='light'] {
 
 /* xs */
 @media (min-width: 475px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 475px;
     }
 }
 
 /* sm */
 @media (min-width: 640px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 640px;
     }
 }
 
 /* md */
 @media (min-width: 768px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 768px;
     }
 }
 
 /* lg */
 @media (min-width: 1024px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 1024px;
     }
 }
 
 /* xl */
 @media (min-width: 1280px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 1280px;
     }
 }
 
 /* 2xl */
 @media (min-width: 1536px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         max-width: 1536px;
     }
 }
 
 @media screen and (max-width: 800px) {
-    .containerpe {
+    .containerpe,
+    .containerpe2 {
         grid-template-areas:
             'over over over over'
             'asidepe asidepe asidepe asidepe'
