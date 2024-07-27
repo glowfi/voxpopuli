@@ -4,11 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';
 import 'dotenv/config';
-import { configDotenv } from 'dotenv';
-
-configDotenv({
-    path: '../.env'
-});
 
 export const Provider = ({ children }: { children: React.ReactNode }) => {
     console.log('CHECK', process.env.SERVER_URL, 'client');
@@ -17,8 +12,7 @@ export const Provider = ({ children }: { children: React.ReactNode }) => {
         trpc.createClient({
             links: [
                 httpBatchLink({
-                    // url: process.env.SERVER_URL as string
-                    url: 'https://voxpopuli.onrender.com/trpc'
+                    url: process.env.SERVER_URL as string
                 })
             ]
         })

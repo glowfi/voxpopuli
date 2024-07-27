@@ -1,5 +1,6 @@
 'use client';
 import { Separator } from '@/components/ui/separator';
+import { trpc } from '@voxpopuli/trpc-client';
 import { TrendingUpIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -7,7 +8,6 @@ import React, { useEffect, useState } from 'react';
 import { MagicCard } from '../magicui/magic-card';
 import { LoadingButton } from '../ui/LoadingButton';
 import { topic } from './types';
-import { trpc } from '@voxpopuli/trpc-client/src/';
 
 const Trendingtopics = () => {
     const [alltopics, setAlltopics] = useState<topic[] | []>([]);

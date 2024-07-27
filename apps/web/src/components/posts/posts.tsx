@@ -1,5 +1,5 @@
 'use client';
-import { trpc } from '@voxpopuli/trpc-client/src/';
+import { trpc } from '@voxpopuli/trpc-client';
 import React, { useState } from 'react';
 import LoadingSpinner from '../loadingspinners/loadingspinner';
 import InfiniteScroll from '../ui/InfiniteScroll';
