@@ -5,8 +5,8 @@ import 'dotenv/config';
 export const trpc = createTRPCProxyClient<AppRouter>({
     links: [
         httpBatchLink({
-            // url: process.env.SERVER_URL as string
-            url: 'http://localhost:8080/trpc'
+            url: process.env.SERVER_URL as string
+            // url: 'http://localhost:8080/trpc'
         })
     ]
 });

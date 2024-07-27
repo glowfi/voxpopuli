@@ -4,7 +4,9 @@ import type { Role } from './types';
 
 export const getUserRoles = async (uid: string): Promise<Role[]> => {
     const [adminExists, managerExists] = await Promise.all([
+        //@ts-ignore
         prisma.admin.findUnique({ where: { uid } }),
+        //@ts-ignore
         prisma.manager.findUnique({ where: { uid } })
     ]);
 
