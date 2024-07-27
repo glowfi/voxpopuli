@@ -11,6 +11,7 @@ configDotenv({
 });
 
 export const Provider = ({ children }: { children: React.ReactNode }) => {
+    console.log('CHECK', process.env.SERVER_URL);
     const [queryClient] = useState(() => new QueryClient());
     const [trpcClient] = useState(() =>
         trpc.createClient({
