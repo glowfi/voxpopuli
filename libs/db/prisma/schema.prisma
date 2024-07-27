@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model trophies{
+    id               Int      @id @default(autoincrement())
+    title            String   @unique
+    description      String
+    imageLink        String
+    winners          User[] //Handle Later
+}
+
+model User{
+    id                       Int      @id @default(autoincrement())
+    username                 String   @unique
+    email                    String   @unique
+    password                 String
+    memberOf                 voxsphere[] @relation("voxsphere_member") //Handle Later
+    moderatorOf              voxsphere[] @relation("voxsphere_moderator") //Handle Later
+    cakeDay                  Int
+    cakeDayHuman             String
+    accountAge               String
+    avatarImg                String
+    bannerImg                String?
+    publicDescription        String?
+    over18                   Boolean @default(false) //Handle Later
+    suspended                Boolean @default(false) //Handle Later
+    keycolorHex              String?
+    primarycolorHex          String?
+    iconcolorHex             String?
+    trophies                 trophies[] //Handle Later
+    createdAt                DateTime @default(now())
+    updatedAt                DateTime @updatedAt
+    posts                    posts[] //Handle Later
+    comments                 comments[] //Handle Later
+}
+
+model awards{
+    id                 Int      @id @default(autoincrement())
+    title              String   @unique
+    imageLink          String
+    postsAwarded       posts[]
+}
+
+model topics{
+    id                 Int      @id @default(autoincrement())
+    title              String   @unique
+    voxsphere          voxsphere[] //Handle Later
+    posts              posts[]
+}
+
+model comments{
+    id                 Int      @id @default(autoincrement())
+    comment            String
+    commentHTML        String
+    author             User     @relation(fields: [authorId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+    authorId           Int
+    replies            comments[] @relation("Comment_Children")  //Handle Later
+    parentComment      comments?  @relation("Comment_Children", fields: [parentCommentId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+    parentCommentId    Int?
+    createdAtUnix      Int 
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    ups                Int      @default(0)
+    post               posts    @relation(fields: [postId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+    postId             Int
+}
+
+model mediaMetadata{
+    id                 Int      @id @default(autoincrement())
+    original_link      String?
+    type               String
+    videoLink          String?
+    imageLink          String?
+    gifLink            String?
+    gallery            Json?
+    post               posts     @relation(fields: [postId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+    postId             Int 
+}
+
+// Flairs -> [{"text":"","color":""},...so on]
+// Rules -> [{rule_title:"",rule_desc:""},...so on]
+// Anchors -> {anchorTitle:[[linkTitle1,link1],[linkTitle2,link2]],...so on}
+
+model flairs{
+    id                  Int      @id @default(autoincrement())
+    title               String
+    colorHex            String?
+    voxsphere           voxsphere     @relation(fields: [voxsphereId], references: [id])
+    voxsphereId         Int
+    posts               posts[] // Handle Later
+}
+
+model rules{
+    id                  Int      @id @default(autoincrement())
+    title               String
+    description         String?
+    voxsphere           voxsphere     @relation(fields: [voxsphereId], references: [id])
+    voxsphereId         Int
+}
+
+
+model voxsphere{
+    id                 Int      @id @default(autoincrement())
+    name               String   @unique
+    about              String?
+    logoURL            String?
+    bannerURL          String?
+    topics             topics[]   //Handle Later
+    rules              rules[]   //Handle Later
+    flairs             flairs[]  //Handle Later
+    anchors            Json?
+    buttonColorHex     String?
+    headerColorHex     String?
+    bannerBgColorHex   String?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    createdAtUnix      Int
+    createdatHuman     String
+    members            User[] @relation("voxsphere_member")
+    moderators         User[] @relation("voxsphere_moderator")
+    totalmembers       Int
+    totalmembersHuman  String
+    over18             Boolean @default(false) //Handle Later
+    spoilersEnabled    Boolean @default(false) //Handle Later
+    posts              posts[]
+}
+
+model posts{
+     id                 Int      @id @default(autoincrement())
+     author             User     @relation(fields: [authorId], references: [id],onDelete: Cascade, onUpdate: Cascade)
+     authorId           Int
+     awards             awards[]  //Handle Later
+     topic              topics[]  //Handle Later
+     createdAt          DateTime @default(now())
+     updatedAt          DateTime @updatedAt
+     createdAtUnix      Int 
+     createdatHuman     String
+     linkType           Boolean  @default(false)  //Handle Later
+     mediaContent       mediaMetadata[] 
+     comments           comments[] //Handle Later
+     numComments        Int      @default(0)
+     over18             Boolean  //Handle Later 
+     spoiler            Boolean  //Handle Later
+     postflair          flairs[] // Handle Later
+     title              String
+     text               String
+     textHTML           String?
+     ups                Int
+     voxsphere          voxsphere[] //Handle Later
+}

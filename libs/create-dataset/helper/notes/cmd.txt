@@ -1,0 +1,3 @@
+drop database postdb;create database postdb;
+sudo -u postgres psql postdb < dump-postdb-202407180901.sql;
+ALTER DATABASE delta REFRESH COLLATION VERSION;
