@@ -11,14 +11,14 @@ configDotenv({
 });
 
 export const Provider = ({ children }: { children: React.ReactNode }) => {
-    console.log('CHECK', process.env.SERVER_URL);
+    console.log('CHECK', process.env.SERVER_URL, 'client');
     const [queryClient] = useState(() => new QueryClient());
     const [trpcClient] = useState(() =>
         trpc.createClient({
             links: [
                 httpBatchLink({
-                    url: process.env.SERVER_URL as string
-                    // url: 'http://localhost:8080/trpc'
+                    // url: process.env.SERVER_URL as string
+                    url: 'https://voxpopuli.onrender.com/trpc'
                 })
             ]
         })
