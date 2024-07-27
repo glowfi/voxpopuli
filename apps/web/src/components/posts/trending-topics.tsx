@@ -1,6 +1,6 @@
 'use client';
 import { Separator } from '@/components/ui/separator';
-import { trpc } from '@voxpopuli/trpc-client';
+import { trpc } from '@voxpopuli/trpc-client/src/';
 import { TrendingUpIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';

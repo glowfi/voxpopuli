@@ -2,7 +2,7 @@
 const nextConfig = {
     reactStrictMode: false,
     env: {
-        BACKEND_URL: process.env.BACKEND_URL,
+        SERVER_URL: process.env.SERVER_URL,
         APP_NAME: process.env.APP_NAME
     },
     images: {

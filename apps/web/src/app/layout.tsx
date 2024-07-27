@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Provider } from '@voxpopuli/trpc-client/Provider';
+import { Provider } from '@voxpopuli/trpc-client/src/Provider';
 import Navbar from '@/components/navbar/navbar';
 import { ThemeProvider } from 'next-themes';
 

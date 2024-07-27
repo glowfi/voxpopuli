@@ -7,7 +7,7 @@ import LoadingSpinner from '../loadingspinners/loadingspinner';
 import { MagicCard } from '../magicui/magic-card';
 import { LoadingButton } from '../ui/LoadingButton';
 import { voxsphere } from './types';
-import { trpc } from '@voxpopuli/trpc-client';
+import { trpc } from '@voxpopuli/trpc-client/src/';
 
 const PopularCommunities = () => {
     const [PopularCommunities, setPopularCommunities] = useState<
