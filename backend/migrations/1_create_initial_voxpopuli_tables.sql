@@ -27,7 +27,7 @@ CREATE TABLE voxspheres (
     spoilers_enabled BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
-    updated_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_topic FOREIGN KEY(topic) REFERENCES topics(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -53,14 +53,14 @@ CREATE TABLE users (
     suspended BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
-    updated_at TIMESTAMP(6) NOT NULL
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE user_flairs(
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     voxsphere_id INTEGER NOT NULL,
-    full_text VARCHAR(255),
+    full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(7),
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -126,7 +126,7 @@ CREATE TABLE posts (
     spoiler BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
-    updated_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_author_id FOREIGN KEY(author_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -221,7 +221,7 @@ CREATE TABLE comments (
     score INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
-    updated_at TIMESTAMP(6) NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_author_id FOREIGN KEY(author_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_parent_comment_id FOREIGN KEY(parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -247,7 +247,7 @@ CREATE TABLE post_flairs(
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL,
     voxsphere_id INTEGER NOT NULL,
-    full_text VARCHAR(255),
+    full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(7),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
