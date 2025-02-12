@@ -1,4 +1,7 @@
 -- +goose Up
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION fn_auto_update_updated_at_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -6,18 +9,19 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 
 CREATE TABLE topics (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name TEXT NOT NULL
 );
 
 CREATE TABLE voxspheres (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     public_description TEXT,
-    topic INTEGER NOT NULL,
+    topic UUID NOT NULL,
     community_icon TEXT,
     banner_background_image TEXT,
     banner_background_color VARCHAR(7),
@@ -33,15 +37,15 @@ CREATE TABLE voxspheres (
 
 
 CREATE TABLE rules (
-    id SERIAL PRIMARY KEY,
-    voxsphere_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    voxsphere_id UUID NOT NULL,
     short_name TEXT NOT NULL,
     description TEXT NOT NULL,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     public_description TEXT,
     avatar_img TEXT,
@@ -57,9 +61,9 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_flairs(
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    voxsphere_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(7),
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -67,8 +71,8 @@ CREATE TABLE user_flairs(
 );
 
 CREATE TABLE user_flair_emojis (
-    id SERIAL PRIMARY KEY,
-    user_flair_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
     text VARCHAR(255) NOT NULL,
     url TEXT NOT NULL,
@@ -76,48 +80,48 @@ CREATE TABLE user_flair_emojis (
 );
 
 CREATE TABLE user_flair_descriptions (
-    id SERIAL PRIMARY KEY,
-    user_flair_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
     text VARCHAR(255) NOT NULL,
     CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE trophies (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     image_link TEXT NOT NULL
 );
 
 CREATE TABLE user_trophies (
-    user_id INTEGER NOT NULL,
-    trophy_id INTEGER NOT NULL,
+    user_id UUID NOT NULL,
+    trophy_id UUID NOT NULL,
     PRIMARY KEY (user_id,trophy_id),
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT trophy_id FOREIGN KEY(trophy_id) REFERENCES trophies(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE voxsphere_members (
-    voxsphere_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    voxsphere_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     PRIMARY KEY (voxsphere_id, user_id),
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE voxsphere_moderators (
-    voxsphere_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    voxsphere_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     PRIMARY KEY (voxsphere_id, user_id),
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE posts (
-    id SERIAL PRIMARY KEY,
-    author_id INTEGER NOT NULL,
-    voxsphere_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    author_id UUID NOT NULL,
+    voxsphere_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
     text TEXT,
     text_html TEXT,
@@ -142,21 +146,21 @@ create type media_type as enum (
 
 
 CREATE TABLE post_medias (
-    id SERIAL PRIMARY KEY,
-    post_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    post_id UUID NOT NULL,
     media_type media_type NOT NULL,
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE images (
-    id SERIAL PRIMARY KEY,
-    media_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    media_id UUID NOT NULL,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE image_metadatas (
-    id SERIAL PRIMARY KEY,
-    image_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    image_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     url TEXT NOT NULL,
@@ -164,14 +168,14 @@ CREATE TABLE image_metadatas (
 );
 
 CREATE TABLE gifs (
-    id SERIAL PRIMARY KEY,
-    media_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    media_id UUID NOT NULL,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE gif_metadatas (
-    id SERIAL PRIMARY KEY,
-    gif_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    gif_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     url TEXT NOT NULL,
@@ -179,8 +183,8 @@ CREATE TABLE gif_metadatas (
 );
 
 CREATE TABLE videos (
-    id SERIAL PRIMARY KEY,
-    media_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    media_id UUID NOT NULL,
     url TEXT NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
@@ -188,14 +192,14 @@ CREATE TABLE videos (
 );
 
 CREATE TABLE galleries (
-    id SERIAL PRIMARY KEY,
-    media_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    media_id UUID NOT NULL,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE gallery_metadatas (
-    id SERIAL PRIMARY KEY,
-    gallery_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    gallery_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
@@ -204,17 +208,17 @@ CREATE TABLE gallery_metadatas (
 );
 
 CREATE TABLE links (
-    id SERIAL PRIMARY KEY,
-    media_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    media_id UUID NOT NULL,
     link TEXT NOT NULL,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE comments (
-    id SERIAL PRIMARY KEY,
-    author_id INTEGER NOT NULL,
-    parent_comment_id INTEGER,
-    post_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    author_id UUID NOT NULL,
+    parent_comment_id UUID,
+    post_id UUID NOT NULL,
     body TEXT NOT NULL,
     body_html TEXT NOT NULL,
     ups INTEGER NOT NULL DEFAULT 0,
@@ -229,14 +233,14 @@ CREATE TABLE comments (
 
 
 CREATE TABLE awards (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     image_link TEXT NOT NULL
 );
 
 CREATE TABLE post_awards (
-    post_id INTEGER NOT NULL,
-    award_id INTEGER NOT NULL,
+    post_id UUID NOT NULL,
+    award_id UUID NOT NULL,
     PRIMARY KEY (post_id,award_id),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_award_id FOREIGN KEY(award_id) REFERENCES awards(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -244,9 +248,9 @@ CREATE TABLE post_awards (
 
 
 CREATE TABLE post_flairs(
-    id SERIAL PRIMARY KEY,
-    post_id INTEGER NOT NULL,
-    voxsphere_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    post_id UUID NOT NULL,
+    voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(7),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -254,8 +258,8 @@ CREATE TABLE post_flairs(
 );
 
 CREATE TABLE post_flair_emojis (
-    id SERIAL PRIMARY KEY,
-    post_flair_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
     text VARCHAR(255) NOT NULL,
     url TEXT NOT NULL,
@@ -263,8 +267,8 @@ CREATE TABLE post_flair_emojis (
 );
 
 CREATE TABLE post_flair_descriptions (
-    id SERIAL PRIMARY KEY,
-    post_flair_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY,
+    post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
     text VARCHAR(255) NOT NULL,
     CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -344,6 +348,8 @@ CREATE INDEX idx_voxspheres_created_at ON voxspheres (created_at);
 CREATE INDEX idx_users_created_at ON users (created_at);
 
 -- +goose Down
+DROP EXTENSION "uuid-ossp";
+
 DROP INDEX idx_voxspheres_created_at;
 DROP INDEX idx_users_created_at;
 DROP INDEX idx_comments_created_at;
