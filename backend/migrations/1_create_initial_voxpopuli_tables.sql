@@ -24,9 +24,9 @@ CREATE TABLE voxspheres (
     topic UUID NOT NULL,
     community_icon TEXT,
     banner_background_image TEXT,
-    banner_background_color VARCHAR(7),
-    key_color VARCHAR(7),
-    primary_color VARCHAR(7),
+    banner_background_color VARCHAR(8),
+    key_color VARCHAR(8),
+    primary_color VARCHAR(8),
     over18 BOOLEAN NOT NULL DEFAULT false,
     spoilers_enabled BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -50,9 +50,9 @@ CREATE TABLE users (
     public_description TEXT,
     avatar_img TEXT,
     banner_img TEXT,
-    iconcolor VARCHAR(7),
-    keycolor VARCHAR(7),
-    primarycolor VARCHAR(7),
+    iconcolor VARCHAR(8),
+    keycolor VARCHAR(8),
+    primarycolor VARCHAR(8),
     over18 BOOLEAN NOT NULL DEFAULT false,
     suspended BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -65,7 +65,7 @@ CREATE TABLE user_flairs(
     user_id UUID NOT NULL,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
-    background_color VARCHAR(7),
+    background_color VARCHAR(8),
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -252,7 +252,7 @@ CREATE TABLE post_flairs(
     post_id UUID NOT NULL,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
-    background_color VARCHAR(7),
+    background_color VARCHAR(8),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
