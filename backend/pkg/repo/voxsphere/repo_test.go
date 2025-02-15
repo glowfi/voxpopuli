@@ -73,9 +73,9 @@ func TestRepo_Voxspheres(t *testing.T) {
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			wantVoxspheres: []models.Voxsphere{
 				{
-					ID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Topic: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					TopicExpanded: models.Topic{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Topic: models.Topic{
 						ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						Name: "xyz",
 					},
@@ -93,9 +93,9 @@ func TestRepo_Voxspheres(t *testing.T) {
 					UpdatedAt:             time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 				},
 				{
-					ID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Topic: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					TopicExpanded: models.Topic{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Topic: models.Topic{
 						ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						Name: "pqr",
 					},

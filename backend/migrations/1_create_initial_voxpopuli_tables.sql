@@ -21,7 +21,7 @@ CREATE TABLE voxspheres (
     id UUID PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     public_description TEXT,
-    topic UUID NOT NULL,
+    topic_id UUID NOT NULL,
     community_icon TEXT,
     banner_background_image TEXT,
     banner_background_color VARCHAR(8),
@@ -32,7 +32,7 @@ CREATE TABLE voxspheres (
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_topic FOREIGN KEY(topic) REFERENCES topics(id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_topic FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -302,7 +302,7 @@ CREATE UNIQUE INDEX "voxsphere_title" ON "voxspheres"("title");
 CREATE UNIQUE INDEX "user_name" ON "users"("name");
 
 -- Create indexes for foreign key columns
-CREATE INDEX idx_voxsphere_topic ON voxspheres (topic);
+CREATE INDEX idx_voxsphere_topic_id ON voxspheres (topic_id);
 CREATE INDEX idx_rules_voxsphere_id ON rules (voxsphere_id);
 CREATE INDEX idx_user_flairs_user_id ON user_flairs (user_id);
 CREATE INDEX idx_user_flairs_voxsphere_id ON user_flairs (voxsphere_id);
@@ -389,7 +389,7 @@ DROP INDEX idx_user_flair_emojis_user_flair_id;
 DROP INDEX idx_user_flairs_voxsphere_id;
 DROP INDEX idx_user_flairs_user_id;
 DROP INDEX idx_rules_voxsphere_id;
-DROP INDEX idx_voxsphere_topic;
+DROP INDEX idx_voxsphere_topic_id;
 
 DROP INDEX "user_name";
 DROP INDEX "voxsphere_title";

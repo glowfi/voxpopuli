@@ -59,7 +59,7 @@ func (r *Repo) Voxspheres(ctx context.Context) ([]models.Voxsphere, error) {
             voxspheres;
     `
 
-	err := r.db.NewRaw(query).NewSelect().Model(&voxspheres).Relation("TopicExpanded").Scan(ctx)
+	err := r.db.NewRaw(query).NewSelect().Model(&voxspheres).Relation("Topic").Scan(ctx)
 	if err != nil {
 		return []models.Voxsphere{}, err
 	}

@@ -1,7 +1,7 @@
 - model: Voxsphere
   rows:
     - id: 00000000-0000-0000-0000-000000000001
-      topic: 00000000-0000-0000-0000-000000000001
+      topic_id: 00000000-0000-0000-0000-000000000001
       title: v/foo
       public_description: foo PublicDescription
       community_icon: foo icon
@@ -16,7 +16,7 @@
       updated_at: 2024-10-10T10:10:10Z
 
     - id: 00000000-0000-0000-0000-000000000002
-      topic: 00000000-0000-0000-0000-000000000002
+      topic_id: 00000000-0000-0000-0000-000000000002
       title: v/bar
       public_description: bar PublicDescription
       community_icon: bar icon

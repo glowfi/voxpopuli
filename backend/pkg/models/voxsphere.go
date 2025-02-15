@@ -8,8 +8,8 @@ import (
 
 type Voxsphere struct {
 	ID                    uuid.UUID `json:"id" bun:",pk"`
-	Topic                 uuid.UUID `json:"topic"`
-	TopicExpanded         Topic     `json:"topic_expanded" bun:"rel:has-one,join:topic=id"`
+	TopicID               uuid.UUID `json:"topic_id"`
+	Topic                 Topic     `json:"topic" bun:"rel:has-one,join:topic_id=id"`
 	Title                 string    `json:"title"`
 	PublicDescription     *string   `json:"public_description"`
 	CommunityIcon         *string   `json:"community_icon"`
