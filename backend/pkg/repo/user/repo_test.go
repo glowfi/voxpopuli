@@ -142,3 +142,60 @@ func TestRepo_Users(t *testing.T) {
 		})
 	}
 }
+
+func TestRepo_UserByID(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantUser     models.User
+		wantErr      error
+	}{
+		{
+			name:         "user not found :NEG",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			},
+			wantUser: models.User{},
+			wantErr:  userrepo.ErrUserNotFound,
+		},
+		{
+			name:         "user found :NEG",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantUser: models.User{
+				ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Name:              "John Doe",
+				PublicDescription: ptrof("This is a public description"),
+				AvatarImg:         ptrof("https://example.com/avatar1.jpg"),
+				BannerImg:         ptrof("https://example.com/banner1.jpg"),
+				Iconcolor:         ptrof("#FF0000"),
+				Keycolor:          ptrof("#00FF00"),
+				Primarycolor:      ptrof("#0000FF"),
+				Over18:            true,
+				Suspended:         false,
+				CreatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				CreatedAtUnix:     1725091100,
+				UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := userrepo.NewRepo(db)
+
+			gotUser, gotErr := pgrepo.UserByID(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantUser, gotUser, "expect user to match")
+		})
+	}
+}
