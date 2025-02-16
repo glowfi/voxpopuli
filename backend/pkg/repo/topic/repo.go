@@ -1,4 +1,4 @@
-package voxtopics
+package topic
 
 import (
 	"context"
