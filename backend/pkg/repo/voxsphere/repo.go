@@ -181,6 +181,8 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 	        UPDATE
 	            voxspheres
 	        SET
+                id = ?,
+                topic_id = ?,
 	            title = ?,
 	            public_description = ?,
 	            community_icon = ?,
@@ -198,6 +200,8 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 	voxsphere.UpdatedAt = time.Now()
 
 	res, err := r.db.NewRaw(query,
+		voxsphere.ID,
+		voxsphere.TopicID,
 		voxsphere.Title,
 		voxsphere.PublicDescription,
 		voxsphere.CommunityIcon,
