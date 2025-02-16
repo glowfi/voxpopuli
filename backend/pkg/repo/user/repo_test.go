@@ -59,7 +59,24 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	return db
 }
 
-func assertUsers(t *testing.T, wantUsers, gotUsers []models.User) {
+func assertTimeWithinRange(t *testing.T, time, start, end time.Time) {
+	t.Helper()
+
+	assert.NotZero(
+		t,
+		time,
+		"expect time to be a non-zeroed out value",
+	)
+
+	// Ensure all times are in UTC
+	time = time.UTC()
+	start = start.UTC()
+	end = end.UTC()
+
+	assert.WithinRange(t, time, start, end)
+}
+
+func assertUsersWithoutTimestamp(t *testing.T, wantUsers, gotUsers []models.User) {
 	t.Helper()
 
 	for _, user := range wantUsers {
@@ -71,8 +88,21 @@ func assertUsers(t *testing.T, wantUsers, gotUsers []models.User) {
 			t.Fatal(fmt.Sprintf("user %v of ID %v is not present in gotUsers", user.Name, user.ID))
 			return
 		}
-		assert.Equal(t, user, gotUsers[idx], "expect user to match")
+		assertUserWithoutTimestamp(t, user, gotUsers[idx])
 	}
+}
+
+func assertUserWithoutTimestamp(t *testing.T, wantUser, gotUser models.User) {
+	assert.Equal(t, wantUser.ID, gotUser.ID, "expected id to match")
+	assert.Equal(t, wantUser.Name, gotUser.Name, "expected name to match")
+	assert.Equal(t, wantUser.PublicDescription, gotUser.PublicDescription, "expected public description to match")
+	assert.Equal(t, wantUser.AvatarImg, gotUser.AvatarImg, "expected avatar image to match")
+	assert.Equal(t, wantUser.BannerImg, gotUser.BannerImg, "expected banner image to match")
+	assert.Equal(t, wantUser.Iconcolor, gotUser.Iconcolor, "expected icon color to match")
+	assert.Equal(t, wantUser.Keycolor, gotUser.Keycolor, "expected key color to match")
+	assert.Equal(t, wantUser.Primarycolor, gotUser.Primarycolor, "expected primary color to match")
+	assert.Equal(t, wantUser.Over18, gotUser.Over18, "expected over 18 to match")
+	assert.Equal(t, wantUser.Suspended, gotUser.Suspended, "expected suspended to match")
 }
 
 func ptrof[T comparable](v T) *T {
@@ -196,6 +226,157 @@ func TestRepo_UserByID(t *testing.T) {
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantUser, gotUser, "expect user to match")
+		})
+	}
+}
+
+func TestRepo_AddUser(t *testing.T) {
+	type args struct {
+		user models.User
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantUser     models.User
+		wantUsers    []models.User
+		wantErr      error
+	}{
+		{
+			name:         "duplicate user id :NEG",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				user: models.User{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:              "new user",
+					PublicDescription: ptrof("A public description"),
+					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+					BannerImg:         ptrof("https://example.com/banner.jpg"),
+					Iconcolor:         ptrof("#ffffff"),
+					Keycolor:          ptrof("#ffffff"),
+					Primarycolor:      ptrof("#ffffff"),
+					Over18:            false,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantUser:  models.User{},
+			wantUsers: []models.User{},
+			wantErr:   userrepo.ErrUserDuplicateIDorName,
+		},
+		{
+			name:         "add user :POS",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				user: models.User{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Name:              "Jane Smith",
+					PublicDescription: ptrof("A public description"),
+					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+					BannerImg:         ptrof("https://example.com/banner.jpg"),
+					Iconcolor:         ptrof("#ffffff"),
+					Keycolor:          ptrof("#ffffff"),
+					Primarycolor:      ptrof("#ffffff"),
+					Over18:            false,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantUser: models.User{
+				ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				Name:              "Jane Smith",
+				PublicDescription: ptrof("A public description"),
+				AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+				BannerImg:         ptrof("https://example.com/banner.jpg"),
+				Iconcolor:         ptrof("#ffffff"),
+				Keycolor:          ptrof("#ffffff"),
+				Primarycolor:      ptrof("#ffffff"),
+				Over18:            false,
+				Suspended:         false,
+				CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				CreatedAtUnix:     1725091101,
+				UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+			},
+			wantUsers: []models.User{
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:              "John Doe",
+					PublicDescription: ptrof("This is a public description"),
+					AvatarImg:         ptrof("https://example.com/avatar1.jpg"),
+					BannerImg:         ptrof("https://example.com/banner1.jpg"),
+					Iconcolor:         ptrof("#FF0000"),
+					Keycolor:          ptrof("#00FF00"),
+					Primarycolor:      ptrof("#0000FF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix:     1725091100,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:              "Jane Doe",
+					PublicDescription: ptrof("This is another public description"),
+					AvatarImg:         ptrof("https://example.com/avatar2.jpg"),
+					BannerImg:         ptrof("https://example.com/banner2.jpg"),
+					Iconcolor:         ptrof("#FFFF00"),
+					Keycolor:          ptrof("#FF00FF"),
+					Primarycolor:      ptrof("#00FFFF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Name:              "Jane Smith",
+					PublicDescription: ptrof("A public description"),
+					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+					BannerImg:         ptrof("https://example.com/banner.jpg"),
+					Iconcolor:         ptrof("#ffffff"),
+					Keycolor:          ptrof("#ffffff"),
+					Primarycolor:      ptrof("#ffffff"),
+					Over18:            false,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := userrepo.NewRepo(db)
+
+			startTime := time.Now()
+			gotUser, gotErr := pgrepo.AddUser(context.Background(), tt.args.user)
+			endTime := time.Now()
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotUsers, err := pgrepo.Users(context.Background())
+			if err != nil {
+				t.Fatal("expect no error while getting users")
+			}
+			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
+			assert.Equal(
+				t,
+				gotUser.UpdatedAt,
+				gotUser.CreatedAt,
+				"expect CreatedAt and UpdatedAt to be same",
+			)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotUser.CreatedAt, startTime, endTime)
+				assertTimeWithinRange(t, gotUser.UpdatedAt, startTime, endTime)
+			}
 		})
 	}
 }

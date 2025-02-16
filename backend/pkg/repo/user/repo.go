@@ -134,6 +134,10 @@ func (r *Repo) AddUser(ctx context.Context, user models.User) (models.User, erro
                 )
             `
 
+	timestamp := time.Now()
+	user.CreatedAt = timestamp
+	user.UpdatedAt = timestamp
+
 	if _, err := r.db.NewRaw(query, user.ID, user.Name, user.PublicDescription, user.AvatarImg, user.BannerImg, user.Iconcolor, user.Keycolor, user.Primarycolor, user.Over18, user.Suspended, user.CreatedAt, user.CreatedAtUnix, user.UpdatedAt).Exec(ctx); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
@@ -163,6 +167,8 @@ func (r *Repo) UpdateUser(ctx context.Context, user models.User) (models.User, e
                 WHERE
                     id = ?
             `
+
+	user.UpdatedAt = time.Now()
 
 	res, err := r.db.NewRaw(query, user.Name, user.PublicDescription, user.AvatarImg, user.BannerImg, user.Iconcolor, user.Keycolor, user.Primarycolor, user.Over18, user.Suspended, time.Now(), user.ID).Exec(ctx)
 	if err != nil {
