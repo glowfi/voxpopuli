@@ -4,6 +4,7 @@
       voxsphere_id: 00000000-0000-0000-0000-000000000001
       short_name: "rule_foo"
       description: "description_foo"
+
     - id: 00000000-0000-0000-0000-000000000002
       voxsphere_id: 00000000-0000-0000-0000-000000000002
       short_name: "rule_bar"
