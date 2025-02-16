@@ -507,3 +507,102 @@ func TestRepo_UpdateUser(t *testing.T) {
 		})
 	}
 }
+
+func TestRepo_DeleteUser(t *testing.T) {
+	type fields struct {
+		db *bun.DB
+	}
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantUsers    []models.User
+		wantErr      error
+	}{
+		{
+			name:         "user id not found :NEG",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			},
+			wantUsers: []models.User{
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:              "John Doe",
+					PublicDescription: ptrof("This is a public description"),
+					AvatarImg:         ptrof("https://example.com/avatar1.jpg"),
+					BannerImg:         ptrof("https://example.com/banner1.jpg"),
+					Iconcolor:         ptrof("#FF0000"),
+					Keycolor:          ptrof("#00FF00"),
+					Primarycolor:      ptrof("#0000FF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix:     1725091100,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:              "Jane Doe",
+					PublicDescription: ptrof("This is another public description"),
+					AvatarImg:         ptrof("https://example.com/avatar2.jpg"),
+					BannerImg:         ptrof("https://example.com/banner2.jpg"),
+					Iconcolor:         ptrof("#FFFF00"),
+					Keycolor:          ptrof("#FF00FF"),
+					Primarycolor:      ptrof("#00FFFF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: userrepo.ErrUserNotFound,
+		},
+		{
+			name:         "delete user :POS",
+			fixtureFiles: []string{"users.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantUsers: []models.User{
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:              "Jane Doe",
+					PublicDescription: ptrof("This is another public description"),
+					AvatarImg:         ptrof("https://example.com/avatar2.jpg"),
+					BannerImg:         ptrof("https://example.com/banner2.jpg"),
+					Iconcolor:         ptrof("#FFFF00"),
+					Keycolor:          ptrof("#FF00FF"),
+					Primarycolor:      ptrof("#00FFFF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := userrepo.NewRepo(db)
+
+			gotErr := pgrepo.DeleteUser(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotUsers, err := pgrepo.Users(context.Background())
+			if err != nil {
+				t.Fatal("expect no error while getting users")
+			}
+
+			assert.Equal(t, tt.wantUsers, gotUsers, "expect users to match")
+		})
+	}
+}
