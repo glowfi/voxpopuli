@@ -63,6 +63,23 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	return db
 }
 
+func assertTimeWithinRange(t *testing.T, time, start, end time.Time) {
+	t.Helper()
+
+	assert.NotZero(
+		t,
+		time,
+		"expect time to be a non-zeroed out value",
+	)
+
+	// Ensure all times are in UTC
+	time = time.UTC()
+	start = start.UTC()
+	end = end.UTC()
+
+	assert.WithinRange(t, time, start, end)
+}
+
 func assertVoxsphereWithoutTimestamp(t *testing.T, wantVoxsphere, gotVoxsphere models.Voxsphere) {
 	assert.Equal(t, wantVoxsphere.ID, gotVoxsphere.ID, "expected id to match")
 	assert.Equal(t, wantVoxsphere.TopicID, gotVoxsphere.TopicID, "expected topic id to match")
@@ -420,8 +437,9 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := voxrepo.NewRepo(db)
 
+			startTime := time.Now()
 			gotVoxsphere, gotErr := pgrepo.AddVoxsphere(context.Background(), tt.args.voxsphere)
-			_ = gotVoxsphere
+			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
@@ -430,6 +448,16 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 				t.Fatal("expect no error while getting voxspheres")
 			}
 			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
+			assert.Equal(
+				t,
+				gotVoxsphere.UpdatedAt,
+				gotVoxsphere.CreatedAt,
+				"expect CreatedAt and UpdatedAt to be same",
+			)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotVoxsphere.CreatedAt, startTime, endTime)
+				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
+			}
 		})
 	}
 }
@@ -589,8 +617,9 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := voxrepo.NewRepo(db)
 
+			startTime := time.Now()
 			gotVoxsphere, gotErr := pgrepo.UpdateVoxsphere(context.Background(), tt.args.voxsphere)
-			_ = gotVoxsphere
+			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
@@ -599,6 +628,9 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 				t.Fatal("expect no error while getting voxspheres")
 			}
 			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
+			}
 		})
 	}
 }
