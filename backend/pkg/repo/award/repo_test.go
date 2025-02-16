@@ -40,7 +40,7 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 
 	db.RegisterModel((*models.Award)(nil))
 
-	// drop all rows of the topics,award table
+	// drop all rows of the award table
 	_, err := db.NewTruncateTable().Cascade().Model((*models.Award)(nil)).Exec(context.Background())
 	if err != nil {
 		t.Fatal("truncate table failed:", err)

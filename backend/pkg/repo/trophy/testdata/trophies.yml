@@ -1,0 +1,10 @@
+- model: Trophy
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      title: trophy_foo
+      description: "description_foo"
+      image_link: "image_link_foo"
+    - id: 00000000-0000-0000-0000-000000000002
+      title: trophy_bar
+      description: "description_bar"
+      image_link: "image_link_bar"
