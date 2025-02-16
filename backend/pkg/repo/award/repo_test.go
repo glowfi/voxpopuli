@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -57,6 +58,22 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	return db
 }
 
+func assertAwards(t *testing.T, wantAwards, gotAwards []models.Award) {
+	t.Helper()
+
+	for _, award := range wantAwards {
+		idx := slices.IndexFunc(gotAwards, func(v models.Award) bool {
+			return v.ID == award.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("award %v of ID %v is not present in gotAwards", award.Title, award.ID))
+			return
+		}
+		assert.Equal(t, award, gotAwards[idx], "expect award to match")
+	}
+}
+
 func TestRepo_Awards(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -97,6 +114,143 @@ func TestRepo_Awards(t *testing.T) {
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantAwards, gotAwards, "expect awards to match")
+		})
+	}
+}
+
+func TestRepo_AwardByID(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantAward    models.Award
+		wantErr      error
+	}{
+		{
+			name:         "award not found :NEG",
+			fixtureFiles: []string{},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantAward: models.Award{},
+			wantErr:   awardrepo.ErrAwardNotFound,
+		},
+		{
+			name:         "award found :POS",
+			fixtureFiles: []string{"awards.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantAward: models.Award{
+				ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Title:     "award_foo",
+				ImageLink: "https:/fooimage.com",
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := awardrepo.NewRepo(db)
+
+			gotAward, gotErr := pgrepo.AwardByID(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
+		})
+	}
+}
+
+func TestRepo_AddAward(t *testing.T) {
+	type args struct {
+		award models.Award
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantAward    models.Award
+		wantAwards   []models.Award
+		wantErr      error
+	}{
+		{
+			name:         "duplicate award id :NEG",
+			fixtureFiles: []string{"awards.yml"},
+			args: args{
+				award: models.Award{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:     "new title",
+					ImageLink: "new image link",
+				},
+			},
+			wantAward: models.Award{},
+			wantAwards: []models.Award{
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:     "award_foo",
+					ImageLink: "https:/fooimage.com",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:     "award_bar",
+					ImageLink: "https:/barimage.com",
+				},
+			},
+			wantErr: awardrepo.ErrAwardDuplicateIDorTitle,
+		},
+		{
+			name:         "add award :POS",
+			fixtureFiles: []string{"awards.yml"},
+			args: args{
+				award: models.Award{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Title:     "new title",
+					ImageLink: "new image link",
+				},
+			},
+			wantAward: models.Award{
+				ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				Title:     "new title",
+				ImageLink: "new image link",
+			},
+			wantAwards: []models.Award{
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:     "award_foo",
+					ImageLink: "https:/fooimage.com",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:     "award_bar",
+					ImageLink: "https:/barimage.com",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Title:     "new title",
+					ImageLink: "new image link",
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := awardrepo.NewRepo(db)
+
+			gotAward, gotErr := pgrepo.AddAward(context.Background(), tt.args.award)
+			gotAwards, err := pgrepo.Awards(context.Background())
+			if err != nil {
+				t.Fatal("expect no error while getting awards")
+			}
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
+			assertAwards(t, tt.wantAwards, gotAwards)
 		})
 	}
 }
