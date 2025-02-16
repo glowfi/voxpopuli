@@ -9,7 +9,7 @@ import (
 type Voxsphere struct {
 	ID                    uuid.UUID `json:"id" bun:",pk"`
 	TopicID               uuid.UUID `json:"topic_id"`
-	Topic                 Topic     `json:"topic" bun:"rel:has-one,join:topic_id=id"`
+	Topic                 Topic     `json:"topic" bun:",scanonly"`
 	Title                 string    `json:"title"`
 	PublicDescription     *string   `json:"public_description"`
 	CommunityIcon         *string   `json:"community_icon"`

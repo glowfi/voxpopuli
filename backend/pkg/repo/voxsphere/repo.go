@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	errVoxsphereNotFound    = errors.New("voxsphere not found")
-	errVoxsphereDuplicateID = errors.New("voxsphere duplicate id")
+	ErrVoxsphereNotFound           = errors.New("voxsphere not found")
+	ErrVoxsphereDuplicateIDorTitle = errors.New("voxsphere duplicate id or title")
 )
 
 type Repository interface {
@@ -26,7 +26,7 @@ type Repository interface {
 	VoxsphereByID(context.Context, uuid.UUID) (models.Voxsphere, error)
 	AddVoxsphere(context.Context, models.Voxsphere) (models.Voxsphere, error)
 	UpdateVoxsphere(context.Context, models.Voxsphere) (models.Voxsphere, error)
-	DeleteVoxsphere(context.Context, uuid.UUID) (models.Voxsphere, error)
+	DeleteVoxsphere(context.Context, uuid.UUID) error
 }
 
 type Repo struct {
@@ -41,25 +41,30 @@ func (r *Repo) Voxspheres(ctx context.Context) ([]models.Voxsphere, error) {
 	var voxspheres []models.Voxsphere
 
 	query := `
-        SELECT 
-            id,
-            title,
-            public_description,
-            community_icon,
-            banner_background_image,
-            banner_background_color,
-            key_color,
-            primary_color,
-            over18,
-            spoilers_enabled,
-            created_at,
-            created_at_unix,
-            updated_at
-        FROM 
-            voxspheres;
-    `
+	        SELECT
+	            v.id,
+	            v.title,
+	            v.topic_id,
+	            json_build_object('id', t.id,'name', t.name) as topic,
+	            v.public_description,
+	            v.community_icon,
+	            v.banner_background_image,
+	            v.banner_background_color,
+	            v.key_color,
+	            v.primary_color,
+	            v.over18,
+	            v.spoilers_enabled,
+	            v.created_at,
+	            v.created_at_unix,
+	            v.updated_at
+	        FROM
+	            voxspheres v
+	        JOIN
+	            topics t ON v.topic_id = t.id;
+	    `
 
-	err := r.db.NewRaw(query).NewSelect().Model(&voxspheres).Relation("Topic").Scan(ctx)
+	_, err := r.db.NewRaw(query).Exec(ctx, &voxspheres)
+	// err := r.db.NewSelect().Model(&voxspheres).Relation("Topic").Scan(ctx)
 	if err != nil {
 		return []models.Voxsphere{}, err
 	}
@@ -70,29 +75,34 @@ func (r *Repo) VoxsphereByID(ctx context.Context, ID uuid.UUID) (models.Voxspher
 	var voxsphere models.Voxsphere
 
 	query := `
-        SELECT 
-            id,
-            title,
-            public_description,
-            community_icon,
-            banner_background_image,
-            banner_background_color,
-            key_color,
-            primary_color,
-            over18,
-            spoilers_enabled,
-            created_at,
-            created_at_unix,
-            updated_at
-        FROM 
-            voxspheres
-        WHERE 
-            id = ?
-    `
-	err := r.db.NewRaw(query, ID).Scan(ctx, &voxsphere)
+	        SELECT
+	            v.id,
+	            v.title,
+	            v.topic_id,
+	            json_build_object('id', t.id,'name', t.name) as topic,
+	            v.public_description,
+	            v.community_icon,
+	            v.banner_background_image,
+	            v.banner_background_color,
+	            v.key_color,
+	            v.primary_color,
+	            v.over18,
+	            v.spoilers_enabled,
+	            v.created_at,
+	            v.created_at_unix,
+	            v.updated_at
+	        FROM
+	            voxspheres v
+	        JOIN
+	            topics t ON v.topic_id = t.id
+	        WHERE
+	            v.id = ?;
+	    `
+	_, err := r.db.NewRaw(query, ID).Exec(ctx, &voxsphere)
+	// err := r.db.NewSelect().Model(&voxsphere).Relation("Topic").Scan(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Voxsphere{}, errVoxsphereNotFound
+			return models.Voxsphere{}, ErrVoxsphereNotFound
 		}
 		return models.Voxsphere{}, err
 	}
@@ -101,46 +111,49 @@ func (r *Repo) VoxsphereByID(ctx context.Context, ID uuid.UUID) (models.Voxspher
 
 func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (models.Voxsphere, error) {
 	query := `
-        INSERT INTO 
-            voxspheres (
-                id,
-                title,
-                public_description,
-                community_icon,
-                banner_background_image,
-                banner_background_color,
-                key_color,
-                primary_color,
-                over18,
-                spoilers_enabled,
-                created_at,
-                created_at_unix,
-                updated_at
-            )
-        VALUES (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9,
-            $10,
-            $11,
-            $12,
-            $13
-        )
-    `
+	        INSERT INTO
+	            voxspheres (
+	                id,
+	                title,
+	                topic_id,
+	                public_description,
+	                community_icon,
+	                banner_background_image,
+	                banner_background_color,
+	                key_color,
+	                primary_color,
+	                over18,
+	                spoilers_enabled,
+	                created_at,
+	                created_at_unix,
+	                updated_at
+	            )
+	        VALUES (
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?,
+	            ?
+	        )
+	    `
 
 	timestamp := time.Now()
 	voxsphere.CreatedAt = timestamp
 	voxsphere.UpdatedAt = timestamp
 
-	if _, err := r.db.ExecContext(ctx, query,
+	if _, err := r.db.NewRaw(query,
 		voxsphere.ID,
 		voxsphere.Title,
+		voxsphere.TopicID,
 		voxsphere.PublicDescription,
 		voxsphere.CommunityIcon,
 		voxsphere.BannerBackgroundImage,
@@ -151,10 +164,11 @@ func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (mo
 		voxsphere.SpoilersEnabled,
 		voxsphere.CreatedAt,
 		voxsphere.CreatedAtUnix,
-		voxsphere.UpdatedAt); err != nil {
+		voxsphere.UpdatedAt).Exec(ctx); err != nil {
+		// if _, err := r.db.NewInsert().Model(&voxsphere).Exec(context.Background()); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Voxsphere{}, errVoxsphereDuplicateID
+			return models.Voxsphere{}, ErrVoxsphereDuplicateIDorTitle
 		}
 		return models.Voxsphere{}, err
 	}
@@ -164,26 +178,26 @@ func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (mo
 
 func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (models.Voxsphere, error) {
 	query := `
-        UPDATE 
-            voxspheres
-        SET 
-            title = $1,
-            public_description = $2,
-            community_icon = $3,
-            banner_background_image = $4,
-            banner_background_color = $5,
-            key_color = $6,
-            primary_color = $7,
-            over18 = $8,
-            spoilers_enabled = $9,
-            updated_at = $10
-        WHERE 
-            id = $11
-    `
+	        UPDATE
+	            voxspheres
+	        SET
+	            title = ?,
+	            public_description = ?,
+	            community_icon = ?,
+	            banner_background_image = ?,
+	            banner_background_color = ?,
+	            key_color = ?,
+	            primary_color = ?,
+	            over18 = ?,
+	            spoilers_enabled = ?,
+	            updated_at = ?
+	        WHERE
+	            id = ?
+	    `
 
 	voxsphere.UpdatedAt = time.Now()
 
-	res, err := r.db.ExecContext(ctx, query,
+	res, err := r.db.NewRaw(query,
 		voxsphere.Title,
 		voxsphere.PublicDescription,
 		voxsphere.CommunityIcon,
@@ -195,7 +209,12 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 		voxsphere.SpoilersEnabled,
 		voxsphere.UpdatedAt,
 		voxsphere.ID,
-	)
+	).Exec(ctx)
+	// res, err := r.db.NewUpdate().
+	// 	Model(&voxsphere).
+	// 	Column("id", "topic_id", "title", "public_description", "community_icon", "banner_background_image", "banner_background_color", "key_color", "primary_color", "over18", "spoilers_enabled", "created_at", "created_at_unix", "updated_at").
+	// 	Where("id = ?", voxsphere.ID).
+	// 	Exec(context.Background())
 	if err != nil {
 		return models.Voxsphere{}, err
 	}
@@ -204,28 +223,28 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 		return models.Voxsphere{}, err
 	}
 	if rowsAffected == 0 {
-		return models.Voxsphere{}, errVoxsphereNotFound
+		return models.Voxsphere{}, ErrVoxsphereNotFound
 	}
 	return voxsphere, nil
 }
 
-func (r *Repo) DeleteVoxsphere(ctx context.Context, ID uuid.UUID) (models.Voxsphere, error) {
+func (r *Repo) DeleteVoxsphere(ctx context.Context, ID uuid.UUID) error {
 	query := `
         DELETE FROM 
             voxspheres
         WHERE 
-            id = $1
+            id = ?
     `
-	res, err := r.db.ExecContext(ctx, query, ID)
+	res, err := r.db.NewRaw(query, ID).Exec(ctx)
 	if err != nil {
-		return models.Voxsphere{}, err
+		return err
 	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return models.Voxsphere{}, err
+		return err
 	}
 	if rowsAffected == 0 {
-		return models.Voxsphere{}, errVoxsphereNotFound
+		return ErrVoxsphereNotFound
 	}
-	return models.Voxsphere{}, nil
+	return nil
 }
