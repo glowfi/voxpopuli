@@ -1,0 +1,31 @@
+- model: Voxsphere
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      topic_id: 00000000-0000-0000-0000-000000000001
+      title: v/foo
+      public_description: foo PublicDescription
+      community_icon: foo icon
+      banner_background_image: foo BannerBackgroundImage
+      banner_background_color: "#000000"
+      key_color: "#000000"
+      primary_color: "#000000"
+      over18: true
+      spoilers_enabled: false
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000002
+      topic_id: 00000000-0000-0000-0000-000000000002
+      title: v/bar
+      public_description: bar PublicDescription
+      community_icon: bar icon
+      banner_background_image: bar BannerBackgroundImage
+      banner_background_color: "#ffffff"
+      key_color: "#ffffff"
+      primary_color: "#ffffff"
+      over18: false
+      spoilers_enabled: false
+      created_at: 2024-10-10T10:10:20Z
+      created_at_unix: 1725091101
+      updated_at: 2024-10-10T10:10:20Z
