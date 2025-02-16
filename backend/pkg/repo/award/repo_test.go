@@ -268,7 +268,7 @@ func TestRepo_UpdateAward(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "voxsphere id not found :NEG",
+			name:         "award id not found :NEG",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
 				award: models.Award{
@@ -293,7 +293,7 @@ func TestRepo_UpdateAward(t *testing.T) {
 			wantErr: awardrepo.ErrAwardNotFound,
 		},
 		{
-			name:         "update voxsphere :POS",
+			name:         "update award :POS",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
 				award: models.Award{
@@ -336,6 +336,70 @@ func TestRepo_UpdateAward(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
 			assertAwards(t, tt.wantAwards, gotAwards)
+		})
+	}
+}
+
+func TestRepo_DeleteAward(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantAwards   []models.Award
+		wantErr      error
+	}{
+		{
+			name:         "award id not found :NEG",
+			fixtureFiles: []string{"awards.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			},
+			wantAwards: []models.Award{
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:     "award_foo",
+					ImageLink: "https:/fooimage.com",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:     "award_bar",
+					ImageLink: "https:/barimage.com",
+				},
+			},
+			wantErr: awardrepo.ErrAwardNotFound,
+		},
+		{
+			name:         "award deleted :POS",
+			fixtureFiles: []string{"awards.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantAwards: []models.Award{
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:     "award_bar",
+					ImageLink: "https:/barimage.com",
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := awardrepo.NewRepo(db)
+
+			gotErr := pgrepo.DeleteAward(context.Background(), tt.args.ID)
+			gotAwards, err := pgrepo.Awards(context.Background())
+			if err != nil {
+				t.Fatal("expect no error while getting awards")
+			}
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantAwards, gotAwards, "expect awards to match")
 		})
 	}
 }
