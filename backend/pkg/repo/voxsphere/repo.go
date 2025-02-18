@@ -13,12 +13,14 @@ import (
 )
 
 const (
-	pgUniqueViolation = "23505"
+	pgUniqueViolation     = "23505"
+	pgConstraintViolation = "23503"
 )
 
 var (
-	ErrVoxsphereNotFound           = errors.New("voxsphere not found")
-	ErrVoxsphereDuplicateIDorTitle = errors.New("voxsphere duplicate id or title")
+	ErrVoxsphereNotFound                  = errors.New("voxsphere not found")
+	ErrVoxsphereDuplicateIDorTitle        = errors.New("voxsphere duplicate id or title")
+	ErrVoxsphereParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
 type Repository interface {
@@ -170,6 +172,9 @@ func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (mo
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Voxsphere{}, ErrVoxsphereDuplicateIDorTitle
 		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.Voxsphere{}, ErrVoxsphereParentTableRecordNotFound
+		}
 		return models.Voxsphere{}, err
 	}
 
@@ -220,6 +225,10 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 	// 	Where("id = ?", voxsphere.ID).
 	// 	Exec(context.Background())
 	if err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.Voxsphere{}, ErrVoxsphereParentTableRecordNotFound
+		}
 		return models.Voxsphere{}, err
 	}
 	rowsAffected, err := res.RowsAffected()

@@ -88,7 +88,7 @@ func (r *Repo) LinkUserTrophy(ctx context.Context, userID uuid.UUID, trophyID uu
 }
 
 func (r *Repo) VoxsphereMemebers(ctx context.Context) ([]models.VoxsphereMember, error) {
-	var voxsphere_member []models.VoxsphereMember
+	var voxsphereMembers []models.VoxsphereMember
 
 	query := `
                 SELECT 
@@ -98,11 +98,11 @@ func (r *Repo) VoxsphereMemebers(ctx context.Context) ([]models.VoxsphereMember,
                     voxsphere_members
             `
 
-	_, err := r.db.NewRaw(query).Exec(ctx, &voxsphere_member)
+	_, err := r.db.NewRaw(query).Exec(ctx, &voxsphereMembers)
 	if err != nil {
 		return []models.VoxsphereMember{}, err
 	}
-	return voxsphere_member, nil
+	return voxsphereMembers, nil
 }
 
 func (r *Repo) LinkVoxsphereMember(ctx context.Context, voxsphereID uuid.UUID, userID uuid.UUID) (models.VoxsphereMember, error) {
@@ -130,6 +130,54 @@ func (r *Repo) LinkVoxsphereMember(ctx context.Context, voxsphereID uuid.UUID, u
 	}
 
 	return models.VoxsphereMember{
+		VoxsphereID: voxsphereID,
+		UserID:      userID,
+	}, nil
+}
+
+func (r *Repo) VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModerator, error) {
+	var voxsphereModerators []models.VoxsphereModerator
+
+	query := `
+                SELECT 
+                    voxsphere_id,
+                    user_id
+                FROM
+                    voxsphere_moderators
+            `
+
+	_, err := r.db.NewRaw(query).Exec(ctx, &voxsphereModerators)
+	if err != nil {
+		return []models.VoxsphereModerator{}, err
+	}
+	return voxsphereModerators, nil
+}
+
+func (r *Repo) LinkVoxsphereModerator(ctx context.Context, voxsphereID uuid.UUID, userID uuid.UUID) (models.VoxsphereModerator, error) {
+	query := `
+                INSERT INTO voxsphere_moderators
+                     (
+                        voxsphere_id,
+                        user_id
+                    )
+                VALUES (
+                    ?,
+                    ?
+                )
+            `
+
+	if _, err := r.db.NewRaw(query, voxsphereID, userID).Exec(ctx); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return models.VoxsphereModerator{}, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.VoxsphereModerator{}, ErrParentTableRecordNotFound
+		}
+		return models.VoxsphereModerator{}, err
+	}
+
+	return models.VoxsphereModerator{
 		VoxsphereID: voxsphereID,
 		UserID:      userID,
 	}, nil

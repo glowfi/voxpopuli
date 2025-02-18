@@ -1,0 +1,11 @@
+- model: CustomEmoji
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      voxsphere_id: 00000000-0000-0000-0000-000000000001
+      url: https://example.com/emoji1.png
+      title: emoji1
+
+    - id: 00000000-0000-0000-0000-000000000002
+      voxsphere_id: 00000000-0000-0000-0000-000000000002
+      url: https://example.com/emoji2.png
+      title: emoji2
