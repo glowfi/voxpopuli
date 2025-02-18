@@ -3,6 +3,6 @@ package models
 import "github.com/google/uuid"
 
 type Topic struct {
-	ID   uuid.UUID `json:"id" bun:",pk"`
+	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }

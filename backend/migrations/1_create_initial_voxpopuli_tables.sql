@@ -60,22 +60,46 @@ CREATE TABLE users (
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE emojis (
+    id UUID PRIMARY KEY,
+    title VARCHAR(128) UNIQUE NOT NULL
+);
+
+CREATE TABLE custom_emojis(
+    id UUID PRIMARY KEY,
+    voxsphere_id UUID NOT NULL,
+    url TEXT UNIQUE NOT NULL,
+    title VARCHAR(128) NOT NULL,
+    CONSTRAINT uk_voxsphere_id_link_text UNIQUE(voxsphere_id,title),
+    CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 CREATE TABLE user_flairs(
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(8),
+    CONSTRAINT uk_user_id_voxsphere_id UNIQUE(user_id,voxsphere_id),
     CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE user_flair_emojis (
+CREATE TABLE user_flair_custom_emojis (
     id UUID PRIMARY KEY,
+    custom_emoji_id UUID NOT NULL,
     user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
-    text VARCHAR(255) NOT NULL,
-    url TEXT NOT NULL,
+    CONSTRAINT fk_custom_emoji_id FOREIGN KEY(custom_emoji_id) REFERENCES custom_emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE user_flair_emojis (
+    id UUID PRIMARY KEY,
+    emoji_id UUID NOT NULL,
+    user_flair_id UUID NOT NULL,
+    order_index INTEGER NOT NULL,
+    CONSTRAINT fk_emoji_id FOREIGN KEY(emoji_id) REFERENCES emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -163,7 +187,7 @@ CREATE TABLE image_metadatas (
     image_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     CONSTRAINT fk_image_id FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -178,14 +202,14 @@ CREATE TABLE gif_metadatas (
     gif_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     CONSTRAINT fk_gif_id FOREIGN KEY(gif_id) REFERENCES gifs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE videos (
     id UUID PRIMARY KEY,
     media_id UUID NOT NULL,
-    url TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -203,7 +227,7 @@ CREATE TABLE gallery_metadatas (
     order_index INTEGER NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT NOT NULL,
+    url TEXT UNIQUE NOT NULL,
     CONSTRAINT fk_gallery_id FOREIGN KEY(gallery_id) REFERENCES galleries(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -253,16 +277,26 @@ CREATE TABLE post_flairs(
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(8),
+    CONSTRAINT post_id_voxsphere_id UNIQUE(post_id,voxsphere_id),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE post_flair_emojis (
+CREATE TABLE post_flair_custom_emojis (
     id UUID PRIMARY KEY,
+    custom_emoji_id UUID NOT NULL,
     post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
-    text VARCHAR(255) NOT NULL,
-    url TEXT NOT NULL,
+    CONSTRAINT fk_custom_emoji_id FOREIGN KEY(custom_emoji_id) REFERENCES custom_emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE post_flair_emojis (
+    id UUID PRIMARY KEY,
+    emoji_id UUID NOT NULL,
+    post_flair_id UUID NOT NULL,
+    order_index INTEGER NOT NULL,
+    CONSTRAINT fk_emoji_id FOREIGN KEY(emoji_id) REFERENCES emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
