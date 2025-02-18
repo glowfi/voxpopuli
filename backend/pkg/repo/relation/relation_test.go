@@ -39,16 +39,30 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	db.RegisterModel((*models.Topic)(nil))
+	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.Trophy)(nil))
 	db.RegisterModel((*models.UserTrophy)(nil))
+	db.RegisterModel((*models.VoxsphereMember)(nil))
 
 	// drop all rows of the user,trophies table
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Voxsphere)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.User)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
-	_, err := db.NewTruncateTable().Cascade().Model((*models.Trophy)(nil)).Exec(context.Background())
-	if err != nil {
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Trophy)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserTrophy)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.VoxsphereMember)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -66,9 +80,8 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 
 func TestRepo_UserTrophies(t *testing.T) {
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-
+		name             string
+		fixtureFiles     []string
 		wantUserTrophies []models.UserTrophy
 		wantErr          error
 	}{
@@ -114,7 +127,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		)
 
-		assert.ErrorIs(t, relationrepo.ErrDuplicateTrophyIDorDuplicateUserID, gotErr, "expect error to match")
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
 		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
 	})
 
@@ -128,7 +141,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 		)
 
-		assert.ErrorIs(t, relationrepo.ErrUserTrophyParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
 		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
 	})
 
@@ -142,7 +155,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 		)
 
-		assert.ErrorIs(t, relationrepo.ErrUserTrophyParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
 		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
 	})
 
@@ -192,4 +205,42 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 		assert.NoError(t, gotErr)
 		assert.Equal(t, []models.UserTrophy(nil), gotUserTrophies, "expect user trophies to match")
 	})
+}
+
+func TestRepo_VoxsphereMemebers(t *testing.T) {
+	tests := []struct {
+		name                 string
+		fixtureFiles         []string
+		wantVoxsphereMembers []models.VoxsphereMember
+		wantErr              error
+	}{
+		{
+			name:         "voxsphere members :POS",
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml"},
+			wantVoxsphereMembers: []models.VoxsphereMember{
+				{
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                 "no voxsphere members :POS",
+			fixtureFiles:         []string{},
+			wantVoxsphereMembers: nil,
+			wantErr:              nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotVoxsphereMembers, gotErr := pgrepo.VoxsphereMemebers(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantVoxsphereMembers, gotVoxsphereMembers, "expect voxspheres to match")
+		})
+	}
 }
