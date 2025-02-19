@@ -268,7 +268,7 @@ func TestRepo_UpdateAward(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "award id not found :NEG",
+			name:         "award not found :NEG",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
 				award: models.Award{
@@ -352,7 +352,7 @@ func TestRepo_DeleteAward(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "award id not found :NEG",
+			name:         "award not found :NEG",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),

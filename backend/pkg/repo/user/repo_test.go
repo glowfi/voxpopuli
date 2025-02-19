@@ -394,7 +394,7 @@ func TestRepo_UpdateUser(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "user id not found :NEG",
+			name:         "user not found :NEG",
 			fixtureFiles: []string{"users.yml"},
 			args: args{
 				user: models.User{
@@ -523,7 +523,7 @@ func TestRepo_DeleteUser(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "user id not found :NEG",
+			name:         "user not found :NEG",
 			fixtureFiles: []string{"users.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),

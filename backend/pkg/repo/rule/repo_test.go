@@ -138,7 +138,7 @@ func TestRepo_RuleByID(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "rule id not found :NEG",
+			name:         "rule not found :NEG",
 			fixtureFiles: []string{"voxspheres.yml", "rules.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
@@ -186,7 +186,7 @@ func TestRepo_UpdateRule(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "rule id not found :NEG",
+			name:         "rule not found :NEG",
 			fixtureFiles: []string{"voxspheres.yml", "rules.yml"},
 			args: args{
 				rule: models.Rule{
@@ -375,7 +375,7 @@ func TestRepo_DeleteRule(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "delete rule with invalid id :NEG",
+			name:         "rule not found :NEG",
 			fixtureFiles: []string{"voxspheres.yml", "rules.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),

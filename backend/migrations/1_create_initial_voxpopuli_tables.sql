@@ -86,28 +86,28 @@ CREATE TABLE user_flairs(
 );
 
 CREATE TABLE user_flair_custom_emojis (
-    id UUID PRIMARY KEY,
     custom_emoji_id UUID NOT NULL,
     user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
+    PRIMARY KEY(custom_emoji_id,user_flair_id,order_index),
     CONSTRAINT fk_custom_emoji_id FOREIGN KEY(custom_emoji_id) REFERENCES custom_emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE user_flair_emojis (
-    id UUID PRIMARY KEY,
     emoji_id UUID NOT NULL,
     user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
+    PRIMARY KEY(emoji_id,user_flair_id,order_index),
     CONSTRAINT fk_emoji_id FOREIGN KEY(emoji_id) REFERENCES emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE user_flair_descriptions (
-    id UUID PRIMARY KEY,
     user_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
-    text VARCHAR(255) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    PRIMARY KEY(user_flair_id,order_index),
     CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -283,28 +283,28 @@ CREATE TABLE post_flairs(
 );
 
 CREATE TABLE post_flair_custom_emojis (
-    id UUID PRIMARY KEY,
     custom_emoji_id UUID NOT NULL,
     post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
+    PRIMARY KEY(custom_emoji_id,post_flair_id,order_index),
     CONSTRAINT fk_custom_emoji_id FOREIGN KEY(custom_emoji_id) REFERENCES custom_emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE post_flair_emojis (
-    id UUID PRIMARY KEY,
     emoji_id UUID NOT NULL,
     post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
+    PRIMARY KEY(emoji_id,post_flair_id,order_index),
     CONSTRAINT fk_emoji_id FOREIGN KEY(emoji_id) REFERENCES emojis(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE post_flair_descriptions (
-    id UUID PRIMARY KEY,
     post_flair_id UUID NOT NULL,
     order_index INTEGER NOT NULL,
-    text VARCHAR(255) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    PRIMARY KEY(post_flair_id,order_index),
     CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 

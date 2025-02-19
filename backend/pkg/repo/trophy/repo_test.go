@@ -91,7 +91,7 @@ func TestRepo_Trophies(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
-			name:         "multiple trophies :POS",
+			name:         "trophies :POS",
 			fixtureFiles: []string{"trophies.yml"},
 			args:         args{},
 			wantTrophies: []models.Trophy{
@@ -144,7 +144,7 @@ func TestRepo_TrophyByID(t *testing.T) {
 			wantErr:    trophyrepo.ErrTrophyNotFound,
 		},
 		{
-			name:         "get trophy by id :POS",
+			name:         "trophy by id :POS",
 			fixtureFiles: []string{"trophies.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -183,7 +183,7 @@ func TestRepo_UpdateTrophy(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "trophy id not found :NEG",
+			name:         "trophy not found :NEG",
 			fixtureFiles: []string{"trophies.yml"},
 			args: args{
 				trophy: models.Trophy{
@@ -274,7 +274,7 @@ func TestRepo_DeleteTrophy(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "trophy id not found :NEG",
+			name:         "trophy not found :NEG",
 			fixtureFiles: []string{"trophies.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),

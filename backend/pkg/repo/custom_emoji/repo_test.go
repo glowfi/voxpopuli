@@ -38,14 +38,18 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
-	db.RegisterModel((*models.CustomEmoji)(nil))
+	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
+	db.RegisterModel((*models.CustomEmoji)(nil))
 
-	// drop all rows of the custom emoji and voxsphere table
-	if _, err := db.NewTruncateTable().Cascade().Model((*models.CustomEmoji)(nil)).Exec(context.Background()); err != nil {
+	// drop all rows of the custom emoji,topic and voxsphere table
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Voxsphere)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.CustomEmoji)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -86,7 +90,7 @@ func TestRepo_CustomEmojis(t *testing.T) {
 	}{
 		{
 			name:         "custom emojis :POS",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			wantCustomEmojis: []models.CustomEmoji{
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -136,7 +140,7 @@ func TestRepo_CustomEmojiByID(t *testing.T) {
 	}{
 		{
 			name:         "custom emoji not found :NEG",
-			fixtureFiles: []string{},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			},
@@ -145,7 +149,7 @@ func TestRepo_CustomEmojiByID(t *testing.T) {
 		},
 		{
 			name:         "custom emoji found :POS",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
@@ -185,7 +189,7 @@ func TestRepo_AddCustomEmoji(t *testing.T) {
 	}{
 		{
 			name:         "add custom emoji with duplicate ID :NEG",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -213,7 +217,7 @@ func TestRepo_AddCustomEmoji(t *testing.T) {
 		},
 		{
 			name:         "voxsphere does not exist in the parent table :NEG",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
@@ -241,7 +245,7 @@ func TestRepo_AddCustomEmoji(t *testing.T) {
 		},
 		{
 			name:         "add custom emoji :POS",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
@@ -305,8 +309,8 @@ func TestRepo_UpdateCustomEmoji(t *testing.T) {
 		wantErr          error
 	}{
 		{
-			name:         "custom emoji ID not found :NEG",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			name:         "custom emoji not found :NEG",
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
@@ -334,7 +338,7 @@ func TestRepo_UpdateCustomEmoji(t *testing.T) {
 		},
 		{
 			name:         "voxsphere is not present in parent table :NEG",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -362,7 +366,7 @@ func TestRepo_UpdateCustomEmoji(t *testing.T) {
 		},
 		{
 			name:         "update custom emoji :POS",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				emoji: models.CustomEmoji{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -424,8 +428,8 @@ func TestRepo_DeleteCustomEmoji(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "custom emoji ID not found :NEG",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			name:         "custom emoji not found :NEG",
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			},
@@ -433,7 +437,7 @@ func TestRepo_DeleteCustomEmoji(t *testing.T) {
 		},
 		{
 			name:         "delete custom emoji :POS",
-			fixtureFiles: []string{"voxspheres.yml", "custom_emojis.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},

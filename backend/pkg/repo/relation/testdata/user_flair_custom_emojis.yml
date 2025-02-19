@@ -1,0 +1,17 @@
+- model: UserFlairCustomEmoji
+  rows:
+    - custom_emoji_id: 00000000-0000-0000-0000-000000000001
+      user_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 4
+
+    - custom_emoji_id: 00000000-0000-0000-0000-000000000001
+      user_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 5
+
+    - custom_emoji_id: 00000000-0000-0000-0000-000000000002
+      user_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 4
+
+    - custom_emoji_id: 00000000-0000-0000-0000-000000000002
+      user_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 5

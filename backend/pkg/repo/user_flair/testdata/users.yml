@@ -27,17 +27,3 @@
       created_at: 2024-10-10T10:10:20Z
       created_at_unix: 1725091101
       updated_at: 2024-10-10T10:10:20Z
-
-    - id: 00000000-0000-0000-0000-000000000003
-      name: "Jane Smith"
-      public_description: "This is another public description"
-      avatar_img: "https://example.com/avatar2.jpg"
-      banner_img: "https://example.com/banner2.jpg"
-      iconcolor: "#FFFF00"
-      keycolor: "#FF00FF"
-      primarycolor: "#00FFFF"
-      over18: true
-      suspended: false
-      created_at: 2024-10-10T10:10:20Z
-      created_at_unix: 1725091101
-      updated_at: 2024-10-10T10:10:20Z

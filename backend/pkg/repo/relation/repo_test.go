@@ -8,9 +8,12 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	customemojirepo "github.com/glowfi/voxpopuli/backend/pkg/repo/custom_emoji"
+	emojirepo "github.com/glowfi/voxpopuli/backend/pkg/repo/emoji"
 	relationrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/relation"
 	trophyrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/trophy"
 	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
+	userFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user_flair"
 	voxsphererepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -44,9 +47,15 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.Trophy)(nil))
+	db.RegisterModel((*models.Emoji)(nil))
+	db.RegisterModel((*models.CustomEmoji)(nil))
 	db.RegisterModel((*models.UserTrophy)(nil))
 	db.RegisterModel((*models.VoxsphereMember)(nil))
 	db.RegisterModel((*models.VoxsphereModerator)(nil))
+	db.RegisterModel((*models.UserFlair)(nil))
+	db.RegisterModel((*models.UserFlairCustomEmoji)(nil))
+	db.RegisterModel((*models.UserFlairEmoji)(nil))
+	db.RegisterModel((*models.UserFlairDescription)(nil))
 
 	// drop all rows of the user,trophies table
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
@@ -61,6 +70,12 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Trophy)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Emoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.CustomEmoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserTrophy)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
@@ -68,6 +83,18 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.VoxsphereModerator)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlair)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlairCustomEmoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlairEmoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlairDescription)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -122,14 +149,16 @@ func TestRepo_UserTrophies(t *testing.T) {
 }
 
 func TestRepo_LinkUserTrophy(t *testing.T) {
-	t.Run("duplicate user id while linking user and trophy :NEG", func(t *testing.T) {
+	t.Run("duplicate user_id,trophy_id while linking user and trophy :NEG", func(t *testing.T) {
 		db := setupPostgres(t, "users.yml", "trophies.yml", "user_trophies.yml")
 		pgrepo := relationrepo.NewRepo(db)
 
 		gotUserTrophy, gotErr := pgrepo.LinkUserTrophy(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.UserTrophy{
+				UserID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				TrophyID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
@@ -142,8 +171,10 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 
 		gotUserTrophy, gotErr := pgrepo.LinkUserTrophy(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			models.UserTrophy{
+				UserID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				TrophyID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
@@ -156,8 +187,10 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 
 		gotUserTrophy, gotErr := pgrepo.LinkUserTrophy(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.UserTrophy{
+				UserID:   uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				TrophyID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
@@ -170,8 +203,10 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 
 		gotUserTrophy, gotErr := pgrepo.LinkUserTrophy(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			models.UserTrophy{
+				UserID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				TrophyID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
 		)
 
 		assert.ErrorIs(t, nil, gotErr, "expect error to match")
@@ -212,7 +247,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 	})
 }
 
-func TestRepo_VoxsphereMemebers(t *testing.T) {
+func TestRepo_VoxsphereMembers(t *testing.T) {
 	tests := []struct {
 		name                 string
 		fixtureFiles         []string
@@ -242,7 +277,7 @@ func TestRepo_VoxsphereMemebers(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := relationrepo.NewRepo(db)
 
-			gotVoxsphereMembers, gotErr := pgrepo.VoxsphereMemebers(context.Background())
+			gotVoxsphereMembers, gotErr := pgrepo.VoxsphereMembers(context.Background())
 
 			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
 			assert.Equal(t, tt.wantVoxsphereMembers, gotVoxsphereMembers, "expect voxsphere members to match")
@@ -251,14 +286,16 @@ func TestRepo_VoxsphereMemebers(t *testing.T) {
 }
 
 func TestRepo_LinkVoxsphereMember(t *testing.T) {
-	t.Run("duplicate voxsphere id while linking voxsphere and member :NEG", func(t *testing.T) {
+	t.Run("duplicate voxsphere_id,user_id while linking voxsphere and member :NEG", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml")
 		pgrepo := relationrepo.NewRepo(db)
 
 		gotVoxsphereMember, gotErr := pgrepo.LinkVoxsphereMember(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.VoxsphereMember{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
@@ -271,36 +308,42 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 
 		gotVoxsphereMember, gotErr := pgrepo.LinkVoxsphereMember(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.VoxsphereMember{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
 		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember)
 	})
 
-	t.Run("memeber not found while linking voxsphere and member :NEG", func(t *testing.T) {
+	t.Run("member not found while linking voxsphere and member :NEG", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml")
 		pgrepo := relationrepo.NewRepo(db)
 
 		gotVoxsphereMember, gotErr := pgrepo.LinkVoxsphereMember(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			models.VoxsphereMember{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
 		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember)
 	})
 
-	t.Run("link voxsphere and user :POS", func(t *testing.T) {
+	t.Run("link voxsphere and member :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml")
 		pgrepo := relationrepo.NewRepo(db)
 
 		gotVoxsphereMember, gotErr := pgrepo.LinkVoxsphereMember(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			models.VoxsphereMember{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
 		)
 
 		assert.ErrorIs(t, nil, gotErr, "expect error to match")
@@ -319,7 +362,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 
 		assert.NoError(t, gotErr)
 
-		gotVoxsphereMembers, gotErr := relationPgrepo.VoxsphereMemebers(context.Background())
+		gotVoxsphereMembers, gotErr := relationPgrepo.VoxsphereMembers(context.Background())
 
 		assert.NoError(t, gotErr)
 		assert.Equal(t, []models.VoxsphereMember(nil), gotVoxsphereMembers, "expect voxsphere members to match")
@@ -334,7 +377,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 
 		assert.NoError(t, gotErr)
 
-		gotVoxsphereMembers, gotErr := relationPgrepo.VoxsphereMemebers(context.Background())
+		gotVoxsphereMembers, gotErr := relationPgrepo.VoxsphereMembers(context.Background())
 
 		assert.NoError(t, gotErr)
 		assert.Equal(t, []models.VoxsphereMember(nil), gotVoxsphereMembers, "expect voxsphere members to match")
@@ -380,14 +423,16 @@ func TestRepo_VoxsphereModerators(t *testing.T) {
 }
 
 func TestRepo_LinkVoxsphereModerator(t *testing.T) {
-	t.Run("duplicate voxsphere id while linking voxsphere and moderators :NEG", func(t *testing.T) {
+	t.Run("duplicate voxsphere_id,user_id while linking voxsphere and moderators :NEG", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_moderators.yml")
 		pgrepo := relationrepo.NewRepo(db)
 
 		gotVoxsphereModerator, gotErr := pgrepo.LinkVoxsphereModerator(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.VoxsphereModerator{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
@@ -400,8 +445,10 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 
 		gotVoxsphereModerator, gotErr := pgrepo.LinkVoxsphereModerator(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			models.VoxsphereModerator{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
@@ -414,8 +461,10 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 
 		gotVoxsphereModerator, gotErr := pgrepo.LinkVoxsphereModerator(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			models.VoxsphereModerator{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
@@ -428,8 +477,10 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 
 		gotVoxsphereModerator, gotErr := pgrepo.LinkVoxsphereModerator(
 			context.Background(),
-			uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-			uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			models.VoxsphereModerator{
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
 		)
 
 		assert.ErrorIs(t, nil, gotErr, "expect error to match")
@@ -467,5 +518,631 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 
 		assert.NoError(t, gotErr)
 		assert.Equal(t, []models.VoxsphereModerator(nil), gotVoxsphereModerators, "expect voxsphere moderators to match")
+	})
+}
+
+func TestRepo_UserFlairEmojis(t *testing.T) {
+	tests := []struct {
+		name                string
+		fixtureFiles        []string
+		wantUserFlairEmojis []models.UserFlairEmoji
+		wantErr             error
+	}{
+		{
+			name:         "user flair emojis :POS",
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "emojis.yml", "users.yml", "user_flairs.yml", "user_flair_emojis.yml"},
+			wantUserFlairEmojis: []models.UserFlairEmoji{
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  1,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  2,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  1,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  2,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                "no user flair emojis :POS",
+			fixtureFiles:        []string{},
+			wantUserFlairEmojis: nil,
+			wantErr:             nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotUserFlairEmojis, gotErr := pgrepo.UserFlairEmojis(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantUserFlairEmojis, gotUserFlairEmojis, "expect user flair emojis to match")
+		})
+	}
+}
+
+func TestRepo_UserFlairCustomEmojis(t *testing.T) {
+	tests := []struct {
+		name                      string
+		fixtureFiles              []string
+		wantUserFlairCustomEmojis []models.UserFlairCustomEmoji
+		wantErr                   error
+	}{
+		{
+			name: "user flair custom emojis :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"custom_emojis.yml",
+				"user_flairs.yml",
+				"user_flair_custom_emojis.yml",
+			},
+			wantUserFlairCustomEmojis: []models.UserFlairCustomEmoji{
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    4,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    5,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    4,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    5,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                      "no user flair custom emojis :POS",
+			fixtureFiles:              []string{},
+			wantUserFlairCustomEmojis: nil,
+			wantErr:                   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotUserFlairCustomEmojis, gotErr := pgrepo.UserFlairCustomEmojis(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantUserFlairCustomEmojis, gotUserFlairCustomEmojis, "expect user flair custom emojis to match")
+		})
+	}
+}
+
+func TestRepo_UserFlairDescriptions(t *testing.T) {
+	tests := []struct {
+		name                      string
+		fixtureFiles              []string
+		wantUserFlairDescriptions []models.UserFlairDescription
+		wantErr                   error
+	}{
+		{
+			name: "user flair descriptions :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"custom_emojis.yml",
+				"user_flairs.yml",
+				"user_flair_descriptions.yml",
+			},
+			wantUserFlairDescriptions: []models.UserFlairDescription{
+				{
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  0,
+					Description: "desc1 ",
+				},
+				{
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  3,
+					Description: " ",
+				},
+				{
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  0,
+					Description: "desc2 ",
+				},
+				{
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  3,
+					Description: " ",
+				},
+				{
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  6,
+					Description: " desc2",
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                      "no user flair descriptions :POS",
+			fixtureFiles:              []string{},
+			wantUserFlairDescriptions: nil,
+			wantErr:                   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotUserFlairDescriptions, gotErr := pgrepo.UserFlairDescriptions(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantUserFlairDescriptions, gotUserFlairDescriptions, "expect user flair descriptions to match")
+		})
+	}
+}
+
+func TestRepo_LinkUserFlairEmoji(t *testing.T) {
+	t.Run("duplicate user_flair_id,emoji_id,order_index while linking user flair and emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairEmoji, gotErr := pgrepo.LinkUserFlairEmoji(
+			context.Background(),
+			models.UserFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairEmoji{}, gotUserFlairEmoji)
+	})
+
+	t.Run("emoji not found in parent table while linking user flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairEmoji, gotErr := pgrepo.LinkUserFlairEmoji(
+			context.Background(),
+			models.UserFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairEmoji{}, gotUserFlairEmoji)
+	})
+
+	t.Run("user flair not found in parent table while linking user flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairEmoji, gotErr := pgrepo.LinkUserFlairEmoji(
+			context.Background(),
+			models.UserFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairEmoji{}, gotUserFlairEmoji)
+	})
+
+	t.Run("link user flair and emoji :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairEmoji, gotErr := pgrepo.LinkUserFlairEmoji(
+			context.Background(),
+			models.UserFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:  0,
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairEmoji{
+			EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:  0,
+		}, gotUserFlairEmoji)
+	})
+
+	t.Run("on deleting user flair child refrences gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		userFlairPgrepo := userFlairrepo.NewRepo(db)
+
+		gotErr := userFlairPgrepo.DeleteUserFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotUserFlairEmojis, gotErr := relationPgrepo.UserFlairEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserFlairEmoji{
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  1,
+			},
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  2,
+			},
+		}, gotUserFlairEmojis, "expect user flair emojis to match")
+	})
+
+	t.Run("on deleting emoji child refrences gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"emojis.yml",
+			"user_flairs.yml",
+			"user_flair_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		emojiPgrepo := emojirepo.NewRepo(db)
+
+		gotErr := emojiPgrepo.DeleteEmoji(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotUserFlairEmojis, gotErr := relationPgrepo.UserFlairEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserFlairEmoji{
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  1,
+			},
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  2,
+			},
+		}, gotUserFlairEmojis, "expect user flair emojis to match")
+	})
+}
+
+func TestRepo_LinkUserFlairCustomEmoji(t *testing.T) {
+	t.Run("duplicate user_flair_id,emoji_id,order_index while linking user flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairCustomEmoji, gotErr := pgrepo.LinkUserFlairCustomEmoji(
+			context.Background(),
+			models.UserFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:    4,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairCustomEmoji{}, gotUserFlairCustomEmoji)
+	})
+
+	t.Run("custom emoji not found in parent table while linking user flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairCustomEmoji, gotErr := pgrepo.LinkUserFlairCustomEmoji(
+			context.Background(),
+			models.UserFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairCustomEmoji{}, gotUserFlairCustomEmoji)
+	})
+
+	t.Run("user flair not found in parent table while linking user flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairCustomEmoji, gotErr := pgrepo.LinkUserFlairCustomEmoji(
+			context.Background(),
+			models.UserFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairCustomEmoji{}, gotUserFlairCustomEmoji)
+	})
+
+	t.Run("link user flair and custom emoji :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairCustomEmoji, gotErr := pgrepo.LinkUserFlairCustomEmoji(
+			context.Background(),
+			models.UserFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairCustomEmoji{
+			CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:    1,
+		}, gotUserFlairCustomEmoji)
+	})
+
+	t.Run("on deleting user flair child refrences gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		userFlairPgrepo := userFlairrepo.NewRepo(db)
+
+		gotErr := userFlairPgrepo.DeleteUserFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotUserFlairCustomEmojis, gotErr := relationPgrepo.UserFlairCustomEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserFlairCustomEmoji{
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    4,
+			},
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    5,
+			},
+		}, gotUserFlairCustomEmojis, "expect user flair custom emojis to match")
+	})
+
+	t.Run("on deleting custom emoji child refrences gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"custom_emojis.yml",
+			"user_flairs.yml",
+			"user_flair_custom_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		customemojiPgrepo := customemojirepo.NewRepo(db)
+
+		gotErr := customemojiPgrepo.DeleteCustomEmoji(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotUserFlairCustomEmojis, gotErr := relationPgrepo.UserFlairCustomEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserFlairCustomEmoji{
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    4,
+			},
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    5,
+			},
+		}, gotUserFlairCustomEmojis, "expect user flair custom emojis to match")
+	})
+}
+
+func TestRepo_LinkUserFlairDescription(t *testing.T) {
+	t.Run("duplicate user_flair_id,order_index while linking user flair and description :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"user_flairs.yml",
+			"user_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairDescription, gotErr := pgrepo.LinkUserFlairDescription(
+			context.Background(),
+			models.UserFlairDescription{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  0,
+				Description: "text",
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairDescription{}, gotUserFlairDescription)
+	})
+
+	t.Run("user flair not found in parent table while linking user flair and description :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"user_flairs.yml",
+			"user_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairDescription, gotErr := pgrepo.LinkUserFlairDescription(
+			context.Background(),
+			models.UserFlairDescription{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:  3,
+				Description: "desc3",
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairDescription{}, gotUserFlairDescription)
+	})
+
+	t.Run("link user flair and description :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"user_flairs.yml",
+			"user_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserFlairDescriptions, gotErr := pgrepo.LinkUserFlairDescription(
+			context.Background(),
+			models.UserFlairDescription{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:  2,
+				Description: "desc3",
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.UserFlairDescription{
+			UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:  2,
+			Description: "desc3",
+		}, gotUserFlairDescriptions)
+	})
+
+	t.Run("on deleting user flair child refrences gets deleted in user_flair_descriptions table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"user_flairs.yml",
+			"user_flair_descriptions.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		userFlairPgrepo := userFlairrepo.NewRepo(db)
+
+		gotErr := userFlairPgrepo.DeleteUserFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotUserFlairDescriptions, gotErr := relationPgrepo.UserFlairDescriptions(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserFlairDescription{
+			{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: "desc2 ",
+				OrderIndex:  0,
+			},
+			{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: " ",
+				OrderIndex:  3,
+			},
+			{
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: " desc2",
+				OrderIndex:  6,
+			},
+		}, gotUserFlairDescriptions, "expect user flair descriptions to match")
 	})
 }

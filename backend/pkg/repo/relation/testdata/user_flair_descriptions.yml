@@ -1,0 +1,21 @@
+- model: UserFlairDescription
+  rows:
+    - user_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 0
+      description: "desc1 "
+
+    - user_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 3
+      description: " "
+
+    - user_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 0
+      description: "desc2 "
+
+    - user_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 3
+      description: " "
+
+    - user_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 6
+      description: " desc2"

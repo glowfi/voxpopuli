@@ -257,7 +257,7 @@ func TestRepo_UpdateTopic(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "topic id not found :NEG",
+			name:         "topic not found :NEG",
 			fixtureFiles: []string{"topics.yml"},
 			args: args{
 				topic: models.Topic{
@@ -334,7 +334,7 @@ func TestRepo_DeleteTopic(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "topic id not found :NEG",
+			name:         "topic not found :NEG",
 			fixtureFiles: []string{"topics.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),

@@ -558,7 +558,7 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 		wantErr        error
 	}{
 		{
-			name:         "voxsphere id not found :NEG",
+			name:         "voxsphere not found :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			args: args{
 				voxsphere: models.Voxsphere{
@@ -793,7 +793,7 @@ func TestRepo_DeleteVoxsphere(t *testing.T) {
 		wantErr        error
 	}{
 		{
-			name:         "voxsphere id not found :NEG",
+			name:         "voxsphere not found :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
