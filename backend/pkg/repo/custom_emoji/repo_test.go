@@ -10,6 +10,7 @@ import (
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	customemojirepo "github.com/glowfi/voxpopuli/backend/pkg/repo/custom_emoji"
+	"github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
@@ -38,6 +39,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.CustomEmoji)(nil))
@@ -58,9 +62,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -119,10 +120,10 @@ func TestRepo_CustomEmojis(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := customemojirepo.NewRepo(db)
 
-			gotEmojis, gotErr := pgrepo.CustomEmojis(context.Background())
+			gotCustomEmojis, gotErr := pgrepo.CustomEmojis(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantCustomEmojis, gotEmojis, "expect custom emojis to match")
+			assertCustomEmojis(t, tt.wantCustomEmojis, gotCustomEmojis)
 		})
 	}
 }
@@ -167,10 +168,10 @@ func TestRepo_CustomEmojiByID(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := customemojirepo.NewRepo(db)
 
-			gotEmoji, gotErr := pgrepo.CustomEmojiByID(context.Background(), tt.args.ID)
+			gotCustomEmoji, gotErr := pgrepo.CustomEmojiByID(context.Background(), tt.args.ID)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantCustomEmoji, gotEmoji, "expect custom emoji to match")
+			assert.Equal(t, tt.wantCustomEmoji, gotCustomEmoji, "expect custom emoji to match")
 		})
 	}
 }
@@ -288,10 +289,15 @@ func TestRepo_AddCustomEmoji(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := customemojirepo.NewRepo(db)
 
-			gotEmoji, gotErr := pgrepo.AddCustomEmoji(context.Background(), tt.args.emoji)
+			gotCustomEmoji, gotErr := pgrepo.AddCustomEmoji(context.Background(), tt.args.emoji)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantCustomEmoji, gotEmoji, "expect custom emoji to match")
+			assert.Equal(t, tt.wantCustomEmoji, gotCustomEmoji, "expect custom emoji to match")
+
+			gotCustomEmojis, err := pgrepo.CustomEmojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting custom emojis")
+			assertCustomEmojis(t, tt.wantCustomEmojis, gotCustomEmojis)
 		})
 	}
 }
@@ -385,20 +391,14 @@ func TestRepo_UpdateCustomEmoji(t *testing.T) {
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Url:         "https://example.com/emoji1.png",
-					Title:       "emoji1",
+					Url:         "https://example.com/updated_emoji1.png",
+					Title:       "updated_emoji1",
 				},
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Url:         "https://example.com/emoji2.png",
 					Title:       "emoji2",
-				},
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Url:         "https://example.com/updated_emoji1.png",
-					Title:       "updated_emoji1",
 				},
 			},
 			wantErr: nil,
@@ -409,10 +409,15 @@ func TestRepo_UpdateCustomEmoji(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := customemojirepo.NewRepo(db)
 
-			gotEmoji, gotErr := pgrepo.UpdateCustomEmoji(context.Background(), tt.args.emoji)
+			gotCustomEmoji, gotErr := pgrepo.UpdateCustomEmoji(context.Background(), tt.args.emoji)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantCustomEmoji, gotEmoji, "expect custom emoji to match")
+			assert.Equal(t, tt.wantCustomEmoji, gotCustomEmoji, "expect custom emoji to match")
+
+			gotCustomEmojis, err := pgrepo.CustomEmojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting custom emojis")
+			assertCustomEmojis(t, tt.wantCustomEmojis, gotCustomEmojis)
 		})
 	}
 }
@@ -422,16 +427,31 @@ func TestRepo_DeleteCustomEmoji(t *testing.T) {
 		ID uuid.UUID
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantErr      error
+		name             string
+		fixtureFiles     []string
+		args             args
+		wantCustomEmojis []models.CustomEmoji
+		wantErr          error
 	}{
 		{
 			name:         "custom emoji not found :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			},
+			wantCustomEmojis: []models.CustomEmoji{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Url:         "https://example.com/emoji1.png",
+					Title:       "emoji1",
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Url:         "https://example.com/emoji2.png",
+					Title:       "emoji2",
+				},
 			},
 			wantErr: customemojirepo.ErrCustomEmojiNotFound,
 		},
@@ -440,6 +460,14 @@ func TestRepo_DeleteCustomEmoji(t *testing.T) {
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "custom_emojis.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantCustomEmojis: []models.CustomEmoji{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Url:         "https://example.com/emoji2.png",
+					Title:       "emoji2",
+				},
 			},
 			wantErr: nil,
 		},
@@ -452,6 +480,37 @@ func TestRepo_DeleteCustomEmoji(t *testing.T) {
 			gotErr := pgrepo.DeleteCustomEmoji(context.Background(), tt.args.ID)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotCustomEmojis, err := pgrepo.CustomEmojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting custom emojis")
+			assertCustomEmojis(t, tt.wantCustomEmojis, gotCustomEmojis)
 		})
 	}
+}
+
+func TestRepo_ForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting voxsphere from parent table , no child references should exist in custom_emoji table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "custom_emojis.yml")
+		customEmojiPgrepo := customemojirepo.NewRepo(db)
+		voxspherePgrepo := voxsphere.NewRepo(db)
+
+		wantCustomEmojis := []models.CustomEmoji{
+			{
+				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Url:         "https://example.com/emoji2.png",
+				Title:       "emoji2",
+			},
+		}
+
+		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no erro while deleting voxsphere")
+
+		gotCustomEmojis, err := customEmojiPgrepo.CustomEmojis(context.Background())
+
+		assert.NoError(t, err, "expect no erro while deleting voxsphere")
+		assertCustomEmojis(t, wantCustomEmojis, gotCustomEmojis)
+	})
 }

@@ -38,6 +38,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Trophy)(nil))
 
 	// drop all rows of the trophy table
@@ -51,9 +54,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -117,6 +117,7 @@ func TestRepo_Trophies(t *testing.T) {
 			pgrepo := trophyrepo.NewRepo(db)
 
 			gotTrophies, gotErr := pgrepo.Trophies(context.Background())
+
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assertTrophies(t, tt.wantTrophies, gotTrophies)
 		})
@@ -164,167 +165,9 @@ func TestRepo_TrophyByID(t *testing.T) {
 			pgrepo := trophyrepo.NewRepo(db)
 
 			gotTrophy, gotErr := pgrepo.TrophyByID(context.Background(), tt.args.ID)
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantTrophy, gotTrophy, "expect trophy to match")
-		})
-	}
-}
-
-func TestRepo_UpdateTrophy(t *testing.T) {
-	type args struct {
-		trophy models.Trophy
-	}
-	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantTrophy   models.Trophy
-		wantTrophies []models.Trophy
-		wantErr      error
-	}{
-		{
-			name:         "trophy not found :NEG",
-			fixtureFiles: []string{"trophies.yml"},
-			args: args{
-				trophy: models.Trophy{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-					Title:       "updated trophy",
-					Description: "updated description",
-					ImageLink:   "updated image link",
-				},
-			},
-			wantTrophy: models.Trophy{},
-			wantTrophies: []models.Trophy{
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:       "trophy_foo",
-					Description: "description_foo",
-					ImageLink:   "image_link_foo",
-				},
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:       "trophy_bar",
-					Description: "description_bar",
-					ImageLink:   "image_link_bar",
-				},
-			},
-			wantErr: trophyrepo.ErrTrophyNotFound,
-		},
-		{
-			name:         "update trophy :POS",
-			fixtureFiles: []string{"trophies.yml"},
-			args: args{
-				trophy: models.Trophy{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:       "updated trophy",
-					Description: "updated description",
-					ImageLink:   "updated image link",
-				},
-			},
-			wantTrophy: models.Trophy{
-				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Title:       "updated trophy",
-				Description: "updated description",
-				ImageLink:   "updated image link",
-			},
-			wantTrophies: []models.Trophy{
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:       "updated trophy",
-					Description: "updated description",
-					ImageLink:   "updated image link",
-				},
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:       "trophy_bar",
-					Description: "description_bar",
-					ImageLink:   "image_link_bar",
-				},
-			},
-			wantErr: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := setupPostgres(t, tt.fixtureFiles...)
-			pgrepo := trophyrepo.NewRepo(db)
-
-			gotTrophy, gotErr := pgrepo.UpdateTrophy(context.Background(), tt.args.trophy)
-			gotTrophies, err := pgrepo.Trophies(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting trophies")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantTrophy, gotTrophy, "expect trophy to match")
-			assertTrophies(t, tt.wantTrophies, gotTrophies)
-		})
-	}
-}
-
-func TestRepo_DeleteTrophy(t *testing.T) {
-	type args struct {
-		ID uuid.UUID
-	}
-	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantTrophies []models.Trophy
-		wantErr      error
-	}{
-		{
-			name:         "trophy not found :NEG",
-			fixtureFiles: []string{"trophies.yml"},
-			args: args{
-				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-			},
-			wantTrophies: []models.Trophy{
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:       "trophy_foo",
-					Description: "description_foo",
-					ImageLink:   "image_link_foo",
-				},
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:       "trophy_bar",
-					Description: "description_bar",
-					ImageLink:   "image_link_bar",
-				},
-			},
-			wantErr: trophyrepo.ErrTrophyNotFound,
-		},
-		{
-			name:         "delete trophy :POS",
-			fixtureFiles: []string{"trophies.yml"},
-			args: args{
-				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			},
-			wantTrophies: []models.Trophy{
-				{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:       "trophy_bar",
-					Description: "description_bar",
-					ImageLink:   "image_link_bar",
-				},
-			},
-			wantErr: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := setupPostgres(t, tt.fixtureFiles...)
-			pgrepo := trophyrepo.NewRepo(db)
-
-			gotErr := pgrepo.DeleteTrophy(context.Background(), tt.args.ID)
-			gotTrophies, err := pgrepo.Trophies(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting trophies")
-			}
-
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertTrophies(t, tt.wantTrophies, gotTrophies)
 		})
 	}
 }
@@ -415,13 +258,172 @@ func TestRepo_AddTrophy(t *testing.T) {
 			pgrepo := trophyrepo.NewRepo(db)
 
 			gotTrophy, gotErr := pgrepo.AddTrophy(context.Background(), tt.args.trophy)
-			gotTrophies, err := pgrepo.Trophies(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting trophies")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantTrophy, gotTrophy, "expect trophy to match")
+
+			gotTrophies, err := pgrepo.Trophies(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting trophies")
+			assertTrophies(t, tt.wantTrophies, gotTrophies)
+		})
+	}
+}
+
+func TestRepo_UpdateTrophy(t *testing.T) {
+	type args struct {
+		trophy models.Trophy
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantTrophy   models.Trophy
+		wantTrophies []models.Trophy
+		wantErr      error
+	}{
+		{
+			name:         "trophy not found :NEG",
+			fixtureFiles: []string{"trophies.yml"},
+			args: args{
+				trophy: models.Trophy{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+					Title:       "updated trophy",
+					Description: "updated description",
+					ImageLink:   "updated image link",
+				},
+			},
+			wantTrophy: models.Trophy{},
+			wantTrophies: []models.Trophy{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "trophy_foo",
+					Description: "description_foo",
+					ImageLink:   "image_link_foo",
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "trophy_bar",
+					Description: "description_bar",
+					ImageLink:   "image_link_bar",
+				},
+			},
+			wantErr: trophyrepo.ErrTrophyNotFound,
+		},
+		{
+			name:         "update trophy :POS",
+			fixtureFiles: []string{"trophies.yml"},
+			args: args{
+				trophy: models.Trophy{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "updated trophy",
+					Description: "updated description",
+					ImageLink:   "updated image link",
+				},
+			},
+			wantTrophy: models.Trophy{
+				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Title:       "updated trophy",
+				Description: "updated description",
+				ImageLink:   "updated image link",
+			},
+			wantTrophies: []models.Trophy{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "updated trophy",
+					Description: "updated description",
+					ImageLink:   "updated image link",
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "trophy_bar",
+					Description: "description_bar",
+					ImageLink:   "image_link_bar",
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := trophyrepo.NewRepo(db)
+
+			gotTrophy, gotErr := pgrepo.UpdateTrophy(context.Background(), tt.args.trophy)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantTrophy, gotTrophy, "expect trophy to match")
+
+			gotTrophies, err := pgrepo.Trophies(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting trophies")
+			assertTrophies(t, tt.wantTrophies, gotTrophies)
+		})
+	}
+}
+
+func TestRepo_DeleteTrophy(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantTrophies []models.Trophy
+		wantErr      error
+	}{
+		{
+			name:         "trophy not found :NEG",
+			fixtureFiles: []string{"trophies.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+			},
+			wantTrophies: []models.Trophy{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "trophy_foo",
+					Description: "description_foo",
+					ImageLink:   "image_link_foo",
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "trophy_bar",
+					Description: "description_bar",
+					ImageLink:   "image_link_bar",
+				},
+			},
+			wantErr: trophyrepo.ErrTrophyNotFound,
+		},
+		{
+			name:         "delete trophy :POS",
+			fixtureFiles: []string{"trophies.yml"},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantTrophies: []models.Trophy{
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "trophy_bar",
+					Description: "description_bar",
+					ImageLink:   "image_link_bar",
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := trophyrepo.NewRepo(db)
+
+			gotErr := pgrepo.DeleteTrophy(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotTrophies, err := pgrepo.Trophies(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting trophies")
 			assertTrophies(t, tt.wantTrophies, gotTrophies)
 		})
 	}

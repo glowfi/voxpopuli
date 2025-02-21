@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	"github.com/glowfi/voxpopuli/backend/pkg/repo/topic"
 	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -39,6 +40,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 
@@ -56,9 +60,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -530,6 +531,7 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			if err != nil {
 				t.Fatal("expect no error while getting voxspheres")
 			}
+
 			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 			assert.Equal(
 				t,
@@ -773,6 +775,7 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 			if err != nil {
 				t.Fatal("expect no error while getting voxspheres")
 			}
+
 			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 			if tt.wantErr == nil {
 				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
@@ -890,4 +893,44 @@ func TestRepo_DeleteVoxsphere(t *testing.T) {
 			assert.Equal(t, tt.wantVoxspheres, gotVoxspheres, "expect voxspheres to match")
 		})
 	}
+}
+
+func TestRepo_ForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting voxsphere from parent table , no child references should exist in voxspheres table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml")
+		topicPgrepo := topic.NewRepo(db)
+		voxspherePgrepo := voxrepo.NewRepo(db)
+
+		wantVoxspheres := []models.Voxsphere{
+			{
+				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Topic: models.Topic{
+					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name: "pqr",
+				},
+				Title:                 "v/bar",
+				PublicDescription:     ptrof("bar PublicDescription"),
+				CommunityIcon:         ptrof("bar icon"),
+				BannerBackgroundImage: ptrof("bar BannerBackgroundImage"),
+				BannerBackgroundColor: ptrof("#ffffff"),
+				KeyColor:              ptrof("#ffffff"),
+				PrimaryColor:          ptrof("#ffffff"),
+				Over18:                false,
+				SpoilersEnabled:       false,
+				CreatedAt:             time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				CreatedAtUnix:         1725091101,
+				UpdatedAt:             time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+			},
+		}
+
+		err := topicPgrepo.DeleteTopic(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting topic")
+
+		gotVoxspheres, err := voxspherePgrepo.Voxspheres(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting rules")
+		assertVoxspheresWithoutTimestamp(t, wantVoxspheres, gotVoxspheres)
+	})
 }

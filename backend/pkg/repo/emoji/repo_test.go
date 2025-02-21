@@ -38,6 +38,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.Emoji)(nil))
@@ -58,9 +61,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -239,13 +239,13 @@ func TestRepo_AddEmoji(t *testing.T) {
 			pgrepo := emojirepo.NewRepo(db)
 
 			gotEmoji, gotErr := pgrepo.AddEmoji(context.Background(), tt.args.emoji)
-			gotEmojis, err := pgrepo.Emojis(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting emojis")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantEmoji, gotEmoji, "expect emoji to match")
+
+			gotEmojis, err := pgrepo.Emojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting emojis")
 			assertEmojis(t, tt.wantEmojis, gotEmojis)
 		})
 	}
@@ -317,13 +317,13 @@ func TestRepo_UpdateEmoji(t *testing.T) {
 			pgrepo := emojirepo.NewRepo(db)
 
 			gotEmoji, gotErr := pgrepo.UpdateEmoji(context.Background(), tt.args.emoji)
-			gotEmojis, err := pgrepo.Emojis(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting emojis")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantEmoji, gotEmoji, "expect emoji to match")
+
+			gotEmojis, err := pgrepo.Emojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting emojis")
 			assertEmojis(t, tt.wantEmojis, gotEmojis)
 		})
 	}
@@ -379,12 +379,12 @@ func TestRepo_DeleteEmoji(t *testing.T) {
 			pgrepo := emojirepo.NewRepo(db)
 
 			gotErr := pgrepo.DeleteEmoji(context.Background(), tt.args.ID)
-			gotEmojis, err := pgrepo.Emojis(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting emojis")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotEmojis, err := pgrepo.Emojis(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting emojis")
 			assert.Equal(t, tt.wantEmojis, gotEmojis, "expect emojis to match")
 		})
 	}

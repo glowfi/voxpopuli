@@ -38,6 +38,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Award)(nil))
 
 	// drop all rows of the award table
@@ -51,9 +54,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -243,13 +243,13 @@ func TestRepo_AddAward(t *testing.T) {
 			pgrepo := awardrepo.NewRepo(db)
 
 			gotAward, gotErr := pgrepo.AddAward(context.Background(), tt.args.award)
-			gotAwards, err := pgrepo.Awards(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting awards")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
+
+			gotAwards, err := pgrepo.Awards(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting awards")
 			assertAwards(t, tt.wantAwards, gotAwards)
 		})
 	}
@@ -328,13 +328,13 @@ func TestRepo_UpdateAward(t *testing.T) {
 			pgrepo := awardrepo.NewRepo(db)
 
 			gotAward, gotErr := pgrepo.UpdateAward(context.Background(), tt.args.award)
-			gotAwards, err := pgrepo.Awards(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting awards")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
+
+			gotAwards, err := pgrepo.Awards(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting awards")
 			assertAwards(t, tt.wantAwards, gotAwards)
 		})
 	}
@@ -393,13 +393,13 @@ func TestRepo_DeleteAward(t *testing.T) {
 			pgrepo := awardrepo.NewRepo(db)
 
 			gotErr := pgrepo.DeleteAward(context.Background(), tt.args.ID)
-			gotAwards, err := pgrepo.Awards(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting awards")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantAwards, gotAwards, "expect awards to match")
+
+			gotAwards, err := pgrepo.Awards(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting awards")
+			assertAwards(t, tt.wantAwards, gotAwards)
 		})
 	}
 }

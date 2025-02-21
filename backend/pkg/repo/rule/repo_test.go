@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	"github.com/glowfi/voxpopuli/backend/pkg/repo/rule"
 	rulerrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/rule"
+	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
@@ -38,6 +40,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.Rule)(nil))
 
@@ -54,9 +59,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -253,13 +255,13 @@ func TestRepo_UpdateRule(t *testing.T) {
 			pgrepo := rulerrepo.NewRepo(db)
 
 			gotRule, gotErr := pgrepo.UpdateRule(context.Background(), tt.args.rule)
-			gotRules, err := pgrepo.Rules(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting rules")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantRule, gotRule, "expect rule to match")
+
+			gotRules, err := pgrepo.Rules(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting rules")
 			assertRules(t, tt.wantRules, gotRules)
 		})
 	}
@@ -351,13 +353,13 @@ func TestRepo_AddRule(t *testing.T) {
 			pgrepo := rulerrepo.NewRepo(db)
 
 			gotRule, gotErr := pgrepo.AddRule(context.Background(), tt.args.rule)
-			gotRules, err := pgrepo.Rules(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting rules")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantRule, gotRule, "expect rule to match")
+
+			gotRules, err := pgrepo.Rules(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting rules")
 			assertRules(t, tt.wantRules, gotRules)
 		})
 	}
@@ -419,13 +421,39 @@ func TestRepo_DeleteRule(t *testing.T) {
 			pgrepo := rulerrepo.NewRepo(db)
 
 			gotErr := pgrepo.DeleteRule(context.Background(), tt.args.ID)
-			gotRules, err := pgrepo.Rules(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting rules")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantRules, gotRules, "expect rules to match")
+
+			gotRules, err := pgrepo.Rules(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting rules")
+			assertRules(t, tt.wantRules, gotRules)
 		})
 	}
+}
+
+func TestRepo_ForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting voxsphere from parent table , no child references should exist in rules table", func(t *testing.T) {
+		db := setupPostgres(t, "voxspheres.yml", "rules.yml")
+		rulePgrepo := rule.NewRepo(db)
+		voxspherePgrepo := voxrepo.NewRepo(db)
+
+		wantRules := []models.Rule{
+			{
+				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				ShortName:   "rule_bar",
+				Description: "description_bar",
+			},
+		}
+
+		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting voxsphere")
+
+		gotRules, err := rulePgrepo.Rules(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting rules")
+		assertRules(t, wantRules, gotRules)
+	})
 }

@@ -38,6 +38,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 
 	// drop all rows of the topics table
@@ -51,9 +54,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -232,13 +232,12 @@ func TestRepo_AddTopic(t *testing.T) {
 			pgrepo := topicrepo.NewRepo(db)
 
 			gotTopic, gotErr := pgrepo.AddTopic(context.Background(), tt.args.topic)
-			gotTopics, err := pgrepo.Topics(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting topics")
-			}
-
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantTopic, gotTopic, "expect topic to match")
+
+			gotTopics, err := pgrepo.Topics(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting topics")
 			assertTopics(t, tt.wantTopics, gotTopics)
 		})
 	}
@@ -310,13 +309,13 @@ func TestRepo_UpdateTopic(t *testing.T) {
 			pgrepo := topicrepo.NewRepo(db)
 
 			gotTopic, gotErr := pgrepo.UpdateTopic(context.Background(), tt.args.topic)
-			gotTopics, err := pgrepo.Topics(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting topics")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantTopic, gotTopic, "expect topic to match")
+
+			gotTopics, err := pgrepo.Topics(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting topics")
 			assertTopics(t, tt.wantTopics, gotTopics)
 		})
 	}
@@ -372,12 +371,13 @@ func TestRepo_DeleteTopic(t *testing.T) {
 			pgrepo := topicrepo.NewRepo(db)
 
 			gotErr := pgrepo.DeleteTopic(context.Background(), tt.args.ID)
-			gotTopics, err := pgrepo.Topics(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting topics")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotTopics, err := pgrepo.Topics(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting topics")
+
 			assertTopics(t, tt.wantTopics, gotTopics)
 		})
 	}

@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
 	userflaireRepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user_flair"
+	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
@@ -38,6 +40,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
@@ -62,9 +67,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -308,13 +310,13 @@ func TestRepo_AddUserFlair(t *testing.T) {
 			pgrepo := userflaireRepo.NewRepo(db)
 
 			gotUserFlair, gotErr := pgrepo.AddUserFlair(context.Background(), tt.args.userFlair)
-			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting user flairs")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantUserFlair, gotUserFlair, "expect user flair to match")
+
+			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting user flairs")
 			assertUserFlairs(t, tt.wantUserFlairs, gotUserFlairs)
 		})
 	}
@@ -469,13 +471,13 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 			pgrepo := userflaireRepo.NewRepo(db)
 
 			gotUserFlair, gotErr := pgrepo.UpdateUserFlair(context.Background(), tt.args.userFlair)
-			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting user flairs")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 			assert.Equal(t, tt.wantUserFlair, gotUserFlair, "expect user flair to match")
+
+			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting user flairs")
 			assertUserFlairs(t, tt.wantUserFlairs, gotUserFlairs)
 		})
 	}
@@ -540,13 +542,65 @@ func TestRepo_DeleteUserFlair(t *testing.T) {
 			pgrepo := userflaireRepo.NewRepo(db)
 
 			gotErr := pgrepo.DeleteUserFlair(context.Background(), tt.args.ID)
-			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting user flairs")
-			}
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotUserFlairs, err := pgrepo.UserFlairs(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting user flairs")
 			assert.Equal(t, tt.wantUserFlairs, gotUserFlairs, "expect flairs to match")
 		})
 	}
+}
+
+func TestRepo_ForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting voxsphere from parent table , no child references should exist in user_flairs table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml")
+		userFlairPgrepo := userflaireRepo.NewRepo(db)
+		voxspherePgrepo := voxrepo.NewRepo(db)
+
+		wantPosts := []models.UserFlair{
+			{
+				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				FullText:        "Flair 2",
+				BackgroundColor: "#000000",
+			},
+		}
+
+		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting voxsphere")
+
+		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting user flairs")
+		assertUserFlairs(t, wantPosts, gotUserFlairs)
+	})
+
+	t.Run("on deleting user from parent table , no child references should exist in user_flairs table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml")
+		userFlairPgrepo := userflaireRepo.NewRepo(db)
+		userPgrepo := userrepo.NewRepo(db)
+
+		wantPosts := []models.UserFlair{
+			{
+				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				FullText:        "Flair 2",
+				BackgroundColor: "#000000",
+			},
+		}
+
+		err := userPgrepo.DeleteUser(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting user")
+
+		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting user flairs")
+		assertUserFlairs(t, wantPosts, gotUserFlairs)
+	})
 }

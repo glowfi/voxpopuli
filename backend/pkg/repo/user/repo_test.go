@@ -39,6 +39,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.User)(nil))
 
 	// drop all rows of the user table
@@ -52,9 +55,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -363,9 +363,8 @@ func TestRepo_AddUser(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotUsers, err := pgrepo.Users(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting users")
-			}
+
+			assert.NoError(t, err, "expect no error while getting users")
 			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
 			assert.Equal(
 				t,
@@ -504,6 +503,22 @@ func TestRepo_UpdateUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := userrepo.NewRepo(db)
+
+			startTime := time.Now()
+			gotUser, gotErr := pgrepo.UpdateUser(context.Background(), tt.args.user)
+			endTime := time.Now()
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotUsers, err := pgrepo.Users(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting users")
+			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotUser.UpdatedAt, startTime, endTime)
+			}
 		})
 	}
 }
@@ -598,10 +613,8 @@ func TestRepo_DeleteUser(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotUsers, err := pgrepo.Users(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting users")
-			}
 
+			assert.NoError(t, err, "expect no error while getting users")
 			assert.Equal(t, tt.wantUsers, gotUsers, "expect users to match")
 		})
 	}

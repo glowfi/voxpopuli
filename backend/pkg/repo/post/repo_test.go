@@ -11,6 +11,8 @@ import (
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
+	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
+	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun"
@@ -39,6 +41,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		}
 	})
 
+	// add query logging hook
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
+
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
@@ -64,9 +69,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	if err := fixture.Load(context.Background(), os.DirFS("testdata"), fixtureFiles...); err != nil {
 		t.Fatal("failed to load fixtures", err)
 	}
-
-	// add query logging hook
-	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	return db
 }
@@ -494,9 +496,8 @@ func TestRepo_AddPost(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotPosts, err := pgrepo.Posts(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting posts")
-			}
+
+			assert.NoError(t, err, "expect no error while getting posts")
 			assertPostsWithoutTimestamp(t, tt.wantPosts, gotPosts)
 			assert.Equal(
 				t,
@@ -758,9 +759,8 @@ func TestRepo_UpdatePost(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotPosts, err := pgrepo.Posts(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting posts")
-			}
+
+			assert.NoError(t, err, "expect no error while getting posts")
 			assertPostsWithoutTimestamp(t, tt.wantPosts, gotPosts)
 			if tt.wantErr == nil {
 				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
@@ -854,11 +854,75 @@ func TestRepo_DeletePost(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotPosts, err := pgrepo.Posts(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting posts")
-			}
 
+			assert.NoError(t, err, "expect no error while getting posts")
 			assert.Equal(t, tt.wantPosts, gotPosts, "expect posts to match")
 		})
 	}
+}
+
+func TestRepo_ForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting voxsphere from parent table , no child references should exist in posts table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml")
+		postPgrepo := postrepo.NewRepo(db)
+		voxspherePgrepo := voxrepo.NewRepo(db)
+
+		wantPosts := []models.Post{
+			{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Title:         "Example Post Title 2",
+				Text:          "This is an example post text 2.",
+				TextHtml:      "<p>This is an example post text 2 in HTML.</p>",
+				Ups:           20,
+				Over18:        true,
+				Spoiler:       true,
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				CreatedAtUnix: 1725091120,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+			},
+		}
+
+		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting voxsphere")
+
+		gotPosts, err := postPgrepo.Posts(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting posts")
+		assertPostsWithoutTimestamp(t, wantPosts, gotPosts)
+	})
+
+	t.Run("on deleting author from parent table , no child references should exist in posts table", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml")
+		postPgrepo := postrepo.NewRepo(db)
+		userPgrepo := userrepo.NewRepo(db)
+
+		wantPosts := []models.Post{
+			{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Title:         "Example Post Title 2",
+				Text:          "This is an example post text 2.",
+				TextHtml:      "<p>This is an example post text 2 in HTML.</p>",
+				Ups:           20,
+				Over18:        true,
+				Spoiler:       true,
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				CreatedAtUnix: 1725091120,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+			},
+		}
+
+		err := userPgrepo.DeleteUser(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting user")
+
+		gotPosts, err := postPgrepo.Posts(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting posts")
+		assertPostsWithoutTimestamp(t, wantPosts, gotPosts)
+	})
 }
