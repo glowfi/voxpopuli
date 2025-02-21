@@ -450,11 +450,27 @@ func TestRepo_UpdateUser(t *testing.T) {
 		{
 			name:         "update user :POS",
 			fixtureFiles: []string{"users.yml"},
-			args:         args{},
+			args: args{
+				user: models.User{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:              "Jane Smith",
+					PublicDescription: ptrof("A public description updated"),
+					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+					BannerImg:         ptrof("https://example.com/banner.jpg"),
+					Iconcolor:         ptrof("#ffffff"),
+					Keycolor:          ptrof("#ffffff"),
+					Primarycolor:      ptrof("#ffffff"),
+					Over18:            false,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
 			wantUser: models.User{
 				ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				Name:              "Jane Smith",
-				PublicDescription: ptrof("A public description"),
+				PublicDescription: ptrof("A public description updated"),
 				AvatarImg:         ptrof("https://example.com/avatar.jpg"),
 				BannerImg:         ptrof("https://example.com/banner.jpg"),
 				Iconcolor:         ptrof("#ffffff"),
@@ -470,7 +486,7 @@ func TestRepo_UpdateUser(t *testing.T) {
 				{
 					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Name:              "Jane Smith",
-					PublicDescription: ptrof("A public description"),
+					PublicDescription: ptrof("A public description updated"),
 					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
 					BannerImg:         ptrof("https://example.com/banner.jpg"),
 					Iconcolor:         ptrof("#ffffff"),
@@ -513,6 +529,8 @@ func TestRepo_UpdateUser(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotUsers, err := pgrepo.Users(context.Background())
+
+			fmt.Printf("%+v\n", gotUsers)
 
 			assert.NoError(t, err, "expect no error while getting users")
 			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
