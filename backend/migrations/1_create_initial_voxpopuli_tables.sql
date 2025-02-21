@@ -188,6 +188,9 @@ CREATE TABLE image_metadatas (
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     url TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at_unix BIGINT NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_image_id FOREIGN KEY(image_id) REFERENCES images(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -203,6 +206,9 @@ CREATE TABLE gif_metadatas (
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     url TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at_unix BIGINT NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_gif_id FOREIGN KEY(gif_id) REFERENCES gifs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -212,6 +218,9 @@ CREATE TABLE videos (
     url TEXT UNIQUE NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at_unix BIGINT NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -228,6 +237,9 @@ CREATE TABLE gallery_metadatas (
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     url TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at_unix BIGINT NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_gallery_id FOREIGN KEY(gallery_id) REFERENCES galleries(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -235,6 +247,9 @@ CREATE TABLE links (
     id UUID PRIMARY KEY,
     media_id UUID NOT NULL,
     link TEXT NOT NULL,
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at_unix BIGINT NOT NULL,
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_media_id FOREIGN KEY(media_id) REFERENCES post_medias(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -380,6 +395,11 @@ CREATE INDEX idx_posts_created_at ON posts (created_at);
 CREATE INDEX idx_comments_created_at ON comments (created_at);
 CREATE INDEX idx_voxspheres_created_at ON voxspheres (created_at);
 CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX idx_image_metadatas_created_at ON image_metadatas (created_at);
+CREATE INDEX idx_gif_metadatas_created_at ON gif_metadatas (created_at);
+CREATE INDEX idx_gallery_metadatas_created_at ON gallery_metadatas (created_at);
+CREATE INDEX idx_videos_created_at ON videos (created_at);
+CREATE INDEX idx_link_created_at ON link (created_at);
 
 -- +goose Down
 DROP EXTENSION "uuid-ossp";
@@ -388,6 +408,11 @@ DROP INDEX idx_voxspheres_created_at;
 DROP INDEX idx_users_created_at;
 DROP INDEX idx_comments_created_at;
 DROP INDEX idx_posts_created_at;
+DROP INDEX idx_image_metadatas_created_at;
+DROP INDEX idx_gif_metadatas_created_at;
+DROP INDEX idx_gallery_metadatas_created_at;
+DROP INDEX idx_videos_created_at;
+DROP INDEX idx_link_created_at;
 DROP INDEX idx_users_public_description;
 DROP INDEX idx_users_name;
 DROP INDEX idx_comments_body;
