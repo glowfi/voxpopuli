@@ -34,3 +34,21 @@ type UserFlairDescription struct {
 	OrderIndex  int32     `json:"order_index"`
 	Description string    `json:"description"`
 }
+
+type PostFlairEmoji struct {
+	EmojiID     uuid.UUID `json:"emoji_id"`
+	PostFlairID uuid.UUID `json:"post_flair_id"`
+	OrderIndex  int32     `json:"order_index"`
+}
+
+type PostFlairCustomEmoji struct {
+	CustomEmojiID uuid.UUID `json:"custom_emoji_id"`
+	PostFlairID   uuid.UUID `json:"post_flair_id"`
+	OrderIndex    int32     `json:"order_index"`
+}
+
+type PostFlairDescription struct {
+	PostFlairID uuid.UUID `json:"post_flair_id"`
+	OrderIndex  int32     `json:"order_index"`
+	Description string    `json:"description"`
+}

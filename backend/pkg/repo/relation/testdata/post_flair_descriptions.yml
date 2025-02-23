@@ -1,0 +1,21 @@
+- model: PostFlairDescription
+  rows:
+    - post_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 0
+      description: "desc1 "
+
+    - post_flair_id: 00000000-0000-0000-0000-000000000001
+      order_index: 3
+      description: " "
+
+    - post_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 0
+      description: "desc2 "
+
+    - post_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 3
+      description: " "
+
+    - post_flair_id: 00000000-0000-0000-0000-000000000002
+      order_index: 6
+      description: " desc2"

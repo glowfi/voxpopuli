@@ -290,11 +290,10 @@ CREATE TABLE post_awards (
 
 CREATE TABLE post_flairs(
     id UUID PRIMARY KEY,
-    post_id UUID NOT NULL,
+    post_id UUID NOT NULL UNIQUE,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
     background_color VARCHAR(8),
-    CONSTRAINT post_id_voxsphere_id UNIQUE(post_id,voxsphere_id),
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );

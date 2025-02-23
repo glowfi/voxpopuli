@@ -48,7 +48,7 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.UserFlair)(nil))
 
-	// drop all rows of the topic,voxsphere,user,user_flair table
+	// drop all rows of the topic,voxsphere,user,user_flairs table
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
@@ -563,7 +563,7 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		userFlairPgrepo := userflaireRepo.NewRepo(db)
 		voxspherePgrepo := voxrepo.NewRepo(db)
 
-		wantPosts := []models.UserFlair{
+		wantUserFlairs := []models.UserFlair{
 			{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -580,7 +580,7 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting user flairs")
-		assertUserFlairs(t, wantPosts, gotUserFlairs)
+		assertUserFlairs(t, wantUserFlairs, gotUserFlairs)
 	})
 
 	t.Run("on deleting user from parent table , no child references should exist in user_flairs table", func(t *testing.T) {
@@ -588,7 +588,7 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		userFlairPgrepo := userflaireRepo.NewRepo(db)
 		userPgrepo := userrepo.NewRepo(db)
 
-		wantPosts := []models.UserFlair{
+		wantUserFlairs := []models.UserFlair{
 			{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -605,6 +605,6 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting user flairs")
-		assertUserFlairs(t, wantPosts, gotUserFlairs)
+		assertUserFlairs(t, wantUserFlairs, gotUserFlairs)
 	})
 }

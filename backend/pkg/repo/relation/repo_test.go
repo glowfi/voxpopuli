@@ -14,6 +14,9 @@ import (
 	trophyrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/trophy"
 	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
 	userFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user_flair"
+
+	// postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
+	postFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post_flair"
 	voxsphererepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +62,10 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.UserFlairCustomEmoji)(nil))
 	db.RegisterModel((*models.UserFlairEmoji)(nil))
 	db.RegisterModel((*models.UserFlairDescription)(nil))
+	db.RegisterModel((*models.Post)(nil))
+	db.RegisterModel((*models.PostFlairCustomEmoji)(nil))
+	db.RegisterModel((*models.PostFlairEmoji)(nil))
+	db.RegisterModel((*models.PostFlairDescription)(nil))
 
 	// drop all rows of the user,trophies table
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
@@ -98,6 +105,18 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlairDescription)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlair)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlairCustomEmoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlairEmoji)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlairDescription)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -1144,5 +1163,655 @@ func TestRepo_LinkUserFlairDescription(t *testing.T) {
 				OrderIndex:  6,
 			},
 		}, gotUserFlairDescriptions, "expect user flair descriptions to match")
+	})
+}
+
+func TestRepo_PostFlairEmojis(t *testing.T) {
+	tests := []struct {
+		name                string
+		fixtureFiles        []string
+		wantPostFlairEmojis []models.PostFlairEmoji
+		wantErr             error
+	}{
+		{
+			name: "post flair emojis :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"emojis.yml",
+				"users.yml",
+				"posts.yml",
+				"post_flairs.yml",
+				"post_flair_emojis.yml",
+			},
+			wantPostFlairEmojis: []models.PostFlairEmoji{
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  1,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  2,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  1,
+				},
+				{
+					EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  2,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                "no post flair emojis :POS",
+			fixtureFiles:        []string{},
+			wantPostFlairEmojis: nil,
+			wantErr:             nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotPostFlairEmojis, gotErr := pgrepo.PostFlairEmojis(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantPostFlairEmojis, gotPostFlairEmojis, "expect post flair emojis to match")
+		})
+	}
+}
+
+func TestRepo_PostFlairCustomEmojis(t *testing.T) {
+	tests := []struct {
+		name                      string
+		fixtureFiles              []string
+		wantPostFlairCustomEmojis []models.PostFlairCustomEmoji
+		wantErr                   error
+	}{
+		{
+			name: "post flair custom emojis :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_flairs.yml",
+				"post_flair_custom_emojis.yml",
+			},
+			wantPostFlairCustomEmojis: []models.PostFlairCustomEmoji{
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    4,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    5,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    4,
+				},
+				{
+					CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    5,
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                      "no post flair custom emojis :POS",
+			fixtureFiles:              []string{},
+			wantPostFlairCustomEmojis: nil,
+			wantErr:                   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotPostFlairCustomEmojis, gotErr := pgrepo.PostFlairCustomEmojis(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantPostFlairCustomEmojis, gotPostFlairCustomEmojis, "expect post flair custom emojis to match")
+		})
+	}
+}
+
+func TestRepo_PostFlairDescriptions(t *testing.T) {
+	tests := []struct {
+		name                      string
+		fixtureFiles              []string
+		wantPostFlairDescriptions []models.PostFlairDescription
+		wantErr                   error
+	}{
+		{
+			name: "post flair descriptions :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_flairs.yml",
+				"post_flair_descriptions.yml",
+			},
+			wantPostFlairDescriptions: []models.PostFlairDescription{
+				{
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  0,
+					Description: "desc1 ",
+				},
+				{
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:  3,
+					Description: " ",
+				},
+				{
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  0,
+					Description: "desc2 ",
+				},
+				{
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  3,
+					Description: " ",
+				},
+				{
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:  6,
+					Description: " desc2",
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                      "no post flair descriptions :POS",
+			fixtureFiles:              []string{},
+			wantPostFlairDescriptions: nil,
+			wantErr:                   nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotPostFlairDescriptions, gotErr := pgrepo.PostFlairDescriptions(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantPostFlairDescriptions, gotPostFlairDescriptions, "expect post flair descriptions to match")
+		})
+	}
+}
+
+func TestRepo_LinkPostFlairEmoji(t *testing.T) {
+	t.Run("duplicate post_flair_id,emoji_id,order_index while linking post flair and emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairEmoji, gotErr := pgrepo.LinkPostFlairEmoji(
+			context.Background(),
+			models.PostFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairEmoji{}, gotPostFlairEmoji)
+	})
+
+	t.Run("emoji not found in parent table while linking post flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairEmoji, gotErr := pgrepo.LinkPostFlairEmoji(
+			context.Background(),
+			models.PostFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairEmoji{}, gotPostFlairEmoji)
+	})
+
+	t.Run("post flair not found in parent table while linking post flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairEmoji, gotErr := pgrepo.LinkPostFlairEmoji(
+			context.Background(),
+			models.PostFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:  1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairEmoji{}, gotPostFlairEmoji)
+	})
+
+	t.Run("link post flair and emoji :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairEmoji, gotErr := pgrepo.LinkPostFlairEmoji(
+			context.Background(),
+			models.PostFlairEmoji{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:  0,
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairEmoji{
+			EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:  0,
+		}, gotPostFlairEmoji)
+	})
+
+	t.Run("on deleting post flair child refrences gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		postFlairPgrepo := postFlairrepo.NewRepo(db)
+
+		gotErr := postFlairPgrepo.DeletePostFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotPostFlairEmojis, gotErr := relationPgrepo.PostFlairEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostFlairEmoji{
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  1,
+			},
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  2,
+			},
+		}, gotPostFlairEmojis, "expect post flair emojis to match")
+	})
+
+	t.Run("on deleting emoji child refrences gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"emojis.yml",
+			"post_flairs.yml",
+			"post_flair_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		emojiPgrepo := emojirepo.NewRepo(db)
+
+		gotErr := emojiPgrepo.DeleteEmoji(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostFlairEmojis, gotErr := relationPgrepo.PostFlairEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostFlairEmoji{
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  1,
+			},
+			{
+				EmojiID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:  2,
+			},
+		}, gotPostFlairEmojis, "expect post flair emojis to match")
+	})
+}
+
+func TestRepo_LinkPostFlairCustomEmoji(t *testing.T) {
+	t.Run("duplicate post_flair_id,emoji_id,order_index while linking post flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairCustomEmoji, gotErr := pgrepo.LinkPostFlairCustomEmoji(
+			context.Background(),
+			models.PostFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:    4,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairCustomEmoji{}, gotPostFlairCustomEmoji)
+	})
+
+	t.Run("custom emoji not found in parent table while linking post flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairCustomEmoji, gotErr := pgrepo.LinkPostFlairCustomEmoji(
+			context.Background(),
+			models.PostFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairCustomEmoji{}, gotPostFlairCustomEmoji)
+	})
+
+	t.Run("post flair not found in parent table while linking post flair and custom emoji :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairCustomEmoji, gotErr := pgrepo.LinkPostFlairCustomEmoji(
+			context.Background(),
+			models.PostFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairCustomEmoji{}, gotPostFlairCustomEmoji)
+	})
+
+	t.Run("link post flair and custom emoji :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairCustomEmoji, gotErr := pgrepo.LinkPostFlairCustomEmoji(
+			context.Background(),
+			models.PostFlairCustomEmoji{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:    1,
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairCustomEmoji{
+			CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:    1,
+		}, gotPostFlairCustomEmoji)
+	})
+
+	t.Run("on deleting post flair child refrences gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		postFlairPgrepo := postFlairrepo.NewRepo(db)
+
+		gotErr := postFlairPgrepo.DeletePostFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotPostFlairCustomEmojis, gotErr := relationPgrepo.PostFlairCustomEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostFlairCustomEmoji{
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    4,
+			},
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    5,
+			},
+		}, gotPostFlairCustomEmojis, "expect post flair custom emojis to match")
+	})
+
+	t.Run("on deleting custom emoji child refrences gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"custom_emojis.yml",
+			"post_flairs.yml",
+			"post_flair_custom_emojis.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		customemojiPgrepo := customemojirepo.NewRepo(db)
+
+		gotErr := customemojiPgrepo.DeleteCustomEmoji(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostFlairCustomEmojis, gotErr := relationPgrepo.PostFlairCustomEmojis(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostFlairCustomEmoji{
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    4,
+			},
+			{
+				CustomEmojiID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    5,
+			},
+		}, gotPostFlairCustomEmojis, "expect post flair custom emojis to match")
+	})
+}
+
+func TestRepo_LinkPostFlairDescription(t *testing.T) {
+	t.Run("duplicate post_flair_id,order_index while linking post flair and description :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_flairs.yml",
+			"post_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairDescription, gotErr := pgrepo.LinkPostFlairDescription(
+			context.Background(),
+			models.PostFlairDescription{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:  0,
+				Description: "text",
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairDescription{}, gotPostFlairDescription)
+	})
+
+	t.Run("post flair not found in parent table while linking post flair and description :NEG", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_flairs.yml",
+			"post_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairDescription, gotErr := pgrepo.LinkPostFlairDescription(
+			context.Background(),
+			models.PostFlairDescription{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				OrderIndex:  3,
+				Description: "desc3",
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairDescription{}, gotPostFlairDescription)
+	})
+
+	t.Run("link user flair and description :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_flairs.yml",
+			"post_flair_descriptions.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostFlairDescriptions, gotErr := pgrepo.LinkPostFlairDescription(
+			context.Background(),
+			models.PostFlairDescription{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				OrderIndex:  2,
+				Description: "desc3",
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.PostFlairDescription{
+			PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			OrderIndex:  2,
+			Description: "desc3",
+		}, gotPostFlairDescriptions)
+	})
+
+	t.Run("on deleting post flair child refrences gets deleted in post_flair_descriptions table :POS", func(t *testing.T) {
+		db := setupPostgres(t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_flairs.yml",
+			"post_flair_descriptions.yml",
+		)
+		relationPgrepo := relationrepo.NewRepo(db)
+		postFlairPgrepo := postFlairrepo.NewRepo(db)
+
+		gotErr := postFlairPgrepo.DeletePostFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+		assert.NoError(t, gotErr)
+
+		gotPostFlairDescriptions, gotErr := relationPgrepo.PostFlairDescriptions(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostFlairDescription{
+			{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: "desc2 ",
+				OrderIndex:  0,
+			},
+			{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: " ",
+				OrderIndex:  3,
+			},
+			{
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				Description: " desc2",
+				OrderIndex:  6,
+			},
+		}, gotPostFlairDescriptions, "expect post flair descriptions to match")
 	})
 }
