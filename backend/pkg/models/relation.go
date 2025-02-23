@@ -52,3 +52,8 @@ type PostFlairDescription struct {
 	OrderIndex  int32     `json:"order_index"`
 	Description string    `json:"description"`
 }
+
+type PostAward struct {
+	PostID  uuid.UUID `json:"post_id"`
+	AwardID uuid.UUID `json:"award_id"`
+}

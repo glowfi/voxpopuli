@@ -46,6 +46,9 @@ type Repository interface {
 
 	PostFlairDescriptions(ctx context.Context) ([]models.PostFlairDescription, error)
 	LinkPostFlairDescription(ctx context.Context, pfd models.PostFlairDescription) (models.PostFlairDescription, error)
+
+	PostAwards(ctx context.Context) ([]models.PostAward, error)
+	LinkPostAward(ctx context.Context, pa models.PostAward) (models.PostAward, error)
 }
 
 type Repo struct {
@@ -486,4 +489,50 @@ func (r *Repo) LinkPostFlairDescription(ctx context.Context, pfd models.PostFlai
 	}
 
 	return pfd, nil
+}
+
+func (r *Repo) PostAwards(ctx context.Context) ([]models.PostAward, error) {
+	var post_awards []models.PostAward
+
+	query := `
+                SELECT 
+                    post_id,
+                    award_id 
+                FROM
+                    post_awards
+            `
+
+	_, err := r.db.NewRaw(query).Exec(ctx, &post_awards)
+	if err != nil {
+		return []models.PostAward{}, err
+	}
+	return post_awards, nil
+}
+
+func (r *Repo) LinkPostAward(ctx context.Context, pa models.PostAward) (models.PostAward, error) {
+	query := `
+                INSERT INTO post_awards
+                     (
+                        post_id,
+                        award_id
+                    )
+                VALUES (
+                    ?,
+                    ?
+                )
+                RETURNING *
+            `
+
+	if _, err := r.db.NewRaw(query, pa.PostID, pa.AwardID).Exec(ctx, &pa); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return models.PostAward{}, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.PostAward{}, ErrParentTableRecordNotFound
+		}
+		return models.PostAward{}, err
+	}
+
+	return pa, nil
 }

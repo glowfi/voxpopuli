@@ -1,0 +1,9 @@
+- model: Award
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      title: award_foo
+      image_link: "https:/fooimage.com"
+
+    - id: 00000000-0000-0000-0000-000000000002
+      title: award_bar
+      image_link: "https:/barimage.com"

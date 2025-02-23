@@ -8,15 +8,15 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	awardrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/award"
 	customemojirepo "github.com/glowfi/voxpopuli/backend/pkg/repo/custom_emoji"
 	emojirepo "github.com/glowfi/voxpopuli/backend/pkg/repo/emoji"
+	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
+	postFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post_flair"
 	relationrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/relation"
 	trophyrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/trophy"
 	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
 	userFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user_flair"
-
-	// postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
-	postFlairrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post_flair"
 	voxsphererepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -51,8 +51,10 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
+	db.RegisterModel((*models.Award)(nil))
 	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.Trophy)(nil))
+	db.RegisterModel((*models.Post)(nil))
 	db.RegisterModel((*models.Emoji)(nil))
 	db.RegisterModel((*models.CustomEmoji)(nil))
 	db.RegisterModel((*models.UserTrophy)(nil))
@@ -62,16 +64,20 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.UserFlairCustomEmoji)(nil))
 	db.RegisterModel((*models.UserFlairEmoji)(nil))
 	db.RegisterModel((*models.UserFlairDescription)(nil))
-	db.RegisterModel((*models.Post)(nil))
+	db.RegisterModel((*models.PostFlair)(nil))
 	db.RegisterModel((*models.PostFlairCustomEmoji)(nil))
 	db.RegisterModel((*models.PostFlairEmoji)(nil))
 	db.RegisterModel((*models.PostFlairDescription)(nil))
+	db.RegisterModel((*models.PostAward)(nil))
 
 	// drop all rows of the user,trophies table
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Voxsphere)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Award)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.User)(nil)).Exec(context.Background()); err != nil {
@@ -117,6 +123,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlairDescription)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostAward)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -181,7 +190,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
-		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
+		assert.Equal(t, models.UserTrophy{}, gotUserTrophy, "expect user trophy to match")
 	})
 
 	t.Run("trophy not found while linking user and trophy :NEG", func(t *testing.T) {
@@ -197,7 +206,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
+		assert.Equal(t, models.UserTrophy{}, gotUserTrophy, "expect user trophy to match")
 	})
 
 	t.Run("user not found while linking user and trophy :NEG", func(t *testing.T) {
@@ -213,7 +222,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.UserTrophy{}, gotUserTrophy)
+		assert.Equal(t, models.UserTrophy{}, gotUserTrophy, "expect user trophy to match")
 	})
 
 	t.Run("link user and trophy :POS", func(t *testing.T) {
@@ -232,7 +241,7 @@ func TestRepo_LinkUserTrophy(t *testing.T) {
 		assert.Equal(t, models.UserTrophy{
 			UserID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			TrophyID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-		}, gotUserTrophy)
+		}, gotUserTrophy, "expect user trophy to match")
 	})
 
 	t.Run("on deleting user id child refrences gets deleted in user_trophies table :POS", func(t *testing.T) {
@@ -318,7 +327,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember)
+		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember, "expect voxsphere member to match")
 	})
 
 	t.Run("voxsphere not found while linking voxsphere and member :NEG", func(t *testing.T) {
@@ -334,7 +343,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember)
+		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember, "expect voxsphere member to match")
 	})
 
 	t.Run("member not found while linking voxsphere and member :NEG", func(t *testing.T) {
@@ -350,7 +359,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember)
+		assert.Equal(t, models.VoxsphereMember{}, gotVoxsphereMember, "expect voxsphere member to match")
 	})
 
 	t.Run("link voxsphere and member :POS", func(t *testing.T) {
@@ -369,7 +378,7 @@ func TestRepo_LinkVoxsphereMember(t *testing.T) {
 		assert.Equal(t, models.VoxsphereMember{
 			VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-		}, gotVoxsphereMember)
+		}, gotVoxsphereMember, "expect voxsphere member to match")
 	})
 
 	t.Run("on deleting voxsphere id child refrences gets deleted in voxsphere_members table :POS", func(t *testing.T) {
@@ -455,7 +464,7 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator)
+		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator, "expect voxsphere moderator to match")
 	})
 
 	t.Run("voxsphere not found while linking voxsphere and moderator :NEG", func(t *testing.T) {
@@ -471,7 +480,7 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator)
+		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator, "expect voxsphere moderator to match")
 	})
 
 	t.Run("moderator not found while linking voxsphere and moderator :NEG", func(t *testing.T) {
@@ -487,7 +496,7 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 		)
 
 		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
-		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator)
+		assert.Equal(t, models.VoxsphereModerator{}, gotVoxsphereModerator, "expect voxsphere moderator to match")
 	})
 
 	t.Run("link voxsphere and moderator :POS", func(t *testing.T) {
@@ -506,7 +515,7 @@ func TestRepo_LinkVoxsphereModerator(t *testing.T) {
 		assert.Equal(t, models.VoxsphereModerator{
 			VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-		}, gotVoxsphereModerator)
+		}, gotVoxsphereModerator, "expect voxsphere moderator to match")
 	})
 
 	t.Run("on deleting voxsphere id child refrences gets deleted in voxsphere_moderators table :POS", func(t *testing.T) {
@@ -1242,6 +1251,7 @@ func TestRepo_PostFlairCustomEmojis(t *testing.T) {
 				"voxspheres.yml",
 				"users.yml",
 				"posts.yml",
+				"custom_emojis.yml",
 				"post_flairs.yml",
 				"post_flair_custom_emojis.yml",
 			},
@@ -1813,5 +1823,150 @@ func TestRepo_LinkPostFlairDescription(t *testing.T) {
 				OrderIndex:  6,
 			},
 		}, gotPostFlairDescriptions, "expect post flair descriptions to match")
+	})
+}
+
+func TestRepo_PostAwards(t *testing.T) {
+	tests := []struct {
+		name           string
+		fixtureFiles   []string
+		wantPostAwards []models.PostAward
+		wantErr        error
+	}{
+		{
+			name:         "post awards :POS",
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml"},
+			wantPostAwards: []models.PostAward{
+				{
+					PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:           "no post awards :POS",
+			fixtureFiles:   []string{},
+			wantPostAwards: nil,
+			wantErr:        nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotPostAwards, gotErr := pgrepo.PostAwards(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantPostAwards, gotPostAwards, "expect post awards to match")
+		})
+	}
+}
+
+func TestRepo_LinkPostAward(t *testing.T) {
+	t.Run("duplicate post_id,award_id while linking post and award :NEG", func(t *testing.T) {
+		db := setupPostgres(
+			t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"awards.yml",
+			"posts.yml",
+			"post_awards.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostAward, gotErr := pgrepo.LinkPostAward(
+			context.Background(),
+			models.PostAward{
+				PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, models.PostAward{}, gotPostAward, "expect post award to match")
+	})
+
+	t.Run("award not found while linking post and award :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostAward, gotErr := pgrepo.LinkPostAward(
+			context.Background(),
+			models.PostAward{
+				PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostAward{}, gotPostAward, "expect post award to match")
+	})
+
+	t.Run("post not found while linking post and award :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostAward, gotErr := pgrepo.LinkPostAward(
+			context.Background(),
+			models.PostAward{
+				PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, models.PostAward{}, gotPostAward, "expect post award to match")
+	})
+
+	t.Run("link post and award :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostAward, gotErr := pgrepo.LinkPostAward(
+			context.Background(),
+			models.PostAward{
+				PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, models.PostAward{
+			PostID:  uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			AwardID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+		}, gotPostAward, "expect post award to match")
+	})
+
+	t.Run("on deleting post id child refrences gets deleted in post_awards table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		postPgrepo := postrepo.NewRepo(db)
+
+		gotErr := postPgrepo.DeletePost(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostAwards, gotErr := relationPgrepo.PostAwards(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostAward(nil), gotPostAwards, "expect post awards to match")
+	})
+
+	t.Run("on deleting award id child refrences gets deleted in post_awards table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		awardPgrepo := awardrepo.NewRepo(db)
+
+		gotErr := awardPgrepo.DeleteAward(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000002"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostAwards, gotErr := relationPgrepo.PostAwards(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostAward(nil), gotPostAwards, "expect post awards to match")
 	})
 }
