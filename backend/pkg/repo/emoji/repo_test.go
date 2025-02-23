@@ -68,6 +68,10 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 func assertEmojis(t *testing.T, wantEmojis, gotEmojis []models.Emoji) {
 	t.Helper()
 
+	if len(wantEmojis) != len(gotEmojis) {
+		t.Fatal("length of wantEmojis and gotEmojis do not match")
+	}
+
 	for _, emoji := range wantEmojis {
 		idx := slices.IndexFunc(gotEmojis, func(v models.Emoji) bool {
 			return v.ID == emoji.ID

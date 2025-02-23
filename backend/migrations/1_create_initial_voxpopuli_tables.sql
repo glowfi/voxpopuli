@@ -399,7 +399,7 @@ CREATE INDEX idx_image_metadatas_created_at ON image_metadatas (created_at);
 CREATE INDEX idx_gif_metadatas_created_at ON gif_metadatas (created_at);
 CREATE INDEX idx_gallery_metadatas_created_at ON gallery_metadatas (created_at);
 CREATE INDEX idx_videos_created_at ON videos (created_at);
-CREATE INDEX idx_link_created_at ON link (created_at);
+CREATE INDEX idx_link_created_at ON links (created_at);
 
 -- +goose Down
 DROP EXTENSION "uuid-ossp";
@@ -461,9 +461,10 @@ DROP TRIGGER set_timestamp ON posts;
 DROP TRIGGER set_timestamp ON users;
 DROP TRIGGER set_timestamp ON voxspheres;
 
-DROP TABLE post_flair_descriptions CASCADE;
-DROP TABLE post_flair_emojis CASCADE;
 DROP TABLE post_flairs CASCADE;
+DROP TABLE post_flair_emojis CASCADE;
+DROP TABLE post_flair_custom_emojis CASCADE;
+DROP TABLE post_flair_descriptions CASCADE;
 DROP TABLE post_awards CASCADE;
 DROP TABLE awards CASCADE;
 DROP TABLE comments CASCADE;
@@ -481,13 +482,16 @@ DROP TABLE voxsphere_moderators CASCADE;
 DROP TABLE voxsphere_members CASCADE;
 DROP TABLE user_trophies CASCADE;
 DROP TABLE trophies CASCADE;
-DROP TABLE user_flair_descriptions CASCADE;
-DROP TABLE user_flair_emojis CASCADE;
-DROP TABLE user_flairs CASCADE;
 DROP TABLE rules CASCADE;
 DROP TABLE users CASCADE;
 DROP TABLE voxspheres CASCADE;
 DROP TABLE topics CASCADE;
+DROP TABLE custom_emojis CASCADE;
+DROP TABLE emojis CASCADE;
+DROP TABLE user_flairs CASCADE;
+DROP TABLE user_flair_emojis CASCADE;
+DROP TABLE user_flair_custom_emojis CASCADE;
+DROP TABLE user_flair_descriptions CASCADE;
 
 DROP TYPE media_type;
 

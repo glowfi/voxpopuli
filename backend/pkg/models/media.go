@@ -26,11 +26,13 @@ type PostMedia struct {
 }
 
 type Image struct {
-	ID      uuid.UUID `json:"id"`
-	MediaID uuid.UUID `json:"media_id"`
+	ID            uuid.UUID       `json:"id"`
+	MediaID       uuid.UUID       `json:"media_id"`
+	ImageMetadata []ImageMetadata `json:"image_metadata" bun:",scanonly"`
 }
 
 type ImageMetadata struct {
+	bun.BaseModel `bun:"table:image_metadatas"`
 	ID            uuid.UUID `json:"id"`
 	ImageID       uuid.UUID `json:"image_id"`
 	Height        int32     `json:"height"`
@@ -42,11 +44,13 @@ type ImageMetadata struct {
 }
 
 type Gif struct {
-	ID      uuid.UUID `json:"id"`
-	MediaID uuid.UUID `json:"media_id"`
+	ID          uuid.UUID     `json:"id"`
+	MediaID     uuid.UUID     `json:"media_id"`
+	GifMetadata []GifMetadata `json:"image_metadata" bun:",scanonly"`
 }
 
 type GifMetadata struct {
+	bun.BaseModel `bun:"table:gif_metadatas"`
 	ID            uuid.UUID `json:"id"`
 	GifID         uuid.UUID `json:"gif_id"`
 	Height        int32     `json:"height"`
@@ -58,11 +62,13 @@ type GifMetadata struct {
 }
 
 type Gallery struct {
-	ID      uuid.UUID `json:"id"`
-	MediaID uuid.UUID `json:"media_id"`
+	ID              uuid.UUID         `json:"id"`
+	MediaID         uuid.UUID         `json:"media_id"`
+	GalleryMetadata []GalleryMetadata `json:"image_metadata" bun:",scanonly"`
 }
 
 type GalleryMetadata struct {
+	bun.BaseModel `bun:"table:gallery_metadatas"`
 	ID            uuid.UUID `json:"id"`
 	GalleryID     uuid.UUID `json:"gallery_id"`
 	OrderIndex    int32     `json:"order_index"`

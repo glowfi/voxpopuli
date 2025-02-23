@@ -79,6 +79,10 @@ func assertTimeWithinRange(t *testing.T, time, start, end time.Time) {
 func assertUsersWithoutTimestamp(t *testing.T, wantUsers, gotUsers []models.User) {
 	t.Helper()
 
+	if len(wantUsers) != len(gotUsers) {
+		t.Fatal("length of wantUsers and gotUsers do not match")
+	}
+
 	for _, user := range wantUsers {
 		idx := slices.IndexFunc(gotUsers, func(v models.User) bool {
 			return v.ID == user.ID
@@ -262,9 +266,40 @@ func TestRepo_AddUser(t *testing.T) {
 					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
 				},
 			},
-			wantUser:  models.User{},
-			wantUsers: []models.User{},
-			wantErr:   userrepo.ErrUserDuplicateIDorName,
+			wantUser: models.User{},
+			wantUsers: []models.User{
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:              "John Doe",
+					PublicDescription: ptrof("This is a public description"),
+					AvatarImg:         ptrof("https://example.com/avatar1.jpg"),
+					BannerImg:         ptrof("https://example.com/banner1.jpg"),
+					Iconcolor:         ptrof("#FF0000"),
+					Keycolor:          ptrof("#00FF00"),
+					Primarycolor:      ptrof("#0000FF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix:     1725091100,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:              "Jane Doe",
+					PublicDescription: ptrof("This is another public description"),
+					AvatarImg:         ptrof("https://example.com/avatar2.jpg"),
+					BannerImg:         ptrof("https://example.com/banner2.jpg"),
+					Iconcolor:         ptrof("#FFFF00"),
+					Keycolor:          ptrof("#FF00FF"),
+					Primarycolor:      ptrof("#00FFFF"),
+					Over18:            true,
+					Suspended:         false,
+					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix:     1725091101,
+					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: userrepo.ErrUserDuplicateIDorName,
 		},
 		{
 			name:         "add user :POS",
@@ -361,11 +396,6 @@ func TestRepo_AddUser(t *testing.T) {
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-
-			gotUsers, err := pgrepo.Users(context.Background())
-
-			assert.NoError(t, err, "expect no error while getting users")
-			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
 			assert.Equal(
 				t,
 				gotUser.UpdatedAt,
@@ -376,6 +406,11 @@ func TestRepo_AddUser(t *testing.T) {
 				assertTimeWithinRange(t, gotUser.CreatedAt, startTime, endTime)
 				assertTimeWithinRange(t, gotUser.UpdatedAt, startTime, endTime)
 			}
+
+			gotUsers, err := pgrepo.Users(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting users")
+			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
 		})
 	}
 }
@@ -527,16 +562,14 @@ func TestRepo_UpdateUser(t *testing.T) {
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-
-			gotUsers, err := pgrepo.Users(context.Background())
-
-			fmt.Printf("%+v\n", gotUsers)
-
-			assert.NoError(t, err, "expect no error while getting users")
-			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
 			if tt.wantErr == nil {
 				assertTimeWithinRange(t, gotUser.UpdatedAt, startTime, endTime)
 			}
+
+			gotUsers, err := pgrepo.Users(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting users")
+			assertUsersWithoutTimestamp(t, tt.wantUsers, gotUsers)
 		})
 	}
 }

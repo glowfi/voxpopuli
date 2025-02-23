@@ -99,6 +99,10 @@ func assertVoxsphereWithoutTimestamp(t *testing.T, wantVoxsphere, gotVoxsphere m
 func assertVoxspheresWithoutTimestamp(t *testing.T, wantVoxspheres, gotVoxspheres []models.Voxsphere) {
 	t.Helper()
 
+	if len(wantVoxspheres) != len(gotVoxspheres) {
+		t.Fatal("length of wantVoxspheres and gotVoxspheres do not match")
+	}
+
 	for _, voxsphere := range wantVoxspheres {
 		idx := slices.IndexFunc(gotVoxspheres, func(v models.Voxsphere) bool {
 			return v.ID == voxsphere.ID
@@ -109,6 +113,26 @@ func assertVoxspheresWithoutTimestamp(t *testing.T, wantVoxspheres, gotVoxsphere
 			return
 		}
 		assertVoxsphereWithoutTimestamp(t, voxsphere, gotVoxspheres[idx])
+	}
+}
+
+func assertVoxspheresWithTimestamp(t *testing.T, wantVoxspheres, gotVoxspheres []models.Voxsphere) {
+	t.Helper()
+
+	if len(wantVoxspheres) != len(gotVoxspheres) {
+		t.Fatal("length of wantVoxspheres and gotVoxspheres do not match")
+	}
+
+	for _, voxsphere := range wantVoxspheres {
+		idx := slices.IndexFunc(gotVoxspheres, func(v models.Voxsphere) bool {
+			return v.ID == voxsphere.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("voxsphere %v of ID %v is not present in gotVoxspheres", voxsphere.Title, voxsphere.ID))
+			return
+		}
+		assert.Equal(t, voxsphere, gotVoxspheres[idx])
 	}
 }
 
@@ -185,7 +209,7 @@ func TestRepo_Voxspheres(t *testing.T) {
 			gotVoxspheres, gotErr := pgrepo.Voxspheres(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantVoxspheres, gotVoxspheres, "expect voxspheres to match")
+			assertVoxspheresWithTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 		})
 	}
 }
@@ -354,23 +378,7 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 					SpoilersEnabled:       false,
 				},
 			},
-			wantVoxsphere: models.Voxsphere{
-				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Topic: models.Topic{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "xyz",
-				},
-				Title:                 "v/foobar",
-				PublicDescription:     ptrof("foo PublicDescription"),
-				CommunityIcon:         ptrof("foo icon"),
-				BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
-				BannerBackgroundColor: ptrof("#000000"),
-				KeyColor:              ptrof("#000000"),
-				PrimaryColor:          ptrof("#000000"),
-				Over18:                true,
-				SpoilersEnabled:       false,
-			},
+			wantVoxsphere: models.Voxsphere{},
 			wantVoxspheres: []models.Voxsphere{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -526,13 +534,6 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-
-			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting voxspheres")
-			}
-
-			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 			assert.Equal(
 				t,
 				gotVoxsphere.UpdatedAt,
@@ -543,6 +544,11 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 				assertTimeWithinRange(t, gotVoxsphere.CreatedAt, startTime, endTime)
 				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
 			}
+
+			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting voxspheres")
+			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 		})
 	}
 }
@@ -770,16 +776,15 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-
-			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting voxspheres")
-			}
-
-			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
+			assertVoxsphereWithoutTimestamp(t, tt.wantVoxsphere, gotVoxsphere)
 			if tt.wantErr == nil {
 				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
 			}
+
+			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting voxsphere")
+			assertVoxspheresWithoutTimestamp(t, tt.wantVoxspheres, gotVoxspheres)
 		})
 	}
 }
@@ -886,10 +891,8 @@ func TestRepo_DeleteVoxsphere(t *testing.T) {
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
 
 			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())
-			if err != nil {
-				t.Fatal("expect no error while getting voxspheres")
-			}
 
+			assert.NoError(t, err, "expect no error while getting voxsphere")
 			assert.Equal(t, tt.wantVoxspheres, gotVoxspheres, "expect voxspheres to match")
 		})
 	}

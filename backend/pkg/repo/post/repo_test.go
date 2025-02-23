@@ -105,6 +105,10 @@ func assertPostWithoutTimestamp(t *testing.T, wantPost, gotPost models.Post) {
 func assertPostsWithoutTimestamp(t *testing.T, wantPosts, gotPosts []models.Post) {
 	t.Helper()
 
+	if len(wantPosts) != len(gotPosts) {
+		t.Fatal("length of wantPosts and gotPosts do not match")
+	}
+
 	for _, post := range wantPosts {
 		idx := slices.IndexFunc(gotPosts, func(p models.Post) bool {
 			return p.ID == post.ID
@@ -490,25 +494,25 @@ func TestRepo_AddPost(t *testing.T) {
 			pgrepo := postrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotVoxsphere, gotErr := pgrepo.AddPost(context.Background(), tt.args.post)
+			gotPost, gotErr := pgrepo.AddPost(context.Background(), tt.args.post)
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(
+				t,
+				gotPost.UpdatedAt,
+				gotPost.CreatedAt,
+				"expect CreatedAt and UpdatedAt to be same",
+			)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotPost.CreatedAt, startTime, endTime)
+				assertTimeWithinRange(t, gotPost.UpdatedAt, startTime, endTime)
+			}
 
 			gotPosts, err := pgrepo.Posts(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting posts")
 			assertPostsWithoutTimestamp(t, tt.wantPosts, gotPosts)
-			assert.Equal(
-				t,
-				gotVoxsphere.UpdatedAt,
-				gotVoxsphere.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotVoxsphere.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
-			}
 		})
 	}
 }
@@ -753,18 +757,18 @@ func TestRepo_UpdatePost(t *testing.T) {
 			pgrepo := postrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotVoxsphere, gotErr := pgrepo.UpdatePost(context.Background(), tt.args.post)
+			gotPost, gotErr := pgrepo.UpdatePost(context.Background(), tt.args.post)
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotPost.UpdatedAt, startTime, endTime)
+			}
 
 			gotPosts, err := pgrepo.Posts(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting posts")
 			assertPostsWithoutTimestamp(t, tt.wantPosts, gotPosts)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
-			}
 		})
 	}
 }

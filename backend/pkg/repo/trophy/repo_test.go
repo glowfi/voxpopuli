@@ -61,6 +61,10 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 func assertTrophies(t *testing.T, wantTrophies, gotTrophies []models.Trophy) {
 	t.Helper()
 
+	if len(wantTrophies) != len(gotTrophies) {
+		t.Fatal("length of wantTrophies and gotTrophies do not match")
+	}
+
 	for _, trophy := range wantTrophies {
 		idx := slices.IndexFunc(gotTrophies, func(v models.Trophy) bool {
 			return v.ID == trophy.ID

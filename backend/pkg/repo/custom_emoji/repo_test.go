@@ -66,19 +66,23 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	return db
 }
 
-func assertCustomEmojis(t *testing.T, wantEmojis, gotEmojis []models.CustomEmoji) {
+func assertCustomEmojis(t *testing.T, wantCustomEmojis, gotCustomEmojis []models.CustomEmoji) {
 	t.Helper()
 
-	for _, emoji := range wantEmojis {
-		idx := slices.IndexFunc(gotEmojis, func(v models.CustomEmoji) bool {
-			return v.ID == emoji.ID
+	if len(wantCustomEmojis) != len(gotCustomEmojis) {
+		t.Fatal("length of wantCustomEmojis and gotCustomEmojis do not match")
+	}
+
+	for _, customemoji := range wantCustomEmojis {
+		idx := slices.IndexFunc(gotCustomEmojis, func(v models.CustomEmoji) bool {
+			return v.ID == customemoji.ID
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("custom emoji %v of ID %v is not present in gotEmojis", emoji.Title, emoji.ID))
+			t.Fatal(fmt.Sprintf("custom emoji %v of ID %v is not present in gotCustomEmojis", customemoji.Title, customemoji.ID))
 			return
 		}
-		assert.Equal(t, emoji, gotEmojis[idx], "expect custom emoji to match")
+		assert.Equal(t, customemoji, gotCustomEmojis[idx], "expect custom emoji to match")
 	}
 }
 

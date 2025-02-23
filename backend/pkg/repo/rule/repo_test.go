@@ -66,6 +66,10 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 func assertRules(t *testing.T, wantRules, gotRules []models.Rule) {
 	t.Helper()
 
+	if len(wantRules) != len(gotRules) {
+		t.Fatal("length of wantRules and gotRules do not match")
+	}
+
 	for _, rule := range wantRules {
 		idx := slices.IndexFunc(gotRules, func(v models.Rule) bool {
 			return v.ID == rule.ID

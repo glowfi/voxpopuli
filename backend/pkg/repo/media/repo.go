@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -223,158 +224,40 @@ func (r *Repo) DeletePostMedia(ctx context.Context, ID uuid.UUID) error {
 	return nil
 }
 
-func (r *Repo) ImageMetadatas(ctx context.Context) ([]models.ImageMetadata, error) {
-	var imageMetadata []models.ImageMetadata
-
-	query := `
-        SELECT 
-            id,
-            image_id,
-            height,
-            width,
-            url
-        FROM 
-            image_metadata;
-    `
-
-	_, err := r.db.NewRaw(query).Exec(ctx, &imageMetadata)
-	if err != nil {
-		return []models.ImageMetadata{}, err
-	}
-	return imageMetadata, nil
-}
-
-func (r *Repo) ImageMetadataByID(ctx context.Context, ID uuid.UUID) (models.ImageMetadata, error) {
-	var imageMetadata models.ImageMetadata
-
-	query := `
-        SELECT 
-            id,
-            image_id,
-            height,
-            width,
-            url
-        FROM 
-            image_metadata
-        WHERE 
-            id = ?;
-    `
-
-	_, err := r.db.NewRaw(query, ID).Exec(ctx, &imageMetadata)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.ImageMetadata{}, ErrNotFound
-		}
-		return models.ImageMetadata{}, err
-	}
-	return imageMetadata, nil
-}
-
-func (r *Repo) AddImageMetadata(ctx context.Context, imageMetadata models.ImageMetadata) (models.ImageMetadata, error) {
-	query := `
-        INSERT INTO 
-            image_metadata (
-                id,
-                image_id,
-                height,
-                width,
-                url
-            )
-        VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        )
-    `
-
-	if _, err := r.db.NewRaw(query,
-		imageMetadata.ID,
-		imageMetadata.ImageID,
-		imageMetadata.Height,
-		imageMetadata.Width,
-		imageMetadata.Url).Exec(ctx); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.ImageMetadata{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.ImageMetadata{}, ErrParentTableRecordNotFound
-		}
-		return models.ImageMetadata{}, err
-	}
-
-	return imageMetadata, nil
-}
-
-func (r *Repo) UpdateImageMetadata(ctx context.Context, imageMetadata models.ImageMetadata) (models.ImageMetadata, error) {
-	query := `
-        UPDATE 
-            image_metadata
-        SET 
-            image_id = ?,
-            height = ?,
-            width = ?,
-            url = ?
-        WHERE 
-            id = ?
-    `
-
-	res, err := r.db.NewRaw(query,
-		imageMetadata.ImageID,
-		imageMetadata.Height,
-		imageMetadata.Width,
-		imageMetadata.Url,
-		imageMetadata.ID).Exec(ctx)
-	if err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.ImageMetadata{}, ErrParentTableRecordNotFound
-		}
-		return models.ImageMetadata{}, err
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return models.ImageMetadata{}, err
-	}
-	if rowsAffected == 0 {
-		return models.ImageMetadata{}, ErrNotFound
-	}
-	return imageMetadata, nil
-}
-
-func (r *Repo) DeleteImageMetadata(ctx context.Context, ID uuid.UUID) error {
-	query := `
-        DELETE FROM 
-            image_metadata
-        WHERE 
-            id = ?
-    `
-	res, err := r.db.NewRaw(query, ID).Exec(ctx)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
 func (r *Repo) Images(ctx context.Context) ([]models.Image, error) {
 	var images []models.Image
 
 	query := `
-        SELECT 
-            id,
-            media_id
-        FROM 
-            images;
-    `
+            SELECT 
+                i.id,
+                i.media_id,
+                (
+                    SELECT 
+                        JSON_AGG(imageMetadata)
+                    FROM 
+                        (
+                            SELECT 
+                                JSON_BUILD_OBJECT(
+                                    'id', imageMetadata.id,
+                                    'image_id', imageMetadata.image_id,
+                                    'height', imageMetadata.height,
+                                    'width', imageMetadata.width,
+                                    'url', imageMetadata.url,
+                                    'created_at', TO_CHAR(imageMetadata.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+                                    'created_at_unix', imageMetadata.created_at_unix,
+                                    'updated_at', TO_CHAR(imageMetadata.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                                ) AS imageMetadata
+                            FROM 
+                                image_metadatas imageMetadata
+                            WHERE 
+                                imageMetadata.image_id = i.id
+                            ORDER BY 
+                                imageMetadata.height -- Sort by height
+                        ) AS orderedMetadata
+                ) AS image_metadata
+            FROM 
+                images i;
+`
 
 	_, err := r.db.NewRaw(query).Exec(ctx, &images)
 	if err != nil {
@@ -387,17 +270,40 @@ func (r *Repo) ImageByID(ctx context.Context, ID uuid.UUID) (models.Image, error
 	var image models.Image
 
 	query := `
-        SELECT 
-            id,
-            media_id
-        FROM 
-            images
-        WHERE 
-            id = ?;
+            SELECT 
+                i.id,
+                i.media_id,
+                (
+                    SELECT 
+                        JSON_AGG(imageMetadata)
+                    FROM 
+                        (
+                            SELECT 
+                                JSON_BUILD_OBJECT(
+                                    'id', imageMetadata.id,
+                                    'image_id', imageMetadata.image_id,
+                                    'height', imageMetadata.height,
+                                    'width', imageMetadata.width,
+                                    'url', imageMetadata.url,
+                                    'created_at', TO_CHAR(imageMetadata.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+                                    'created_at_unix', imageMetadata.created_at_unix,
+                                    'updated_at', TO_CHAR(imageMetadata.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                                ) AS imageMetadata
+                            FROM 
+                                image_metadatas imageMetadata
+                            WHERE 
+                                imageMetadata.image_id = i.id
+                            ORDER BY 
+                                imageMetadata.height
+                        ) AS orderedMetadata
+                ) AS image_metadata
+            FROM 
+                images i
+            WHERE
+                i.id = ?;
     `
 
-	_, err := r.db.NewRaw(query, ID).Exec(ctx, &image)
-	if err != nil {
+	if _, err := r.db.NewRaw(query, ID).Exec(ctx, &image); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Image{}, ErrNotFound
 		}
@@ -469,6 +375,171 @@ func (r *Repo) DeleteImage(ctx context.Context, ID uuid.UUID) error {
 	query := `
         DELETE FROM 
             images
+        WHERE 
+            id = ?
+    `
+	res, err := r.db.NewRaw(query, ID).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *Repo) ImageMetadatas(ctx context.Context) ([]models.ImageMetadata, error) {
+	var imageMetadatas []models.ImageMetadata
+
+	query := `
+        SELECT
+            id,
+            image_id,
+            height,
+            width,
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
+            image_metadatas;
+    `
+
+	_, err := r.db.NewRaw(query).Exec(ctx, &imageMetadatas)
+	if err != nil {
+		return []models.ImageMetadata{}, err
+	}
+	return imageMetadatas, nil
+}
+
+func (r *Repo) ImageMetadataByID(ctx context.Context, ID uuid.UUID) (models.ImageMetadata, error) {
+	var imageMetadata models.ImageMetadata
+
+	query := `
+        SELECT
+            id,
+            image_id,
+            height,
+            width,
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
+            image_metadatas
+        WHERE
+            id = ?;
+    `
+
+	_, err := r.db.NewRaw(query, ID).Exec(ctx, &imageMetadata)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.ImageMetadata{}, ErrNotFound
+		}
+		return models.ImageMetadata{}, err
+	}
+	return imageMetadata, nil
+}
+
+func (r *Repo) AddImageMetadata(ctx context.Context, imageMetadata models.ImageMetadata) (models.ImageMetadata, error) {
+	query := `
+        INSERT INTO
+            image_metadatas (
+                id,
+                image_id,
+                height,
+                width,
+                url,
+                created_at,
+                created_at_unix,
+                updated_at
+            )
+        VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        )
+    `
+
+	timestamp := time.Now()
+	imageMetadata.CreatedAt = timestamp
+	imageMetadata.UpdatedAt = timestamp
+
+	if _, err := r.db.NewRaw(query,
+		imageMetadata.ID,
+		imageMetadata.ImageID,
+		imageMetadata.Height,
+		imageMetadata.Width,
+		imageMetadata.Url,
+		imageMetadata.CreatedAt,
+		imageMetadata.CreatedAtUnix,
+		imageMetadata.UpdatedAt).Exec(ctx); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return models.ImageMetadata{}, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.ImageMetadata{}, ErrParentTableRecordNotFound
+		}
+		return models.ImageMetadata{}, err
+	}
+	return imageMetadata, nil
+}
+
+func (r *Repo) UpdateImageMetadata(ctx context.Context, imageMetadata models.ImageMetadata) (models.ImageMetadata, error) {
+	query := `
+        UPDATE
+            image_metadatas
+        SET
+            image_id = ?,
+            height = ?,
+            width = ?,
+            url = ?,
+            updated_at = ?
+        WHERE
+            id = ?
+    `
+
+	imageMetadata.UpdatedAt = time.Now()
+
+	res, err := r.db.NewRaw(query,
+		imageMetadata.ImageID,
+		imageMetadata.Height,
+		imageMetadata.Width,
+		imageMetadata.Url,
+		imageMetadata.UpdatedAt,
+		imageMetadata.ID,
+	).Exec(ctx)
+	if err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return models.ImageMetadata{}, ErrParentTableRecordNotFound
+		}
+		return models.ImageMetadata{}, err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return models.ImageMetadata{}, err
+	}
+	if rowsAffected == 0 {
+		return models.ImageMetadata{}, ErrNotFound
+	}
+	return imageMetadata, nil
+}
+
+func (r *Repo) DeleteImageMetadata(ctx context.Context, ID uuid.UUID) error {
+	query := `
+        DELETE FROM 
+            image_metadatas
         WHERE 
             id = ?
     `
@@ -611,13 +682,16 @@ func (r *Repo) GifMetadatas(ctx context.Context) ([]models.GifMetadata, error) {
 	var gifMetadatas []models.GifMetadata
 
 	query := `
-        SELECT 
+        SELECT
             id,
             gif_id,
             height,
             width,
-            url
-        FROM 
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
             gif_metadatas;
     `
 
@@ -632,15 +706,18 @@ func (r *Repo) GifMetadataByID(ctx context.Context, ID uuid.UUID) (models.GifMet
 	var gifMetadata models.GifMetadata
 
 	query := `
-        SELECT 
+        SELECT
             id,
             gif_id,
             height,
             width,
-            url
-        FROM 
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
             gif_metadatas
-        WHERE 
+        WHERE
             id = ?;
     `
 
@@ -656,15 +733,21 @@ func (r *Repo) GifMetadataByID(ctx context.Context, ID uuid.UUID) (models.GifMet
 
 func (r *Repo) AddGifMetadata(ctx context.Context, gifMetadata models.GifMetadata) (models.GifMetadata, error) {
 	query := `
-        INSERT INTO 
+        INSERT INTO
             gif_metadatas (
                 id,
                 gif_id,
                 height,
                 width,
-                url
+                url,
+                created_at,
+                created_at_unix,
+                updated_at
             )
         VALUES (
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -673,12 +756,19 @@ func (r *Repo) AddGifMetadata(ctx context.Context, gifMetadata models.GifMetadat
         )
     `
 
+	timestamp := time.Now()
+	gifMetadata.CreatedAt = timestamp
+	gifMetadata.UpdatedAt = timestamp
+
 	if _, err := r.db.NewRaw(query,
 		gifMetadata.ID,
 		gifMetadata.GifID,
 		gifMetadata.Height,
 		gifMetadata.Width,
-		gifMetadata.Url).Exec(ctx); err != nil {
+		gifMetadata.Url,
+		gifMetadata.CreatedAt,
+		gifMetadata.CreatedAtUnix,
+		gifMetadata.UpdatedAt).Exec(ctx); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.GifMetadata{}, ErrDuplicateID
@@ -688,29 +778,33 @@ func (r *Repo) AddGifMetadata(ctx context.Context, gifMetadata models.GifMetadat
 		}
 		return models.GifMetadata{}, err
 	}
-
 	return gifMetadata, nil
 }
 
 func (r *Repo) UpdateGifMetadata(ctx context.Context, gifMetadata models.GifMetadata) (models.GifMetadata, error) {
 	query := `
-        UPDATE 
+        UPDATE
             gif_metadatas
-        SET 
+        SET
             gif_id = ?,
             height = ?,
             width = ?,
-            url = ?
-        WHERE 
+            url = ?,
+            updated_at = ?
+        WHERE
             id = ?
     `
+
+	gifMetadata.UpdatedAt = time.Now()
 
 	res, err := r.db.NewRaw(query,
 		gifMetadata.GifID,
 		gifMetadata.Height,
 		gifMetadata.Width,
 		gifMetadata.Url,
-		gifMetadata.ID).Exec(ctx)
+		gifMetadata.UpdatedAt,
+		gifMetadata.ID,
+	).Exec(ctx)
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
@@ -880,7 +974,10 @@ func (r *Repo) GalleryMetadatas(ctx context.Context) ([]models.GalleryMetadata, 
             order_index,
             height,
             width,
-            url
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
         FROM 
             gallery_metadatas;
     `
@@ -902,7 +999,10 @@ func (r *Repo) GalleryMetadataByID(ctx context.Context, ID uuid.UUID) (models.Ga
             order_index,
             height,
             width,
-            url
+            url,
+            created_at,
+            created_at_unix,
+            updated_at
         FROM 
             gallery_metadatas
         WHERE 
@@ -928,9 +1028,15 @@ func (r *Repo) AddGalleryMetadata(ctx context.Context, galleryMetadata models.Ga
                 order_index,
                 height,
                 width,
-                url
+                url,
+                created_at,
+                created_at_unix,
+                updated_at
             )
         VALUES (
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -940,13 +1046,20 @@ func (r *Repo) AddGalleryMetadata(ctx context.Context, galleryMetadata models.Ga
         )
     `
 
+	timestamp := time.Now()
+	galleryMetadata.CreatedAt = timestamp
+	galleryMetadata.UpdatedAt = timestamp
+
 	if _, err := r.db.NewRaw(query,
 		galleryMetadata.ID,
 		galleryMetadata.GalleryID,
 		galleryMetadata.OrderIndex,
 		galleryMetadata.Height,
 		galleryMetadata.Width,
-		galleryMetadata.Url).Exec(ctx); err != nil {
+		galleryMetadata.Url,
+		galleryMetadata.CreatedAt,
+		galleryMetadata.CreatedAtUnix,
+		galleryMetadata.UpdatedAt).Exec(ctx); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.GalleryMetadata{}, ErrDuplicateID
@@ -969,10 +1082,13 @@ func (r *Repo) UpdateGalleryMetadata(ctx context.Context, galleryMetadata models
             order_index = ?,
             height = ?,
             width = ?,
-            url = ?
+            url = ?,
+            updated_at = ?
         WHERE 
             id = ?
     `
+
+	galleryMetadata.UpdatedAt = time.Now()
 
 	res, err := r.db.NewRaw(query,
 		galleryMetadata.GalleryID,
@@ -980,6 +1096,7 @@ func (r *Repo) UpdateGalleryMetadata(ctx context.Context, galleryMetadata models
 		galleryMetadata.Height,
 		galleryMetadata.Width,
 		galleryMetadata.Url,
+		galleryMetadata.UpdatedAt,
 		galleryMetadata.ID).Exec(ctx)
 	if err != nil {
 		var pgdriverErr pgdriver.Error
@@ -1023,13 +1140,16 @@ func (r *Repo) Videos(ctx context.Context) ([]models.Video, error) {
 	var videos []models.Video
 
 	query := `
-        SELECT 
+        SELECT
             id,
             media_id,
             url,
             height,
-            width
-        FROM 
+            width,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
             videos;
     `
 
@@ -1044,15 +1164,18 @@ func (r *Repo) VideoByID(ctx context.Context, ID uuid.UUID) (models.Video, error
 	var video models.Video
 
 	query := `
-        SELECT 
+        SELECT
             id,
             media_id,
             url,
             height,
-            width
-        FROM 
+            width,
+            created_at,
+            created_at_unix,
+            updated_at
+        FROM
             videos
-        WHERE 
+        WHERE
             id = ?;
     `
 
@@ -1068,15 +1191,21 @@ func (r *Repo) VideoByID(ctx context.Context, ID uuid.UUID) (models.Video, error
 
 func (r *Repo) AddVideo(ctx context.Context, video models.Video) (models.Video, error) {
 	query := `
-        INSERT INTO 
+        INSERT INTO
             videos (
                 id,
                 media_id,
                 url,
                 height,
-                width
+                width,
+                created_at,
+                created_at_unix,
+                updated_at
             )
         VALUES (
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -1085,12 +1214,19 @@ func (r *Repo) AddVideo(ctx context.Context, video models.Video) (models.Video, 
         )
     `
 
+	timestamp := time.Now()
+	video.CreatedAt = timestamp
+	video.UpdatedAt = timestamp
+
 	if _, err := r.db.NewRaw(query,
 		video.ID,
 		video.MediaID,
 		video.Url,
 		video.Height,
-		video.Width).Exec(ctx); err != nil {
+		video.Width,
+		video.CreatedAt,
+		video.CreatedAtUnix,
+		video.UpdatedAt).Exec(ctx); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Video{}, ErrDuplicateID
@@ -1100,29 +1236,33 @@ func (r *Repo) AddVideo(ctx context.Context, video models.Video) (models.Video, 
 		}
 		return models.Video{}, err
 	}
-
 	return video, nil
 }
 
 func (r *Repo) UpdateVideo(ctx context.Context, video models.Video) (models.Video, error) {
 	query := `
-        UPDATE 
+        UPDATE
             videos
-        SET 
+        SET
             media_id = ?,
             url = ?,
             height = ?,
-            width = ?
-        WHERE 
+            width = ?,
+            updated_at = ?
+        WHERE
             id = ?
     `
+
+	video.UpdatedAt = time.Now()
 
 	res, err := r.db.NewRaw(query,
 		video.MediaID,
 		video.Url,
 		video.Height,
 		video.Width,
-		video.ID).Exec(ctx)
+		video.UpdatedAt,
+		video.ID,
+	).Exec(ctx)
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
@@ -1166,11 +1306,14 @@ func (r *Repo) Links(ctx context.Context) ([]models.Link, error) {
 
 	query := `
         SELECT
-            l.id,
-            l.media_id,
-            l.link
+            id,
+            media_id,
+            link,
+            created_at,
+            created_at_unix,
+            updated_at
         FROM
-            links l;
+            links;
     `
 
 	_, err := r.db.NewRaw(query).Exec(ctx, &links)
@@ -1185,13 +1328,16 @@ func (r *Repo) LinkByID(ctx context.Context, ID uuid.UUID) (models.Link, error) 
 
 	query := `
         SELECT
-            l.id,
-            l.media_id,
-            l.link
+            id,
+            media_id,
+            link,
+            created_at,
+            created_at_unix,
+            updated_at
         FROM
-            links l
+            links
         WHERE
-            l.id = ?;
+            id = ?;
     `
 
 	_, err := r.db.NewRaw(query, ID).Exec(ctx, &link)
@@ -1210,31 +1356,41 @@ func (r *Repo) AddLink(ctx context.Context, link models.Link) (models.Link, erro
             links (
                 id,
                 media_id,
-                link
+                link,
+                created_at,
+                created_at_unix,
+                updated_at
             )
         VALUES (
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?
         )
     `
 
-	link.ID = uuid.New()
+	timestamp := time.Now()
+	link.CreatedAt = timestamp
+	link.UpdatedAt = timestamp
 
 	if _, err := r.db.NewRaw(query,
 		link.ID,
 		link.MediaID,
-		link.Link).Exec(ctx); err != nil {
+		link.Link,
+		link.CreatedAt,
+		link.CreatedAtUnix,
+		link.UpdatedAt).Exec(ctx); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Link{}, ErrDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.Link{}, ErrNotFound
+			return models.Link{}, ErrParentTableRecordNotFound
 		}
 		return models.Link{}, err
 	}
-
 	return link, nil
 }
 
@@ -1244,15 +1400,20 @@ func (r *Repo) UpdateLink(ctx context.Context, link models.Link) (models.Link, e
             links
         SET
             media_id = ?,
-            link = ?
+            link = ?,
+            updated_at = ?
         WHERE
             id = ?
     `
 
+	link.UpdatedAt = time.Now()
+
 	res, err := r.db.NewRaw(query,
 		link.MediaID,
 		link.Link,
-		link.ID).Exec(ctx)
+		link.UpdatedAt,
+		link.ID,
+	).Exec(ctx)
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
