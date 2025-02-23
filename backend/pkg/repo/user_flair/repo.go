@@ -101,9 +101,17 @@ func (r *Repo) AddUserFlair(ctx context.Context, userFlair models.UserFlair) (mo
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, userFlair.ID, userFlair.UserID, userFlair.VoxsphereID, userFlair.FullText, userFlair.BackgroundColor).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(
+		query,
+		userFlair.ID,
+		userFlair.UserID,
+		userFlair.VoxsphereID,
+		userFlair.FullText,
+		userFlair.BackgroundColor,
+	).Exec(ctx, &userFlair); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.UserFlair{}, ErrUserFlairDuplicateID
@@ -128,9 +136,20 @@ func (r *Repo) UpdateUserFlair(ctx context.Context, userFlair models.UserFlair) 
                     background_color = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, userFlair.UserID, userFlair.VoxsphereID, userFlair.FullText, userFlair.BackgroundColor, userFlair.ID).Exec(ctx)
+	res, err := r.db.NewRaw(
+		query,
+		userFlair.UserID,
+		userFlair.VoxsphereID,
+		userFlair.FullText,
+		userFlair.BackgroundColor,
+		userFlair.ID,
+	).Exec(ctx, &userFlair)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.UserFlair{}, ErrUserFlairNotFound
+	}
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {

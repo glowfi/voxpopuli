@@ -87,9 +87,10 @@ func (r *Repo) AddTopic(ctx context.Context, topic models.Topic) (models.Topic, 
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, topic.ID, topic.Name).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, topic.ID, topic.Name).Exec(ctx, &topic); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Topic{}, ErrTopicDuplicateIDorName
@@ -108,9 +109,13 @@ func (r *Repo) UpdateTopic(ctx context.Context, topic models.Topic) (models.Topi
                     name = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, topic.Name, topic.ID).Exec(ctx)
+	res, err := r.db.NewRaw(query, topic.Name, topic.ID).Exec(ctx, &topic)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Topic{}, ErrTopicNotFound
+	}
 	if err != nil {
 		return models.Topic{}, err
 	}

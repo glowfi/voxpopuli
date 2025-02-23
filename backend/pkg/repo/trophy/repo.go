@@ -95,9 +95,10 @@ func (r *Repo) AddTrophy(ctx context.Context, trophy models.Trophy) (models.Trop
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, trophy.ID, trophy.Title, trophy.Description, trophy.ImageLink).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, trophy.ID, trophy.Title, trophy.Description, trophy.ImageLink).Exec(ctx, &trophy); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Trophy{}, ErrTrophyDuplicateIDorTitle
@@ -118,9 +119,13 @@ func (r *Repo) UpdateTrophy(ctx context.Context, trophy models.Trophy) (models.T
                     image_link = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, trophy.Title, trophy.Description, trophy.ImageLink, trophy.ID).Exec(ctx)
+	res, err := r.db.NewRaw(query, trophy.Title, trophy.Description, trophy.ImageLink, trophy.ID).Exec(ctx, &trophy)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Trophy{}, ErrTrophyNotFound
+	}
 	if err != nil {
 		return models.Trophy{}, err
 	}

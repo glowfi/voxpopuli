@@ -76,9 +76,10 @@ func (r *Repo) LinkUserTrophy(ctx context.Context, ut models.UserTrophy) (models
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, ut.UserID, ut.TrophyID).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, ut.UserID, ut.TrophyID).Exec(ctx, &ut); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.UserTrophy{}, ErrDuplicateID
@@ -89,10 +90,7 @@ func (r *Repo) LinkUserTrophy(ctx context.Context, ut models.UserTrophy) (models
 		return models.UserTrophy{}, err
 	}
 
-	return models.UserTrophy{
-		UserID:   ut.UserID,
-		TrophyID: ut.TrophyID,
-	}, nil
+	return ut, nil
 }
 
 func (r *Repo) VoxsphereMembers(ctx context.Context) ([]models.VoxsphereMember, error) {
@@ -124,9 +122,10 @@ func (r *Repo) LinkVoxsphereMember(ctx context.Context, vme models.VoxsphereMemb
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, vme.VoxsphereID, vme.UserID).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, vme.VoxsphereID, vme.UserID).Exec(ctx, &vme); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.VoxsphereMember{}, ErrDuplicateID
@@ -137,10 +136,7 @@ func (r *Repo) LinkVoxsphereMember(ctx context.Context, vme models.VoxsphereMemb
 		return models.VoxsphereMember{}, err
 	}
 
-	return models.VoxsphereMember{
-		VoxsphereID: vme.VoxsphereID,
-		UserID:      vme.UserID,
-	}, nil
+	return vme, nil
 }
 
 func (r *Repo) VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModerator, error) {
@@ -172,9 +168,10 @@ func (r *Repo) LinkVoxsphereModerator(ctx context.Context, vmod models.Voxsphere
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, vmod.VoxsphereID, vmod.UserID).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, vmod.VoxsphereID, vmod.UserID).Exec(ctx, &vmod); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.VoxsphereModerator{}, ErrDuplicateID
@@ -185,10 +182,7 @@ func (r *Repo) LinkVoxsphereModerator(ctx context.Context, vmod models.Voxsphere
 		return models.VoxsphereModerator{}, err
 	}
 
-	return models.VoxsphereModerator{
-		VoxsphereID: vmod.VoxsphereID,
-		UserID:      vmod.UserID,
-	}, nil
+	return vmod, nil
 }
 
 func (r *Repo) UserFlairEmojis(ctx context.Context) ([]models.UserFlairEmoji, error) {
@@ -223,6 +217,7 @@ func (r *Repo) LinkUserFlairEmoji(ctx context.Context, ufe models.UserFlairEmoji
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
 	if _, err := r.db.NewRaw(query, ufe.EmojiID, ufe.UserFlairID, ufe.OrderIndex).Exec(ctx); err != nil {
@@ -236,11 +231,7 @@ func (r *Repo) LinkUserFlairEmoji(ctx context.Context, ufe models.UserFlairEmoji
 		return models.UserFlairEmoji{}, err
 	}
 
-	return models.UserFlairEmoji{
-		EmojiID:     ufe.EmojiID,
-		UserFlairID: ufe.UserFlairID,
-		OrderIndex:  ufe.OrderIndex,
-	}, nil
+	return ufe, nil
 }
 
 func (r *Repo) UserFlairCustomEmojis(ctx context.Context) ([]models.UserFlairCustomEmoji, error) {
@@ -275,9 +266,10 @@ func (r *Repo) LinkUserFlairCustomEmoji(ctx context.Context, ufce models.UserFla
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, ufce.CustomEmojiID, ufce.UserFlairID, ufce.OrderIndex).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, ufce.CustomEmojiID, ufce.UserFlairID, ufce.OrderIndex).Exec(ctx, &ufce); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.UserFlairCustomEmoji{}, ErrDuplicateID
@@ -288,11 +280,7 @@ func (r *Repo) LinkUserFlairCustomEmoji(ctx context.Context, ufce models.UserFla
 		return models.UserFlairCustomEmoji{}, err
 	}
 
-	return models.UserFlairCustomEmoji{
-		CustomEmojiID: ufce.CustomEmojiID,
-		UserFlairID:   ufce.UserFlairID,
-		OrderIndex:    ufce.OrderIndex,
-	}, nil
+	return ufce, nil
 }
 
 func (r *Repo) UserFlairDescriptions(ctx context.Context) ([]models.UserFlairDescription, error) {
@@ -327,9 +315,10 @@ func (r *Repo) LinkUserFlairDescription(ctx context.Context, ufd models.UserFlai
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, ufd.UserFlairID, ufd.OrderIndex, ufd.Description).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, ufd.UserFlairID, ufd.OrderIndex, ufd.Description).Exec(ctx, &ufd); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.UserFlairDescription{}, ErrDuplicateID
@@ -340,9 +329,5 @@ func (r *Repo) LinkUserFlairDescription(ctx context.Context, ufd models.UserFlai
 		return models.UserFlairDescription{}, err
 	}
 
-	return models.UserFlairDescription{
-		UserFlairID: ufd.UserFlairID,
-		OrderIndex:  ufd.OrderIndex,
-		Description: ufd.Description,
-	}, nil
+	return ufd, nil
 }

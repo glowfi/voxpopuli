@@ -1,4 +1,6 @@
 -- +goose Up
+
+ALTER DATABASE voxpopuli SET TIMEZONE TO utc;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- +goose StatementBegin

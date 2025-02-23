@@ -131,6 +131,7 @@ func (r *Repo) AddPost(ctx context.Context, post models.Post) (models.Post, erro
             ?,
             ?
         )
+        RETURNING *
     `
 
 	timestamp := time.Now()
@@ -150,7 +151,7 @@ func (r *Repo) AddPost(ctx context.Context, post models.Post) (models.Post, erro
 		post.Spoiler,
 		post.CreatedAt,
 		post.CreatedAtUnix,
-		post.UpdatedAt).Exec(ctx); err != nil {
+		post.UpdatedAt).Exec(ctx, &post); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Post{}, ErrPostDuplicateID
@@ -180,6 +181,7 @@ func (r *Repo) UpdatePost(ctx context.Context, post models.Post) (models.Post, e
             updated_at = ?
         WHERE
             id = ?
+        RETURNING *
     `
 
 	timestamp := time.Now()
@@ -196,11 +198,14 @@ func (r *Repo) UpdatePost(ctx context.Context, post models.Post) (models.Post, e
 		post.Spoiler,
 		post.UpdatedAt,
 		post.ID,
-	).Exec(ctx)
+	).Exec(ctx, &post)
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
 			return models.Post{}, ErrPostParentTableRecordNotFound
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Post{}, ErrPostNotFound
 		}
 		return models.Post{}, err
 	}

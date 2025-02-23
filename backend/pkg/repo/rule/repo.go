@@ -117,13 +117,14 @@ func (r *RuleRepo) AddRule(ctx context.Context, rule models.Rule) (models.Rule, 
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
 	if _, err := r.db.NewRaw(query,
 		rule.ID,
 		rule.VoxsphereID,
 		rule.ShortName,
-		rule.Description).Exec(ctx); err != nil {
+		rule.Description).Exec(ctx, &rule); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Rule{}, ErrRuleDuplicateIDorName
@@ -144,6 +145,7 @@ func (r *RuleRepo) UpdateRule(ctx context.Context, rule models.Rule) (models.Rul
                     description = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
 	res, err := r.db.NewRaw(query,
@@ -151,7 +153,10 @@ func (r *RuleRepo) UpdateRule(ctx context.Context, rule models.Rule) (models.Rul
 		rule.ShortName,
 		rule.Description,
 		rule.ID,
-	).Exec(ctx)
+	).Exec(ctx, &rule)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Rule{}, ErrRuleNotFound
+	}
 	if err != nil {
 		return models.Rule{}, err
 	}

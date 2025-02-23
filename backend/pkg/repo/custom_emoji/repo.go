@@ -97,9 +97,10 @@ func (r *Repo) AddCustomEmoji(ctx context.Context, customEmoji models.CustomEmoj
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, customEmoji.ID, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, customEmoji.ID, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title).Exec(ctx, &customEmoji); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.CustomEmoji{}, ErrCustomEmojiDuplicateID
@@ -123,6 +124,7 @@ func (r *Repo) UpdateCustomEmoji(ctx context.Context, customEmoji models.CustomE
                     title = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
 	res, err := r.db.NewRaw(query, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title, customEmoji.ID).Exec(ctx)
@@ -130,6 +132,9 @@ func (r *Repo) UpdateCustomEmoji(ctx context.Context, customEmoji models.CustomE
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
 			return models.CustomEmoji{}, ErrCustomEmojiParentTableRecordNotFound
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.CustomEmoji{}, ErrCustomEmojiNotFound
 		}
 		return models.CustomEmoji{}, err
 	}

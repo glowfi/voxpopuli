@@ -91,9 +91,10 @@ func (r *Repo) AddAward(ctx context.Context, award models.Award) (models.Award, 
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, award.ID, award.Title, award.ImageLink).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, award.ID, award.Title, award.ImageLink).Exec(ctx, &award); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Award{}, ErrAwardDuplicateIDorTitle
@@ -113,9 +114,13 @@ func (r *Repo) UpdateAward(ctx context.Context, award models.Award) (models.Awar
                     image_link = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, award.Title, award.ImageLink, award.ID).Exec(ctx)
+	res, err := r.db.NewRaw(query, award.Title, award.ImageLink, award.ID).Exec(ctx, &award)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Award{}, ErrAwardNotFound
+	}
 	if err != nil {
 		return models.Award{}, err
 	}

@@ -87,9 +87,10 @@ func (r *Repo) AddEmoji(ctx context.Context, emoji models.Emoji) (models.Emoji, 
                     ?,
                     ?
                 )
+                RETURNING *
             `
 
-	if _, err := r.db.NewRaw(query, emoji.ID, emoji.Title).Exec(ctx); err != nil {
+	if _, err := r.db.NewRaw(query, emoji.ID, emoji.Title).Exec(ctx, &emoji); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
 			return models.Emoji{}, ErrEmojiDuplicateIDorText
@@ -108,9 +109,13 @@ func (r *Repo) UpdateEmoji(ctx context.Context, emoji models.Emoji) (models.Emoj
                     title = ?
                 WHERE
                     id = ?
+                RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, emoji.Title, emoji.ID).Exec(ctx)
+	res, err := r.db.NewRaw(query, emoji.Title, emoji.ID).Exec(ctx, &emoji)
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Emoji{}, ErrEmojiNotFound
+	}
 	if err != nil {
 		return models.Emoji{}, err
 	}

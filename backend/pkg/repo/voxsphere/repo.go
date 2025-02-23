@@ -146,11 +146,13 @@ func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (mo
 	            ?,
 	            ?
 	        )
+	        RETURNING *
 	    `
 
 	timestamp := time.Now()
 	voxsphere.CreatedAt = timestamp
 	voxsphere.UpdatedAt = timestamp
+	voxsphere.CreatedAtUnix = timestamp.Unix()
 
 	if _, err := r.db.NewRaw(query,
 		voxsphere.ID,
@@ -166,7 +168,7 @@ func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (mo
 		voxsphere.SpoilersEnabled,
 		voxsphere.CreatedAt,
 		voxsphere.CreatedAtUnix,
-		voxsphere.UpdatedAt).Exec(ctx); err != nil {
+		voxsphere.UpdatedAt).Exec(ctx, &voxsphere); err != nil {
 		// if _, err := r.db.NewInsert().Model(&voxsphere).Exec(context.Background()); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
@@ -199,6 +201,7 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 	            updated_at = ?
 	        WHERE
 	            id = ?
+	        RETURNING *
 	    `
 
 	voxsphere.UpdatedAt = time.Now()
@@ -216,12 +219,15 @@ func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) 
 		voxsphere.SpoilersEnabled,
 		voxsphere.UpdatedAt,
 		voxsphere.ID,
-	).Exec(ctx)
+	).Exec(ctx, &voxsphere)
 	// res, err := r.db.NewUpdate().
 	// 	Model(&voxsphere).
 	// 	Column("id", "topic_id", "title", "public_description", "community_icon", "banner_background_image", "banner_background_color", "key_color", "primary_color", "over18", "spoilers_enabled", "created_at", "created_at_unix", "updated_at").
 	// 	Where("id = ?", voxsphere.ID).
 	// 	Exec(context.Background())
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.Voxsphere{}, ErrVoxsphereNotFound
+	}
 	if err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
