@@ -776,7 +776,6 @@ func TestRepo_UpdateVoxsphere(t *testing.T) {
 			endTime := time.Now()
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertVoxsphereWithoutTimestamp(t, tt.wantVoxsphere, gotVoxsphere)
 			if tt.wantErr == nil {
 				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
 			}

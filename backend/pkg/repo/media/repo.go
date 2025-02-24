@@ -923,10 +923,35 @@ func (r *Repo) Galleries(ctx context.Context) ([]models.Gallery, error) {
 
 	query := `
         SELECT 
-            id,
-            media_id
+            g.id,
+            g.media_id,
+            (
+                SELECT 
+                    JSON_AGG(galleryMetadata)
+                FROM 
+                    (
+                        SELECT 
+                            JSON_BUILD_OBJECT(
+                                'id', galleryMetadata.id,
+                                'gallery_id', galleryMetadata.gallery_id,
+                                'order_index', galleryMetadata.order_index,
+                                'height', galleryMetadata.height,
+                                'width', galleryMetadata.width,
+                                'url', galleryMetadata.url,
+                                'created_at', TO_CHAR(galleryMetadata.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+                                'created_at_unix', galleryMetadata.created_at_unix,
+                                'updated_at', TO_CHAR(galleryMetadata.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                            ) AS galleryMetadata
+                        FROM 
+                            gallery_metadatas galleryMetadata
+                        WHERE 
+                            galleryMetadata.gallery_id = g.id
+                        ORDER BY 
+                            galleryMetadata.order_index
+                    ) AS orderedMetadata
+            ) AS gallery_metadata
         FROM 
-            galleries;
+            galleries g;
     `
 
 	_, err := r.db.NewRaw(query).Exec(ctx, &galleries)
@@ -941,10 +966,35 @@ func (r *Repo) GalleryByID(ctx context.Context, ID uuid.UUID) (models.Gallery, e
 
 	query := `
         SELECT 
-            id,
-            media_id
+            g.id,
+            g.media_id,
+            (
+                SELECT 
+                    JSON_AGG(galleryMetadata)
+                FROM 
+                    (
+                        SELECT 
+                            JSON_BUILD_OBJECT(
+                                'id', galleryMetadata.id,
+                                'gallery_id', galleryMetadata.gallery_id,
+                                'order_index', galleryMetadata.order_index,
+                                'height', galleryMetadata.height,
+                                'width', galleryMetadata.width,
+                                'url', galleryMetadata.url,
+                                'created_at', TO_CHAR(galleryMetadata.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+                                'created_at_unix', galleryMetadata.created_at_unix,
+                                'updated_at', TO_CHAR(galleryMetadata.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                            ) AS galleryMetadata
+                        FROM 
+                            gallery_metadatas galleryMetadata
+                        WHERE 
+                            galleryMetadata.gallery_id = g.id
+                        ORDER BY 
+                            galleryMetadata.order_index
+                    ) AS orderedMetadata
+            ) AS gallery_metadata
         FROM 
-            galleries
+            galleries g
         WHERE 
             id = ?;
     `

@@ -2,6 +2,7 @@
   rows:
     - id: 00000000-0000-0000-0000-000000000001
       gallery_id: 00000000-0000-0000-0000-000000000001
+      order_index : 0
       height: 1080
       width: 1920
       url: https://example.com/gallery11.jpg
@@ -11,6 +12,7 @@
 
     - id: 00000000-0000-0000-0000-000000000002
       gallery_id: 00000000-0000-0000-0000-000000000001
+      order_index : 0
       height: 720
       width: 1280
       url: https://example.com/gallery12.jpg
@@ -20,18 +22,20 @@
 
     - id: 00000000-0000-0000-0000-000000000003
       gallery_id: 00000000-0000-0000-0000-000000000002
+      order_index : 1
       height: 720
       width: 1280
-      url: https://example.com/image21.jpg
+      url: https://example.com/gallery21.jpg
       created_at: 2024-10-10T10:10:10Z
       created_at_unix: 1725091100
       updated_at: 2024-10-10T10:10:10Z
 
     - id: 00000000-0000-0000-0000-000000000004
       gallery_id: 00000000-0000-0000-0000-000000000002
+      order_index : 1
       height: 1080
       width: 1920
-      url: https://example.com/image22.jpg
+      url: https://example.com/gallery22.jpg
       created_at: 2024-10-10T10:10:20Z
       created_at_unix: 1725091101
       updated_at: 2024-10-10T10:10:20Z

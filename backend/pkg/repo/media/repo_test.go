@@ -378,6 +378,77 @@ func assertVideosWithTimestamp(t *testing.T, wantVideos, gotVideos []models.Vide
 	}
 }
 
+func assertGalleryMetadataWithoutTimestamp(t *testing.T, wantGalleryMetadata, gotGalleryMetadata models.GalleryMetadata) {
+	assert.Equal(t, wantGalleryMetadata.ID, gotGalleryMetadata.ID, "expected id to match")
+	assert.Equal(t, wantGalleryMetadata.GalleryID, gotGalleryMetadata.GalleryID, "expected gallery id to match")
+	assert.Equal(t, wantGalleryMetadata.OrderIndex, gotGalleryMetadata.OrderIndex, "expected order index to match")
+	assert.Equal(t, wantGalleryMetadata.Height, gotGalleryMetadata.Height, "expected height to match")
+	assert.Equal(t, wantGalleryMetadata.Width, gotGalleryMetadata.Width, "expected width to match")
+	assert.Equal(t, wantGalleryMetadata.Url, gotGalleryMetadata.Url, "expected url to match")
+}
+
+func assertGalleryMetadatasWithoutTimestamp(t *testing.T, wantGalleryMetadatas, gotGalleryMetadatas []models.GalleryMetadata) {
+	t.Helper()
+
+	if len(wantGalleryMetadatas) != len(gotGalleryMetadatas) {
+		t.Fatal("length of wantGalleryMetadatas and gotGalleryMetadatas do not match")
+	}
+
+	for _, galleryMetadata := range wantGalleryMetadatas {
+		idx := slices.IndexFunc(gotGalleryMetadatas, func(gm models.GalleryMetadata) bool {
+			return gm.ID == galleryMetadata.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
+			return
+		}
+		assertGalleryMetadataWithoutTimestamp(t, galleryMetadata, gotGalleryMetadatas[idx])
+	}
+}
+
+func assertGalleryMetadatasWithTimestamp(t *testing.T, wantGalleryMetadatas, gotGalleryMetadatas []models.GalleryMetadata) {
+	t.Helper()
+
+	for _, galleryMetadata := range wantGalleryMetadatas {
+		idx := slices.IndexFunc(gotGalleryMetadatas, func(gm models.GalleryMetadata) bool {
+			return gm.ID == galleryMetadata.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
+			return
+		}
+		assert.Equal(t, galleryMetadata, gotGalleryMetadatas[idx], "expected gallery metadata to match")
+	}
+}
+
+func assertGallery(t *testing.T, wantGallery, gotGallery models.Gallery) {
+	assert.Equal(t, wantGallery.ID, gotGallery.ID, "expected id to match")
+	assert.Equal(t, wantGallery.MediaID, gotGallery.MediaID, "expected media id to match")
+	assertGalleryMetadatasWithTimestamp(t, wantGallery.GalleryMetadata, gotGallery.GalleryMetadata)
+}
+
+func assertGalleries(t *testing.T, wantGalleries, gotGalleries []models.Gallery) {
+	t.Helper()
+
+	if len(wantGalleries) != len(gotGalleries) {
+		t.Fatal("length of wantGalleries and gotGalleries do not match")
+	}
+
+	for _, gallery := range wantGalleries {
+		idx := slices.IndexFunc(gotGalleries, func(g models.Gallery) bool {
+			return g.ID == gallery.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("gallery %v of ID %v is not present in gotGalleries", gallery.MediaID, gallery.ID))
+			return
+		}
+		assertGallery(t, gallery, gotGalleries[idx])
+	}
+}
+
 func TestRepo_PostMedias(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -1654,7 +1725,7 @@ func TestRepo_ImageMetadataByID(t *testing.T) {
 			wantErr:           mediarepo.ErrNotFound,
 		},
 		{
-			name: "image found :POS",
+			name: "image metadata found :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -1802,7 +1873,7 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add image :POS",
+			name: "add image metadata :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -2163,7 +2234,7 @@ func TestRepo_DeleteImageMetadata(t *testing.T) {
 			gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting image metadatas")
-			assert.Equal(t, tt.wantImageMetadatas, gotImageMetadatas, "expect image metadatas to match")
+			assertImageMetadatasWithTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
 		})
 	}
 }
@@ -2984,7 +3055,7 @@ func TestRepo_GifMetadataByID(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "gif found :POS",
+			name: "gif metadata found :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -3328,7 +3399,7 @@ func TestRepo_UpdateGifMetadata(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "update gif :POS",
+			name: "update gif metadata :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -4518,5 +4589,1784 @@ func TestRepo_LinkForeignKeyCascade(t *testing.T) {
 
 		assert.NoError(t, err, "expect no error while getting links")
 		assert.Equal(t, []models.Link(nil), gotLinks, "expect links to match")
+	})
+}
+
+func TestRepo_Galleries(t *testing.T) {
+	tests := []struct {
+		name          string
+		fixtureFiles  []string
+		wantGalleries []models.Gallery
+		wantErr       error
+	}{
+		{
+			name: "galleries :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:          "no images :POS",
+			fixtureFiles:  []string{},
+			wantGalleries: nil,
+			wantErr:       nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotGalleries, gotErr := pgrepo.Galleries(context.Background())
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assertGalleries(t, tt.wantGalleries, gotGalleries)
+		})
+	}
+}
+
+func TestRepo_GalleryByID(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name         string
+		fixtureFiles []string
+		args         args
+		wantGallery  models.Gallery
+		wantErr      error
+	}{
+		{
+			name: "gallery not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+			wantGallery: models.Gallery{},
+			wantErr:     mediarepo.ErrNotFound,
+		},
+		{
+			name: "gallery found :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantGallery: models.Gallery{
+				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				GalleryMetadata: []models.GalleryMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						OrderIndex:    0,
+						Height:        1080,
+						Width:         1920,
+						Url:           "https://example.com/gallery11.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						OrderIndex:    0,
+						Height:        720,
+						Width:         1280,
+						Url:           "https://example.com/gallery12.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						CreatedAtUnix: 1725091101,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotGallery, gotErr := pgrepo.GalleryByID(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assertGallery(t, tt.wantGallery, gotGallery)
+		})
+	}
+}
+
+func TestRepo_AddGallery(t *testing.T) {
+	type args struct {
+		gallery models.Gallery
+	}
+	tests := []struct {
+		name          string
+		fixtureFiles  []string
+		args          args
+		wantGallery   models.Gallery
+		wantGalleries []models.Gallery
+		wantErr       error
+	}{
+		{
+			name: "duplicate gallery id :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				},
+			},
+			wantGallery: models.Gallery{},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: mediarepo.ErrDuplicateID,
+		},
+		{
+			name: "media not found in parent table :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				},
+			},
+			wantGallery: models.Gallery{},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: mediarepo.ErrParentTableRecordNotFound,
+		},
+		{
+			name: "add gallery :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				},
+			},
+			wantGallery: models.Gallery{
+				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+			},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		db := setupPostgres(t, tt.fixtureFiles...)
+		pgrepo := mediarepo.NewRepo(db)
+
+		gotGallery, gotErr := pgrepo.AddGallery(context.Background(), tt.args.gallery)
+
+		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+		assert.Equal(t, tt.wantGallery, gotGallery, "expect gallery to match")
+
+		gotGalleries, err := pgrepo.Galleries(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting galleries")
+		assertGalleries(t, tt.wantGalleries, gotGalleries)
+	}
+}
+
+func TestRepo_UpdateGallery(t *testing.T) {
+	type args struct {
+		gallery models.Gallery
+	}
+	tests := []struct {
+		name          string
+		fixtureFiles  []string
+		args          args
+		wantGallery   models.Gallery
+		wantGalleries []models.Gallery
+		wantErr       error
+	}{
+		{
+			name: "gallery not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				},
+			},
+			wantGallery: models.Gallery{},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: mediarepo.ErrNotFound,
+		},
+		{
+			name: "media not found in parent table :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				},
+			},
+			wantGallery: models.Gallery{},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: mediarepo.ErrParentTableRecordNotFound,
+		},
+		{
+			name: "update gallery :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				gallery: models.Gallery{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				},
+			},
+			wantGallery: models.Gallery{
+				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		db := setupPostgres(t, tt.fixtureFiles...)
+		pgrepo := mediarepo.NewRepo(db)
+
+		gotGallery, gotErr := pgrepo.UpdateGallery(context.Background(), tt.args.gallery)
+
+		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+		assert.Equal(t, tt.wantGallery, gotGallery, "expect gallery to match")
+
+		gotGalleries, err := pgrepo.Galleries(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting galleries")
+		assertGalleries(t, tt.wantGalleries, gotGalleries)
+	}
+}
+
+func TestRepo_DeleteGallery(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name          string
+		fixtureFiles  []string
+		args          args
+		wantGalleries []models.Gallery
+		wantErr       error
+	}{
+		{
+			name: "gallery not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: mediarepo.ErrNotFound,
+		},
+		{
+			name: "gallery deleted :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantGalleries: []models.Gallery{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryMetadata: []models.GalleryMetadata{
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotErr := pgrepo.DeleteGallery(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotGalleries, err := pgrepo.Galleries(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting galleries")
+			assertGalleries(t, tt.wantGalleries, gotGalleries)
+		})
+	}
+}
+
+func TestRepo_GalleryForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting media from parent table , no child references should exist in galleries table", func(t *testing.T) {
+		db := setupPostgres(
+			t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_medias.yml",
+			"galleries.yml",
+			"gallery_metadatas.yml",
+		)
+		pgrepo := mediarepo.NewRepo(db)
+
+		err := pgrepo.DeletePostMedia(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000003"))
+
+		assert.NoError(t, err, "expect no error while deleting post media")
+
+		gotGalleries, err := pgrepo.Galleries(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting galleries")
+		assertGalleries(t, nil, gotGalleries)
+	})
+}
+
+func TestRepo_GalleryMetadatas(t *testing.T) {
+	tests := []struct {
+		name                 string
+		fixtureFiles         []string
+		wantGalleryMetadatas []models.GalleryMetadata
+		wantErr              error
+	}{
+		{
+			name: "gallery metadatas :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:                 "no gallery metadatas :POS",
+			fixtureFiles:         []string{},
+			wantGalleryMetadatas: nil,
+			wantErr:              nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotGalleryMetadatas, gotErr := pgrepo.GalleryMetadatas(context.Background())
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+		})
+	}
+}
+
+func TestRepo_GalleryMetadataByID(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name                string
+		fixtureFiles        []string
+		args                args
+		wantGalleryMetadata models.GalleryMetadata
+		wantErr             error
+	}{
+		{
+			name: "gallery metadata not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+			wantGalleryMetadata: models.GalleryMetadata{},
+			wantErr:             mediarepo.ErrNotFound,
+		},
+		{
+			name: "gallery metadata found :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantGalleryMetadata: models.GalleryMetadata{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				OrderIndex:    0,
+				Height:        1080,
+				Width:         1920,
+				Url:           "https://example.com/gallery11.jpg",
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				CreatedAtUnix: 1725091100,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+			},
+
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotGalleryMetadata, gotErr := pgrepo.GalleryMetadataByID(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(t, tt.wantGalleryMetadata, gotGalleryMetadata, "expect gallery metadata to match")
+		})
+	}
+}
+
+func TestRepo_AddGalleryMetadata(t *testing.T) {
+	type args struct {
+		galleryMetadata models.GalleryMetadata
+	}
+	tests := []struct {
+		name                 string
+		fixtureFiles         []string
+		args                 args
+		wantGalleryMetadata  models.GalleryMetadata
+		wantGalleryMetadatas []models.GalleryMetadata
+		wantErr              error
+	}{
+		{
+			name: "duplicate image metadata :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: mediarepo.ErrDuplicateID,
+		},
+		{
+			name: "gallery not present in parent table :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+					Height:        2160,
+					Width:         3840,
+					Url:           "https://example.com/image3.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: mediarepo.ErrParentTableRecordNotFound,
+		},
+		{
+			name: "add gallery metadata :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Height:        2160,
+					Width:         3840,
+					Url:           "https://example.com/imagenew.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Height:        2160,
+				Width:         3840,
+				Url:           "https://example.com/imagenew.jpg",
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				CreatedAtUnix: 1725091300,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+			},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Height:        2160,
+					Width:         3840,
+					Url:           "https://example.com/imagenew.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			startTime := time.Now()
+			gotGalleryMetadata, gotErr := pgrepo.AddGalleryMetadata(context.Background(), tt.args.galleryMetadata)
+			endTime := time.Now()
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			assert.Equal(
+				t,
+				gotGalleryMetadata.UpdatedAt,
+				gotGalleryMetadata.CreatedAt,
+				"expect CreatedAt and UpdatedAt to be same",
+			)
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotGalleryMetadata.CreatedAt, startTime, endTime)
+				assertTimeWithinRange(t, gotGalleryMetadata.UpdatedAt, startTime, endTime)
+			}
+
+			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting gallery metadatas")
+			assertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+		})
+	}
+}
+
+func TestRepo_UpdateGalleryMetadata(t *testing.T) {
+	type args struct {
+		galleryMetadata models.GalleryMetadata
+	}
+	tests := []struct {
+		name                 string
+		fixtureFiles         []string
+		args                 args
+		wantGalleryMetadata  models.GalleryMetadata
+		wantGalleryMetadatas []models.GalleryMetadata
+		wantErr              error
+	}{
+		{
+			name: "gallery metadata not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11-updated.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: mediarepo.ErrNotFound,
+		},
+		{
+			name: "gallery not present in parent table :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+					Height:        2160,
+					Width:         3840,
+					Url:           "https://example.com/gallery11-updated.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: mediarepo.ErrParentTableRecordNotFound,
+		},
+		{
+			name: "update gallery metadata :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				galleryMetadata: models.GalleryMetadata{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/image-updated.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+			},
+			wantGalleryMetadata: models.GalleryMetadata{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Height:        1080,
+				Width:         1920,
+				Url:           "https://example.com/image-updated.jpg",
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				CreatedAtUnix: 1725091300,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+			},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/image-updated.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091300,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			startTime := time.Now()
+			gotGalleryMetadata, gotErr := pgrepo.UpdateGalleryMetadata(context.Background(), tt.args.galleryMetadata)
+			endTime := time.Now()
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+			if tt.wantErr == nil {
+				assertTimeWithinRange(t, gotGalleryMetadata.UpdatedAt, startTime, endTime)
+			}
+
+			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting gallery metadatas")
+			assertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+		})
+	}
+}
+
+func TestRepo_DeleteGalleryMetadata(t *testing.T) {
+	type args struct {
+		ID uuid.UUID
+	}
+	tests := []struct {
+		name                 string
+		fixtureFiles         []string
+		args                 args
+		wantGalleryMetadatas []models.GalleryMetadata
+		wantErr              error
+	}{
+		{
+			name: "gallery metadata not found :NEG",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery11.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: mediarepo.ErrNotFound,
+		},
+		{
+			name: "gallery metadata deleted :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+			},
+			args: args{
+				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+			wantGalleryMetadatas: []models.GalleryMetadata{
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					OrderIndex:    0,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery12.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        720,
+					Width:         1280,
+					Url:           "https://example.com/gallery21.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					OrderIndex:    1,
+					Height:        1080,
+					Width:         1920,
+					Url:           "https://example.com/gallery22.jpg",
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091101,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := mediarepo.NewRepo(db)
+
+			gotErr := pgrepo.DeleteGalleryMetadata(context.Background(), tt.args.ID)
+
+			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+
+			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
+
+			assert.NoError(t, err, "expect no error while getting gallery metadatas")
+			assertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+		})
+	}
+}
+
+func TestRepo_GalleryMetadataForeignKeyCascade(t *testing.T) {
+	t.Run("on deleting gallery from parent table , no child references should exist in gallery_metadatas table", func(t *testing.T) {
+		db := setupPostgres(
+			t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_medias.yml",
+			"galleries.yml",
+			"gallery_metadatas.yml",
+		)
+		pgrepo := mediarepo.NewRepo(db)
+
+		err := pgrepo.DeleteGallery(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, err, "expect no error while deleting gallery")
+
+		gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
+
+		assert.NoError(t, err, "expect no error while getting gallery metadatas")
+		wantGalleryMetadatas := []models.GalleryMetadata{
+			{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    1,
+				Height:        720,
+				Width:         1280,
+				Url:           "https://example.com/gallery21.jpg",
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				CreatedAtUnix: 1725091100,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+			},
+			{
+				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				OrderIndex:    1,
+				Height:        1080,
+				Width:         1920,
+				Url:           "https://example.com/gallery22.jpg",
+				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				CreatedAtUnix: 1725091101,
+				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+			},
+		}
+		assertGalleryMetadatasWithTimestamp(t, wantGalleryMetadatas, gotGalleryMetadatas)
 	})
 }
