@@ -268,7 +268,7 @@ CREATE TABLE comments (
     created_at_unix BIGINT NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_author_id FOREIGN KEY(author_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_parent_comment_id FOREIGN KEY(parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- CONSTRAINT fk_parent_comment_id FOREIGN KEY(parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 

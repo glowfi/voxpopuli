@@ -1,0 +1,85 @@
+- model: Comment
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      author_id: 00000000-0000-0000-0000-000000000001
+      parent_comment_id: 
+      post_id: 00000000-0000-0000-0000-000000000001
+      body: This is a parent comment 1
+      body_html: <p>This is a parent comment 1</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000002
+      author_id: 00000000-0000-0000-0000-000000000002
+      parent_comment_id: 00000000-0000-0000-0000-000000000001
+      post_id: 00000000-0000-0000-0000-000000000001
+      body: This is reply 1 to parent comment 1
+      body_html: <p>This is reply 1 to parent comment 1</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000003
+      author_id: 00000000-0000-0000-0000-000000000003
+      parent_comment_id: 00000000-0000-0000-0000-000000000002
+      post_id: 00000000-0000-0000-0000-000000000001
+      body: This is reply to reply 1
+      body_html: <p>This is reply to reply 1</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000004
+      author_id: 00000000-0000-0000-0000-000000000003
+      parent_comment_id: 
+      post_id: 00000000-0000-0000-0000-000000000001
+      body: This is a parent comment 2
+      body_html: <p>This is a parent comment 2</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000005
+      author_id: 00000000-0000-0000-0000-000000000001
+      parent_comment_id: 
+      post_id: 00000000-0000-0000-0000-000000000002
+      body: This is a parent comment 3
+      body_html: <p>This is a parent comment 3</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000006
+      author_id: 00000000-0000-0000-0000-000000000002
+      parent_comment_id: 00000000-0000-0000-0000-000000000005
+      post_id: 00000000-0000-0000-0000-000000000002
+      body: This is reply to parent comment 3
+      body_html: <p>This is reply to parent comment 3</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000007
+      author_id: 00000000-0000-0000-0000-000000000003
+      parent_comment_id: 
+      post_id: 00000000-0000-0000-0000-000000000002
+      body: This is a parent comment 4
+      body_html: <p>This is a parent comment 4</p>
+      ups: 1
+      score: 1
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
