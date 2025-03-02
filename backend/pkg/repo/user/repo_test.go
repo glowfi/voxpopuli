@@ -234,39 +234,41 @@ func TestRepo_UserByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddUser(t *testing.T) {
+func TestRepo_AddUsers(t *testing.T) {
 	type args struct {
-		user models.User
+		users []models.User
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantUser     models.User
-		wantUsers    []models.User
-		wantErr      error
+		name              string
+		fixtureFiles      []string
+		args              args
+		wantInsertedUsers []models.User
+		wantUsers         []models.User
+		wantErr           error
 	}{
 		{
 			name:         "duplicate user id :NEG",
 			fixtureFiles: []string{"users.yml"},
 			args: args{
-				user: models.User{
-					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name:              "new user",
-					PublicDescription: ptrof("A public description"),
-					AvatarImg:         ptrof("https://example.com/avatar.jpg"),
-					BannerImg:         ptrof("https://example.com/banner.jpg"),
-					Iconcolor:         ptrof("#ffffff"),
-					Keycolor:          ptrof("#ffffff"),
-					Primarycolor:      ptrof("#ffffff"),
-					Over18:            false,
-					Suspended:         false,
-					CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
-					CreatedAtUnix:     1725091101,
-					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				users: []models.User{
+					{
+						ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Name:              "new user",
+						PublicDescription: ptrof("A public description"),
+						AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+						BannerImg:         ptrof("https://example.com/banner.jpg"),
+						Iconcolor:         ptrof("#ffffff"),
+						Keycolor:          ptrof("#ffffff"),
+						Primarycolor:      ptrof("#ffffff"),
+						Over18:            false,
+						Suspended:         false,
+						CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						CreatedAtUnix:     1725091101,
+						UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					},
 				},
 			},
-			wantUser: models.User{},
+			wantInsertedUsers: nil,
 			wantUsers: []models.User{
 				{
 					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -302,10 +304,29 @@ func TestRepo_AddUser(t *testing.T) {
 			wantErr: userrepo.ErrUserDuplicateIDorName,
 		},
 		{
-			name:         "add user :POS",
+			name:         "add users :POS",
 			fixtureFiles: []string{"users.yml"},
 			args: args{
-				user: models.User{
+				users: []models.User{
+					{
+						ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Name:              "Jane Smith",
+						PublicDescription: ptrof("A public description"),
+						AvatarImg:         ptrof("https://example.com/avatar.jpg"),
+						BannerImg:         ptrof("https://example.com/banner.jpg"),
+						Iconcolor:         ptrof("#ffffff"),
+						Keycolor:          ptrof("#ffffff"),
+						Primarycolor:      ptrof("#ffffff"),
+						Over18:            false,
+						Suspended:         false,
+						CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						CreatedAtUnix:     1725091101,
+						UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedUsers: []models.User{
+				{
 					ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					Name:              "Jane Smith",
 					PublicDescription: ptrof("A public description"),
@@ -320,21 +341,6 @@ func TestRepo_AddUser(t *testing.T) {
 					CreatedAtUnix:     1725091101,
 					UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
 				},
-			},
-			wantUser: models.User{
-				ID:                uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				Name:              "Jane Smith",
-				PublicDescription: ptrof("A public description"),
-				AvatarImg:         ptrof("https://example.com/avatar.jpg"),
-				BannerImg:         ptrof("https://example.com/banner.jpg"),
-				Iconcolor:         ptrof("#ffffff"),
-				Keycolor:          ptrof("#ffffff"),
-				Primarycolor:      ptrof("#ffffff"),
-				Over18:            false,
-				Suspended:         false,
-				CreatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
-				CreatedAtUnix:     1725091101,
-				UpdatedAt:         time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
 			},
 			wantUsers: []models.User{
 				{
@@ -392,19 +398,21 @@ func TestRepo_AddUser(t *testing.T) {
 			pgrepo := userrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotUser, gotErr := pgrepo.AddUser(context.Background(), tt.args.user)
+			gotInsertedUsers, gotErr := pgrepo.AddUsers(context.Background(), tt.args.users...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotUser.UpdatedAt,
-				gotUser.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotUser.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotUser.UpdatedAt, startTime, endTime)
+			for _, gotInsertedUser := range gotInsertedUsers {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedUser.UpdatedAt,
+					gotInsertedUser.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedUser.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedUser.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotUsers, err := pgrepo.Users(context.Background())

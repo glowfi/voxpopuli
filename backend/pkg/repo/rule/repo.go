@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -24,7 +25,7 @@ type RuleRepository interface {
 	Rules() ([]models.Rule, error)
 	RuleByID(context.Context, uuid.UUID) (models.Rule, error)
 	RulesByVoxsphereID(context.Context, uuid.UUID) ([]models.Rule, error)
-	AddRule(context.Context, models.Rule) (models.Rule, error)
+	AddRules(context.Context, ...models.Rule) ([]models.Rule, error)
 	UpdateRule(context.Context, models.Rule) (models.Rule, error)
 	DeleteRule(context.Context, uuid.UUID) error
 }
@@ -102,37 +103,43 @@ func (r *RuleRepo) RulesByVoxsphereID(ctx context.Context, voxsphereID uuid.UUID
 	return rules, nil
 }
 
-func (r *RuleRepo) AddRule(ctx context.Context, rule models.Rule) (models.Rule, error) {
+func (r *RuleRepo) AddRules(ctx context.Context, rules ...models.Rule) ([]models.Rule, error) {
 	query := `
-                INSERT INTO
-                    rules (
-                        id,
-                        voxsphere_id,
-                        short_name,
-                        description
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            rules (
+                id,
+                voxsphere_id,
+                short_name,
+                description
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query,
-		rule.ID,
-		rule.VoxsphereID,
-		rule.ShortName,
-		rule.Description).Exec(ctx, &rule); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Rule{}, ErrRuleDuplicateIDorName
-		}
-		return models.Rule{}, err
+	for _, rule := range rules {
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
+
+		args = append(args,
+			rule.ID,
+			rule.VoxsphereID,
+			rule.ShortName,
+			rule.Description,
+		)
 	}
 
-	return rule, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &rules); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrRuleDuplicateIDorName
+		}
+		return nil, err
+	}
+
+	return rules, nil
 }
 
 func (r *RuleRepo) UpdateRule(ctx context.Context, rule models.Rule) (models.Rule, error) {

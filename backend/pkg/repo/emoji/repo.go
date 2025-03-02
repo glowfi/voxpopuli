@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -23,7 +25,7 @@ var (
 type Repository interface {
 	Emojis() ([]models.Emoji, error)
 	EmojiByID(context.Context, uuid.UUID) (models.Emoji, error)
-	AddEmoji(context.Context, models.Emoji) (models.Emoji, error)
+	AddEmojis(context.Context, ...models.Emoji) ([]models.Emoji, error)
 	UpdateEmoji(context.Context, models.Emoji) (models.Emoji, error)
 	DeleteEmoji(context.Context, uuid.UUID) error
 }
@@ -76,29 +78,32 @@ func (r *Repo) EmojiByID(ctx context.Context, ID uuid.UUID) (models.Emoji, error
 	return emoji, nil
 }
 
-func (r *Repo) AddEmoji(ctx context.Context, emoji models.Emoji) (models.Emoji, error) {
+func (r *Repo) AddEmojis(ctx context.Context, emojis ...models.Emoji) ([]models.Emoji, error) {
 	query := `
-                INSERT INTO
-                    emojis (
-                        id,
-                        title
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            emojis (
+                id,
+                title
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, emoji := range emojis {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		args = append(args, emoji.ID, emoji.Title)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
 
-	if _, err := r.db.NewRaw(query, emoji.ID, emoji.Title).Exec(ctx, &emoji); err != nil {
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &emojis); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Emoji{}, ErrEmojiDuplicateIDorText
+			return nil, ErrEmojiDuplicateIDorText
 		}
-		return models.Emoji{}, err
+		return nil, err
 	}
 
-	return emoji, nil
+	return emojis, nil
 }
 
 func (r *Repo) UpdateEmoji(ctx context.Context, emoji models.Emoji) (models.Emoji, error) {

@@ -16,7 +16,8 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE topics (
     id UUID PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    category TEXT NOT NULL
 );
 
 CREATE TABLE voxspheres (

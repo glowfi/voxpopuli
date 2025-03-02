@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -26,7 +27,7 @@ var (
 type Repository interface {
 	Posts() ([]models.Post, error)
 	PostByID(context.Context, uuid.UUID) (models.Post, error)
-	AddPost(context.Context, models.Post) (models.Post, error)
+	AddPosts(context.Context, ...models.Post) ([]models.Post, error)
 	UpdatePost(context.Context, models.Post) (models.Post, error)
 	DeletePost(context.Context, uuid.UUID) error
 }
@@ -100,7 +101,7 @@ func (r *Repo) PostByID(ctx context.Context, ID uuid.UUID) (models.Post, error) 
 	return post, nil
 }
 
-func (r *Repo) AddPost(ctx context.Context, post models.Post) (models.Post, error) {
+func (r *Repo) AddPosts(ctx context.Context, posts ...models.Post) ([]models.Post, error) {
 	query := `
         INSERT INTO
             posts (
@@ -117,52 +118,56 @@ func (r *Repo) AddPost(ctx context.Context, post models.Post) (models.Post, erro
                 created_at_unix,
                 updated_at
             )
-        VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        )
-        RETURNING *
+        VALUES 
     `
+	// Create a slice to store the args
+	args := make([]interface{}, 0)
+	// Create a slice to store the placeholders
+	placeholders := make([]string, 0)
 
-	timestamp := time.Now()
-	post.CreatedAt = timestamp
-	post.UpdatedAt = timestamp
-	post.CreatedAtUnix = timestamp.Unix()
+	// Iterate over the posts
+	for _, post := range posts {
+		timestamp := time.Now()
+		post.CreatedAt = timestamp
+		post.UpdatedAt = timestamp
+		post.CreatedAtUnix = timestamp.Unix()
 
-	if _, err := r.db.NewRaw(query,
-		post.ID,
-		post.AuthorID,
-		post.VoxsphereID,
-		post.Title,
-		post.Text,
-		post.TextHtml,
-		post.Ups,
-		post.Over18,
-		post.Spoiler,
-		post.CreatedAt,
-		post.CreatedAtUnix,
-		post.UpdatedAt).Exec(ctx, &post); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Post{}, ErrPostDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.Post{}, ErrPostParentTableRecordNotFound
-		}
-		return models.Post{}, err
+		// Append the placeholders
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+
+		// Append the values
+		args = append(args,
+			post.ID,
+			post.AuthorID,
+			post.VoxsphereID,
+			post.Title,
+			post.Text,
+			post.TextHtml,
+			post.Ups,
+			post.Over18,
+			post.Spoiler,
+			post.CreatedAt,
+			post.CreatedAtUnix,
+			post.UpdatedAt,
+		)
 	}
 
-	return post, nil
+	// Join the placeholders
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &posts); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrPostDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrPostParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return posts, nil
 }
 
 func (r *Repo) UpdatePost(ctx context.Context, post models.Post) (models.Post, error) {

@@ -169,29 +169,31 @@ func TestRepo_AwardByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddAward(t *testing.T) {
+func TestRepo_AddAwards(t *testing.T) {
 	type args struct {
-		award models.Award
+		awards []models.Award
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantAward    models.Award
-		wantAwards   []models.Award
-		wantErr      error
+		name               string
+		fixtureFiles       []string
+		args               args
+		wantInsertedAwards []models.Award
+		wantAwards         []models.Award
+		wantErr            error
 	}{
 		{
 			name:         "duplicate award id :NEG",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
-				award: models.Award{
-					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:     "new title",
-					ImageLink: "new image link",
+				awards: []models.Award{
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Title:     "new title",
+						ImageLink: "new image link",
+					},
 				},
 			},
-			wantAward: models.Award{},
+			wantInsertedAwards: nil,
 			wantAwards: []models.Award{
 				{
 					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -207,19 +209,33 @@ func TestRepo_AddAward(t *testing.T) {
 			wantErr: awardrepo.ErrAwardDuplicateIDorTitle,
 		},
 		{
-			name:         "add award :POS",
+			name:         "add awards :POS",
 			fixtureFiles: []string{"awards.yml"},
 			args: args{
-				award: models.Award{
-					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Title:     "new title",
-					ImageLink: "new image link",
+				awards: []models.Award{
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Title:     "new title1",
+						ImageLink: "new image link1",
+					},
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+						Title:     "new title2",
+						ImageLink: "new image link2",
+					},
 				},
 			},
-			wantAward: models.Award{
-				ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				Title:     "new title",
-				ImageLink: "new image link",
+			wantInsertedAwards: []models.Award{
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Title:     "new title1",
+					ImageLink: "new image link1",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					Title:     "new title2",
+					ImageLink: "new image link2",
+				},
 			},
 			wantAwards: []models.Award{
 				{
@@ -234,8 +250,13 @@ func TestRepo_AddAward(t *testing.T) {
 				},
 				{
 					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Title:     "new title",
-					ImageLink: "new image link",
+					Title:     "new title1",
+					ImageLink: "new image link1",
+				},
+				{
+					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					Title:     "new title2",
+					ImageLink: "new image link2",
 				},
 			},
 			wantErr: nil,
@@ -246,10 +267,10 @@ func TestRepo_AddAward(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := awardrepo.NewRepo(db)
 
-			gotAward, gotErr := pgrepo.AddAward(context.Background(), tt.args.award)
+			gotInsertedAward, gotErr := pgrepo.AddAwards(context.Background(), tt.args.awards...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantAward, gotAward, "expect award to match")
+			assert.Equal(t, tt.wantInsertedAwards, gotInsertedAward, "expect inserted awards to match")
 
 			gotAwards, err := pgrepo.Awards(context.Background())
 

@@ -1,7 +1,9 @@
 - model: Topic
   rows:
     - id: 00000000-0000-0000-0000-000000000001
-      name: topic_foo
+      name: xyz
+      category : foo
 
     - id: 00000000-0000-0000-0000-000000000002
-      name: topic_bar
+      name: pqr
+      category : bar

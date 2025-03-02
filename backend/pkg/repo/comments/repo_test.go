@@ -326,37 +326,39 @@ func TestRepo_CommentByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddComment(t *testing.T) {
+func TestRepo_AddComments(t *testing.T) {
 	type args struct {
-		comment models.Comment
+		comments []models.Comment
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantComment  models.Comment
-		wantComments []models.Comment
-		wantErr      error
+		name                 string
+		fixtureFiles         []string
+		args                 args
+		wantInsertedComments []models.Comment
+		wantComments         []models.Comment
+		wantErr              error
 	}{
 		{
 			name:         "duplicate comment id :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "comments.yml"},
 			args: args{
-				comment: models.Comment{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Body:            "This is a parent comment 1",
-					BodyHtml:        "<p>This is a parent comment 1</p>",
-					Ups:             1,
-					Score:           1,
-					CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix:   1725091100,
-					UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				comments: []models.Comment{
+					{
+						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Body:            "This is a parent comment 1",
+						BodyHtml:        "<p>This is a parent comment 1</p>",
+						Ups:             1,
+						Score:           1,
+						CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix:   1725091100,
+						UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantComment: models.Comment{},
+			wantInsertedComments: nil,
 			wantComments: []models.Comment{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -456,21 +458,23 @@ func TestRepo_AddComment(t *testing.T) {
 			name:         "author does not exist in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "comments.yml"},
 			args: args{
-				comment: models.Comment{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
-					AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Body:            "This is a parent comment 5",
-					BodyHtml:        "<p>This is a parent comment 5</p>",
-					Ups:             1,
-					Score:           1,
-					CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix:   1725091100,
-					UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				comments: []models.Comment{
+					{
+						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+						AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Body:            "This is a parent comment 5",
+						BodyHtml:        "<p>This is a parent comment 5</p>",
+						Ups:             1,
+						Score:           1,
+						CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix:   1725091100,
+						UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantComment: models.Comment{},
+			wantInsertedComments: nil,
 			wantComments: []models.Comment{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -570,21 +574,23 @@ func TestRepo_AddComment(t *testing.T) {
 			name:         "post does not exist in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "comments.yml"},
 			args: args{
-				comment: models.Comment{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
-					AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Body:            "This is a parent comment 5",
-					BodyHtml:        "<p>This is a parent comment 5</p>",
-					Ups:             1,
-					Score:           1,
-					CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix:   1725091100,
-					UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				comments: []models.Comment{
+					{
+						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+						AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Body:            "This is a parent comment 5",
+						BodyHtml:        "<p>This is a parent comment 5</p>",
+						Ups:             1,
+						Score:           1,
+						CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix:   1725091100,
+						UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantComment: models.Comment{},
+			wantInsertedComments: nil,
 			wantComments: []models.Comment{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -681,10 +687,27 @@ func TestRepo_AddComment(t *testing.T) {
 			wantErr: commentrepo.ErrCommentParentTableRecordNotFound,
 		},
 		{
-			name:         "add comment :NEG",
+			name:         "add comments :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "comments.yml"},
 			args: args{
-				comment: models.Comment{
+				comments: []models.Comment{
+					{
+						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
+						AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Body:            "This is a parent comment 5",
+						BodyHtml:        "<p>This is a parent comment 5</p>",
+						Ups:             1,
+						Score:           1,
+						CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix:   1725091100,
+						UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedComments: []models.Comment{
+				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
 					AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
@@ -697,19 +720,6 @@ func TestRepo_AddComment(t *testing.T) {
 					CreatedAtUnix:   1725091100,
 					UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 				},
-			},
-			wantComment: models.Comment{
-				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000008"),
-				AuthorID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				ParentCommentID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
-				PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				Body:            "This is a parent comment 5",
-				BodyHtml:        "<p>This is a parent comment 5</p>",
-				Ups:             1,
-				Score:           1,
-				CreatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-				CreatedAtUnix:   1725091100,
-				UpdatedAt:       time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 			},
 			wantComments: []models.Comment{
 				{
@@ -826,19 +836,21 @@ func TestRepo_AddComment(t *testing.T) {
 			pgrepo := commentrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotComment, gotErr := pgrepo.AddComment(context.Background(), tt.args.comment)
+			gotInsertedComments, gotErr := pgrepo.AddComments(context.Background(), tt.args.comments...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotComment.UpdatedAt,
-				gotComment.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotComment.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotComment.UpdatedAt, startTime, endTime)
+			for _, gotInsertedComment := range gotInsertedComments {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedComment.UpdatedAt,
+					gotInsertedComment.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedComment.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedComment.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotComments, err := pgrepo.Comments(context.Background())

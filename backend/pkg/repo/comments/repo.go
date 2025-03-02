@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -26,7 +28,7 @@ var (
 type Repository interface {
 	Comments() ([]models.Comment, error)
 	CommentByID(context.Context, uuid.UUID) (models.Comment, error)
-	AddComment(context.Context, models.Comment) (models.Comment, error)
+	AddComments(context.Context, ...models.Comment) ([]models.Comment, error)
 	UpdateComment(context.Context, models.Comment) (models.Comment, error)
 	DeleteComment(context.Context, uuid.UUID) error
 }
@@ -98,7 +100,7 @@ func (r *Repo) CommentByID(ctx context.Context, ID uuid.UUID) (models.Comment, e
 	return comment, nil
 }
 
-func (r *Repo) AddComment(ctx context.Context, comment models.Comment) (models.Comment, error) {
+func (r *Repo) AddComments(ctx context.Context, comments ...models.Comment) ([]models.Comment, error) {
 	query := `
         INSERT INTO
             comments (
@@ -114,50 +116,45 @@ func (r *Repo) AddComment(ctx context.Context, comment models.Comment) (models.C
                 created_at_unix,
                 updated_at
             )
-        VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        )
-        RETURNING *
+        VALUES 
     `
 
-	timestamp := time.Now()
-	comment.CreatedAt = timestamp
-	comment.UpdatedAt = timestamp
-	comment.CreatedAtUnix = timestamp.Unix()
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, comment := range comments {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+		timestamp := time.Now()
+		comment.CreatedAt = timestamp
+		comment.UpdatedAt = timestamp
+		comment.CreatedAtUnix = timestamp.Unix()
+		args = append(args,
+			comment.ID,
+			comment.AuthorID,
+			comment.ParentCommentID,
+			comment.PostID,
+			comment.Body,
+			comment.BodyHtml,
+			comment.Ups,
+			comment.Score,
+			comment.CreatedAt,
+			comment.CreatedAtUnix,
+			comment.UpdatedAt,
+		)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
 
-	if _, err := r.db.NewRaw(query,
-		comment.ID,
-		comment.AuthorID,
-		comment.ParentCommentID,
-		comment.PostID,
-		comment.Body,
-		comment.BodyHtml,
-		comment.Ups,
-		comment.Score,
-		comment.CreatedAt,
-		comment.CreatedAtUnix,
-		comment.UpdatedAt).Exec(ctx, &comment); err != nil {
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &comments); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Comment{}, ErrCommentDuplicateID
+			return nil, ErrCommentDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.Comment{}, ErrCommentParentTableRecordNotFound
+			return nil, ErrCommentParentTableRecordNotFound
 		}
-		return models.Comment{}, err
+		return nil, err
 	}
 
-	return comment, nil
+	return comments, nil
 }
 
 func (r *Repo) UpdateComment(ctx context.Context, comment models.Comment) (models.Comment, error) {

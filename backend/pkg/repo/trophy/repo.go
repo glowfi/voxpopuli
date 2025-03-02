@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -23,7 +24,7 @@ var (
 type Repository interface {
 	Trophies() ([]models.Trophy, error)
 	TrophyByID(context.Context, uuid.UUID) (models.Trophy, error)
-	AddTrophy(context.Context, models.Trophy) (models.Trophy, error)
+	AddTrophies(context.Context, ...models.Trophy) ([]models.Trophy, error)
 	UpdateTrophy(context.Context, models.Trophy) (models.Trophy, error)
 	DeleteTrophy(context.Context, uuid.UUID) error
 }
@@ -80,33 +81,43 @@ func (r *Repo) TrophyByID(ctx context.Context, ID uuid.UUID) (models.Trophy, err
 	return trophy, nil
 }
 
-func (r *Repo) AddTrophy(ctx context.Context, trophy models.Trophy) (models.Trophy, error) {
+func (r *Repo) AddTrophies(ctx context.Context, trophies ...models.Trophy) ([]models.Trophy, error) {
 	query := `
-                INSERT INTO
-                    trophies (
-                        id,
-                        title,
-                        description,
-                        image_link
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            trophies (
+                id,
+                title,
+                description,
+                image_link
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, trophy.ID, trophy.Title, trophy.Description, trophy.ImageLink).Exec(ctx, &trophy); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Trophy{}, ErrTrophyDuplicateIDorTitle
-		}
-		return models.Trophy{}, err
+	for _, trophy := range trophies {
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
+
+		args = append(args,
+			trophy.ID,
+			trophy.Title,
+			trophy.Description,
+			trophy.ImageLink,
+		)
 	}
 
-	return trophy, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &trophies); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrTrophyDuplicateIDorTitle
+		}
+		return nil, err
+	}
+
+	return trophies, nil
 }
 
 func (r *Repo) UpdateTrophy(ctx context.Context, trophy models.Trophy) (models.Trophy, error) {

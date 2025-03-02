@@ -277,41 +277,43 @@ func TestRepo_VoxsphereByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddVoxsphere(t *testing.T) {
+func TestRepo_AddVoxspheres(t *testing.T) {
 	type args struct {
-		voxsphere models.Voxsphere
+		voxspheres []models.Voxsphere
 	}
 	tests := []struct {
-		name           string
-		fixtureFiles   []string
-		args           args
-		wantVoxsphere  models.Voxsphere
-		wantVoxspheres []models.Voxsphere
-		wantErr        error
+		name                   string
+		fixtureFiles           []string
+		args                   args
+		wantInsertedVoxspheres []models.Voxsphere
+		wantVoxspheres         []models.Voxsphere
+		wantErr                error
 	}{
 		{
 			name:         "duplicate voxsphere id :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			args: args{
-				voxsphere: models.Voxsphere{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Topic: models.Topic{
-						ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Name: "xyz",
+				voxspheres: []models.Voxsphere{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Topic: models.Topic{
+							ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Name: "xyz",
+						},
+						Title:                 "v/foobar",
+						PublicDescription:     ptrof("foo PublicDescription"),
+						CommunityIcon:         ptrof("foo icon"),
+						BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
+						BannerBackgroundColor: ptrof("#000000"),
+						KeyColor:              ptrof("#000000"),
+						PrimaryColor:          ptrof("#000000"),
+						Over18:                true,
+						SpoilersEnabled:       false,
 					},
-					Title:                 "v/foobar",
-					PublicDescription:     ptrof("foo PublicDescription"),
-					CommunityIcon:         ptrof("foo icon"),
-					BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
-					BannerBackgroundColor: ptrof("#000000"),
-					KeyColor:              ptrof("#000000"),
-					PrimaryColor:          ptrof("#000000"),
-					Over18:                true,
-					SpoilersEnabled:       false,
 				},
 			},
-			wantVoxsphere: models.Voxsphere{},
+			wantInsertedVoxspheres: nil,
 			wantVoxspheres: []models.Voxsphere{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -360,25 +362,27 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			name:         "topic does not exist in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			args: args{
-				voxsphere: models.Voxsphere{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Topic: models.Topic{
-						ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Name: "xyz",
+				voxspheres: []models.Voxsphere{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Topic: models.Topic{
+							ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Name: "xyz",
+						},
+						Title:                 "v/foobar",
+						PublicDescription:     ptrof("foo PublicDescription"),
+						CommunityIcon:         ptrof("foo icon"),
+						BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
+						BannerBackgroundColor: ptrof("#000000"),
+						KeyColor:              ptrof("#000000"),
+						PrimaryColor:          ptrof("#000000"),
+						Over18:                true,
+						SpoilersEnabled:       false,
 					},
-					Title:                 "v/foobar",
-					PublicDescription:     ptrof("foo PublicDescription"),
-					CommunityIcon:         ptrof("foo icon"),
-					BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
-					BannerBackgroundColor: ptrof("#000000"),
-					KeyColor:              ptrof("#000000"),
-					PrimaryColor:          ptrof("#000000"),
-					Over18:                true,
-					SpoilersEnabled:       false,
 				},
 			},
-			wantVoxsphere: models.Voxsphere{},
+			wantInsertedVoxspheres: nil,
 			wantVoxspheres: []models.Voxsphere{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -424,10 +428,31 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			wantErr: voxrepo.ErrVoxsphereParentTableRecordNotFound,
 		},
 		{
-			name:         "add voxsphere :POS",
+			name:         "add voxspheres :POS",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml"},
 			args: args{
-				voxsphere: models.Voxsphere{
+				voxspheres: []models.Voxsphere{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Topic: models.Topic{
+							ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Name: "xyz",
+						},
+						Title:                 "v/foobar",
+						PublicDescription:     ptrof("foo PublicDescription"),
+						CommunityIcon:         ptrof("foo icon"),
+						BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
+						BannerBackgroundColor: ptrof("#000000"),
+						KeyColor:              ptrof("#000000"),
+						PrimaryColor:          ptrof("#000000"),
+						Over18:                true,
+						SpoilersEnabled:       false,
+					},
+				},
+			},
+			wantInsertedVoxspheres: []models.Voxsphere{
+				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Topic: models.Topic{
@@ -444,23 +469,6 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 					Over18:                true,
 					SpoilersEnabled:       false,
 				},
-			},
-			wantVoxsphere: models.Voxsphere{
-				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				TopicID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Topic: models.Topic{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "xyz",
-				},
-				Title:                 "v/foobar",
-				PublicDescription:     ptrof("foo PublicDescription"),
-				CommunityIcon:         ptrof("foo icon"),
-				BannerBackgroundImage: ptrof("foo BannerBackgroundImage"),
-				BannerBackgroundColor: ptrof("#000000"),
-				KeyColor:              ptrof("#000000"),
-				PrimaryColor:          ptrof("#000000"),
-				Over18:                true,
-				SpoilersEnabled:       false,
 			},
 			wantVoxspheres: []models.Voxsphere{
 				{
@@ -530,19 +538,21 @@ func TestRepo_AddVoxsphere(t *testing.T) {
 			pgrepo := voxrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotVoxsphere, gotErr := pgrepo.AddVoxsphere(context.Background(), tt.args.voxsphere)
+			gotInsertedVoxspheres, gotErr := pgrepo.AddVoxspheres(context.Background(), tt.args.voxspheres...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotVoxsphere.UpdatedAt,
-				gotVoxsphere.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotVoxsphere.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotVoxsphere.UpdatedAt, startTime, endTime)
+			for _, gotInsertedVoxsphere := range gotInsertedVoxspheres {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedVoxsphere.UpdatedAt,
+					gotInsertedVoxsphere.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedVoxsphere.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedVoxsphere.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotVoxspheres, err := pgrepo.Voxspheres(context.Background())

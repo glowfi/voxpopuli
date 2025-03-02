@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ var (
 type Repository interface {
 	CustomEmojis() ([]models.CustomEmoji, error)
 	CustomEmojiByID(context.Context, uuid.UUID) (models.CustomEmoji, error)
-	AddCustomEmoji(context.Context, models.CustomEmoji) (models.CustomEmoji, error)
+	AddCustomEmojis(context.Context, ...models.CustomEmoji) ([]models.CustomEmoji, error)
 	UpdateCustomEmoji(context.Context, models.CustomEmoji) (models.CustomEmoji, error)
 	DeleteCustomEmoji(context.Context, uuid.UUID) error
 }
@@ -82,36 +84,37 @@ func (r *Repo) CustomEmojiByID(ctx context.Context, ID uuid.UUID) (models.Custom
 	return customEmoji, nil
 }
 
-func (r *Repo) AddCustomEmoji(ctx context.Context, customEmoji models.CustomEmoji) (models.CustomEmoji, error) {
+func (r *Repo) AddCustomEmojis(ctx context.Context, customEmojis ...models.CustomEmoji) ([]models.CustomEmoji, error) {
 	query := `
-                INSERT INTO
-                    custom_emojis (
-                        id,
-                        voxsphere_id,
-                        url,
-                        title
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            custom_emojis (
+                id,
+                voxsphere_id,
+                url,
+                title
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, customEmoji := range customEmojis {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?)"))
+		args = append(args, customEmoji.ID, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
 
-	if _, err := r.db.NewRaw(query, customEmoji.ID, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title).Exec(ctx, &customEmoji); err != nil {
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &customEmojis); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.CustomEmoji{}, ErrCustomEmojiDuplicateID
+			return nil, ErrCustomEmojiDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.CustomEmoji{}, ErrCustomEmojiParentTableRecordNotFound
+			return nil, ErrCustomEmojiParentTableRecordNotFound
 		}
-		return models.CustomEmoji{}, err
+		return nil, err
 	}
 
-	return customEmoji, nil
+	return customEmojis, nil
 }
 
 func (r *Repo) UpdateCustomEmoji(ctx context.Context, customEmoji models.CustomEmoji) (models.CustomEmoji, error) {

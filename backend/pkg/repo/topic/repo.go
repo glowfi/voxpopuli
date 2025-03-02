@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -23,7 +24,7 @@ var (
 type Repository interface {
 	Topics() ([]models.Topic, error)
 	TopicByID(context.Context, uuid.UUID) (models.Topic, error)
-	AddTopic(context.Context, models.Topic) (models.Topic, error)
+	AddTopics(context.Context, ...models.Topic) ([]models.Topic, error)
 	UpdateTopic(context.Context, models.Topic) (models.Topic, error)
 	DeleteTopic(context.Context, uuid.UUID) error
 }
@@ -42,7 +43,8 @@ func (r *Repo) Topics(ctx context.Context) ([]models.Topic, error) {
 	query := `
             SELECT
                 id,
-                name
+                name,
+                category
             FROM
                 topics;
             `
@@ -60,7 +62,8 @@ func (r *Repo) TopicByID(ctx context.Context, ID uuid.UUID) (models.Topic, error
 	query := `
                 SELECT
                     id,
-                    name
+                    name,
+                    category
                 FROM
                     topics
                 WHERE
@@ -76,29 +79,41 @@ func (r *Repo) TopicByID(ctx context.Context, ID uuid.UUID) (models.Topic, error
 	return topic, nil
 }
 
-func (r *Repo) AddTopic(ctx context.Context, topic models.Topic) (models.Topic, error) {
+func (r *Repo) AddTopics(ctx context.Context, topics ...models.Topic) ([]models.Topic, error) {
 	query := `
-                INSERT INTO
-                    topics (
-                        id,
-                        name
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            topics (
+                id,
+                name,
+                category
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, topic.ID, topic.Name).Exec(ctx, &topic); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Topic{}, ErrTopicDuplicateIDorName
-		}
-		return models.Topic{}, err
+	for _, topic := range topics {
+		placeholders = append(placeholders, "(?, ?, ?)")
+
+		args = append(args,
+			topic.ID,
+			topic.Name,
+			topic.Category,
+		)
 	}
 
-	return topic, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &topics); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrTopicDuplicateIDorName
+		}
+		return nil, err
+	}
+
+	return topics, nil
 }
 
 func (r *Repo) UpdateTopic(ctx context.Context, topic models.Topic) (models.Topic, error) {
@@ -106,13 +121,14 @@ func (r *Repo) UpdateTopic(ctx context.Context, topic models.Topic) (models.Topi
                 UPDATE
                     topics
                 SET
-                    name = ?
+                    name = ?,
+                    category = ?
                 WHERE
                     id = ?
                 RETURNING *
             `
 
-	res, err := r.db.NewRaw(query, topic.Name, topic.ID).Exec(ctx, &topic)
+	res, err := r.db.NewRaw(query, topic.Name, topic.Category, topic.ID).Exec(ctx, &topic)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Topic{}, ErrTopicNotFound
 	}

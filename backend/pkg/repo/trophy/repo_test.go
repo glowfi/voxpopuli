@@ -176,30 +176,32 @@ func TestRepo_TrophyByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddTrophy(t *testing.T) {
+func TestRepo_AddTrophies(t *testing.T) {
 	type args struct {
-		trophy models.Trophy
+		trophies []models.Trophy
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantTrophy   models.Trophy
-		wantTrophies []models.Trophy
-		wantErr      error
+		name                 string
+		fixtureFiles         []string
+		args                 args
+		wantInsertedTrophies []models.Trophy
+		wantTrophies         []models.Trophy
+		wantErr              error
 	}{
 		{
 			name:         "duplicate trophy title :NEG",
 			fixtureFiles: []string{"trophies.yml"},
 			args: args{
-				trophy: models.Trophy{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Title:       "trophy_foo",
-					Description: "new description",
-					ImageLink:   "new image link",
+				trophies: []models.Trophy{
+					{
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Title:       "trophy_foo",
+						Description: "new description",
+						ImageLink:   "new image link",
+					},
 				},
 			},
-			wantTrophy: models.Trophy{},
+			wantInsertedTrophies: nil,
 			wantTrophies: []models.Trophy{
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -217,21 +219,25 @@ func TestRepo_AddTrophy(t *testing.T) {
 			wantErr: trophyrepo.ErrTrophyDuplicateIDorTitle,
 		},
 		{
-			name:         "add trophy :POS",
+			name:         "add trophies :POS",
 			fixtureFiles: []string{"trophies.yml"},
 			args: args{
-				trophy: models.Trophy{
+				trophies: []models.Trophy{
+					{
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Title:       "new trophy",
+						Description: "new description",
+						ImageLink:   "new image link",
+					},
+				},
+			},
+			wantInsertedTrophies: []models.Trophy{
+				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					Title:       "new trophy",
 					Description: "new description",
 					ImageLink:   "new image link",
 				},
-			},
-			wantTrophy: models.Trophy{
-				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				Title:       "new trophy",
-				Description: "new description",
-				ImageLink:   "new image link",
 			},
 			wantTrophies: []models.Trophy{
 				{
@@ -261,10 +267,10 @@ func TestRepo_AddTrophy(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := trophyrepo.NewRepo(db)
 
-			gotTrophy, gotErr := pgrepo.AddTrophy(context.Background(), tt.args.trophy)
+			gotInsertedTrophies, gotErr := pgrepo.AddTrophies(context.Background(), tt.args.trophies...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantTrophy, gotTrophy, "expect trophy to match")
+			assert.Equal(t, tt.wantInsertedTrophies, gotInsertedTrophies, "expect inserted trophies to match")
 
 			gotTrophies, err := pgrepo.Trophies(context.Background())
 

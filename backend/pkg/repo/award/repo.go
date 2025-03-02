@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -23,7 +25,7 @@ var (
 type Repository interface {
 	Awards() ([]models.Award, error)
 	AwardByID(context.Context, uuid.UUID) (models.Award, error)
-	AddAward(context.Context, models.Award) (models.Award, error)
+	AddAwards(context.Context, ...models.Award) ([]models.Award, error)
 	UpdateAward(context.Context, models.Award) (models.Award, error)
 	DeleteAward(context.Context, uuid.UUID) error
 }
@@ -78,31 +80,34 @@ func (r *Repo) AwardByID(ctx context.Context, ID uuid.UUID) (models.Award, error
 	return award, nil
 }
 
-func (r *Repo) AddAward(ctx context.Context, award models.Award) (models.Award, error) {
+func (r *Repo) AddAwards(ctx context.Context, awards ...models.Award) ([]models.Award, error) {
 	query := `
-                INSERT INTO
-                    awards (
-                        id,
-                        title,
-                        image_link
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            awards (
+                id,
+                title,
+                image_link
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, award.ID, award.Title, award.ImageLink).Exec(ctx, &award); err != nil {
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, award := range awards {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		args = append(args, award.ID, award.Title, award.ImageLink)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &awards); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Award{}, ErrAwardDuplicateIDorTitle
+			return nil, ErrAwardDuplicateIDorTitle
 		}
-		return models.Award{}, err
+		return nil, err
 	}
 
-	return award, nil
+	return awards, nil
 }
 
 func (r *Repo) UpdateAward(ctx context.Context, award models.Award) (models.Award, error) {

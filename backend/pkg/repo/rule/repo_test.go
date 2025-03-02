@@ -271,30 +271,32 @@ func TestRepo_UpdateRule(t *testing.T) {
 	}
 }
 
-func TestRepo_AddRule(t *testing.T) {
+func TestRepo_AddRules(t *testing.T) {
 	type args struct {
-		rule models.Rule
+		rules []models.Rule
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantRule     models.Rule
-		wantRules    []models.Rule
-		wantErr      error
+		name              string
+		fixtureFiles      []string
+		args              args
+		wantInsertedRules []models.Rule
+		wantRules         []models.Rule
+		wantErr           error
 	}{
 		{
 			name:         "duplicate rule id :POS",
 			fixtureFiles: []string{"voxspheres.yml", "rules.yml"},
 			args: args{
-				rule: models.Rule{
-					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					ShortName:   "new rule",
-					Description: "new description",
+				rules: []models.Rule{
+					{
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ShortName:   "new rule",
+						Description: "new description",
+					},
 				},
 			},
-			wantRule: models.Rule{},
+			wantInsertedRules: nil,
 			wantRules: []models.Rule{
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -312,21 +314,25 @@ func TestRepo_AddRule(t *testing.T) {
 			wantErr: rulerrepo.ErrRuleDuplicateIDorName,
 		},
 		{
-			name:         "add rule :POS",
+			name:         "add rules :POS",
 			fixtureFiles: []string{"voxspheres.yml", "rules.yml"},
 			args: args{
-				rule: models.Rule{
+				rules: []models.Rule{
+					{
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						ShortName:   "new rule",
+						Description: "new description",
+					},
+				},
+			},
+			wantInsertedRules: []models.Rule{
+				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					ShortName:   "new rule",
 					Description: "new description",
 				},
-			},
-			wantRule: models.Rule{
-				ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				ShortName:   "new rule",
-				Description: "new description",
 			},
 			wantRules: []models.Rule{
 				{
@@ -356,10 +362,10 @@ func TestRepo_AddRule(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := rulerrepo.NewRepo(db)
 
-			gotRule, gotErr := pgrepo.AddRule(context.Background(), tt.args.rule)
+			gotInsertedRules, gotErr := pgrepo.AddRules(context.Background(), tt.args.rules...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantRule, gotRule, "expect rule to match")
+			assert.Equal(t, tt.wantInsertedRules, gotInsertedRules, "expect inserted rules to match")
 
 			gotRules, err := pgrepo.Rules(context.Background())
 

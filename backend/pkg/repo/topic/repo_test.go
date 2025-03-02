@@ -90,12 +90,14 @@ func TestRepo_Topics(t *testing.T) {
 			fixtureFiles: []string{"topics.yml"},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "topic_foo",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "xyz",
+					Category: "foo",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: nil,
@@ -147,8 +149,9 @@ func TestRepo_TopicByID(t *testing.T) {
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 			wantTopic: models.Topic{
-				ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Name: "topic_foo",
+				ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Name:     "xyz",
+				Category: "foo",
 			},
 			wantErr: nil,
 		},
@@ -166,65 +169,79 @@ func TestRepo_TopicByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddTopic(t *testing.T) {
+func TestRepo_AddTopics(t *testing.T) {
 	type args struct {
-		topic models.Topic
+		topics []models.Topic
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantTopic    models.Topic
-		wantTopics   []models.Topic
-		wantErr      error
+		name               string
+		fixtureFiles       []string
+		args               args
+		wantInsertedTopics []models.Topic
+		wantTopics         []models.Topic
+		wantErr            error
 	}{
 		{
 			name:         "duplicate topic name :NEG",
 			fixtureFiles: []string{"topics.yml"},
 			args: args{
-				topic: models.Topic{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Name: "topic_foo",
+				topics: []models.Topic{
+					{
+						ID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Name:     "xyz",
+						Category: "new Category",
+					},
 				},
 			},
-			wantTopic: models.Topic{},
+			wantInsertedTopics: nil,
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "topic_foo",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "xyz",
+					Category: "foo",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: topicrepo.ErrTopicDuplicateIDorName,
 		},
 		{
-			name:         "add topic :POS",
+			name:         "add topics :POS",
 			fixtureFiles: []string{"topics.yml"},
 			args: args{
-				topic: models.Topic{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Name: "new topic",
+				topics: []models.Topic{
+					{
+						ID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Name:     "new topic",
+						Category: "new Category",
+					},
 				},
 			},
-			wantTopic: models.Topic{
-				ID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				Name: "new topic",
+			wantInsertedTopics: []models.Topic{
+				{
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Name:     "new topic",
+					Category: "new Category",
+				},
 			},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "topic_foo",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "xyz",
+					Category: "foo",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Name: "new topic",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Name:     "new topic",
+					Category: "new Category",
 				},
 			},
 			wantErr: nil,
@@ -235,9 +252,9 @@ func TestRepo_AddTopic(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := topicrepo.NewRepo(db)
 
-			gotTopic, gotErr := pgrepo.AddTopic(context.Background(), tt.args.topic)
+			gotInsertedTopic, gotErr := pgrepo.AddTopics(context.Background(), tt.args.topics...)
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantTopic, gotTopic, "expect topic to match")
+			assert.Equal(t, tt.wantInsertedTopics, gotInsertedTopic, "expect inserted topics to match")
 
 			gotTopics, err := pgrepo.Topics(context.Background())
 
@@ -271,12 +288,14 @@ func TestRepo_UpdateTopic(t *testing.T) {
 			wantTopic: models.Topic{},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "topic_foo",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "xyz",
+					Category: "foo",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: topicrepo.ErrTopicNotFound,
@@ -286,22 +305,26 @@ func TestRepo_UpdateTopic(t *testing.T) {
 			fixtureFiles: []string{"topics.yml"},
 			args: args{
 				topic: models.Topic{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "updated topic",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "updated topic",
+					Category: "updated category",
 				},
 			},
 			wantTopic: models.Topic{
-				ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Name: "updated topic",
+				ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				Name:     "updated topic",
+				Category: "updated category",
 			},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "updated topic",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "updated topic",
+					Category: "updated category",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: nil,
@@ -344,12 +367,14 @@ func TestRepo_DeleteTopic(t *testing.T) {
 			},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Name: "topic_foo",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Name:     "xyz",
+					Category: "foo",
 				},
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: topicrepo.ErrTopicNotFound,
@@ -362,8 +387,9 @@ func TestRepo_DeleteTopic(t *testing.T) {
 			},
 			wantTopics: []models.Topic{
 				{
-					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Name: "topic_bar",
+					ID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Name:     "pqr",
+					Category: "bar",
 				},
 			},
 			wantErr: nil,

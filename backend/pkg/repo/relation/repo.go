@@ -3,6 +3,8 @@ package relation
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/uptrace/bun"
@@ -21,34 +23,34 @@ var (
 
 type Repository interface {
 	UserTrophies(ctx context.Context) ([]models.UserTrophy, error)
-	LinkUserTrophy(ctx context.Context, ut models.UserTrophy) (models.UserTrophy, error)
+	LinkUserTrophies(context.Context, ...models.UserTrophy) ([]models.UserTrophy, error)
 
 	VoxsphereMembers(ctx context.Context) ([]models.VoxsphereMember, error)
-	LinkVoxsphereMember(ctx context.Context, vme models.VoxsphereMember) (models.VoxsphereMember, error)
+	LinkVoxsphereMembers(context.Context, ...models.VoxsphereMember) ([]models.VoxsphereMember, error)
 
 	VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModerator, error)
-	LinkVoxsphereModerator(ctx context.Context, vmod models.VoxsphereModerator) (models.VoxsphereModerator, error)
+	LinkVoxsphereModerators(context.Context, ...models.VoxsphereModerator) ([]models.VoxsphereModerator, error)
 
 	UserFlairEmojis(ctx context.Context) ([]models.UserFlairEmoji, error)
-	LinkUserFlairEmoji(ctx context.Context, ufe models.UserFlairEmoji) (models.UserFlairEmoji, error)
+	LinkUserFlairEmojis(context.Context, ...models.UserFlairEmoji) ([]models.UserFlairEmoji, error)
 
 	UserFlairCustomEmojis(ctx context.Context) ([]models.UserFlairCustomEmoji, error)
-	LinkUserFlairCustomEmoji(ctx context.Context, ufce models.UserFlairCustomEmoji) (models.UserFlairCustomEmoji, error)
+	LinkUserFlairCustomEmojis(context.Context, ...models.UserFlairCustomEmoji) ([]models.UserFlairCustomEmoji, error)
 
 	UserFlairDescriptions(ctx context.Context) ([]models.UserFlairDescription, error)
-	LinkUserFlairDescription(ctx context.Context, ufd models.UserFlairDescription) (models.UserFlairDescription, error)
+	LinkUserFlairDescriptions(context.Context, ...models.UserFlairDescription) ([]models.UserFlairDescription, error)
 
 	PostFlairEmojis(ctx context.Context) ([]models.PostFlairEmoji, error)
-	LinkPostFlairEmoji(ctx context.Context, pfe models.PostFlairEmoji) (models.PostFlairEmoji, error)
+	LinkPostFlairEmojis(context.Context, ...models.PostFlairEmoji) ([]models.PostFlairEmoji, error)
 
 	PostFlairCustomEmojis(ctx context.Context) ([]models.PostFlairCustomEmoji, error)
-	LinkPostFlairCustomEmoji(ctx context.Context, pfce models.PostFlairCustomEmoji) (models.PostFlairCustomEmoji, error)
+	LinkPostFlairCustomEmojis(context.Context, ...models.PostFlairCustomEmoji) ([]models.PostFlairCustomEmoji, error)
 
 	PostFlairDescriptions(ctx context.Context) ([]models.PostFlairDescription, error)
-	LinkPostFlairDescription(ctx context.Context, pfd models.PostFlairDescription) (models.PostFlairDescription, error)
+	LinkPostFlairDescriptions(context.Context, ...models.PostFlairDescription) ([]models.PostFlairDescription, error)
 
 	PostAwards(ctx context.Context) ([]models.PostAward, error)
-	LinkPostAward(ctx context.Context, pa models.PostAward) (models.PostAward, error)
+	LinkPostAwards(context.Context, ...models.PostAward) ([]models.PostAward, error)
 }
 
 type Repo struct {
@@ -77,32 +79,42 @@ func (r *Repo) UserTrophies(ctx context.Context) ([]models.UserTrophy, error) {
 	return user_trophies, nil
 }
 
-func (r *Repo) LinkUserTrophy(ctx context.Context, ut models.UserTrophy) (models.UserTrophy, error) {
+func (r *Repo) LinkUserTrophies(ctx context.Context, uts ...models.UserTrophy) ([]models.UserTrophy, error) {
 	query := `
-                INSERT INTO user_trophies
-                     (
-                        user_id,
-                        trophy_id
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO user_trophies
+             (
+                user_id,
+                trophy_id
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, ut.UserID, ut.TrophyID).Exec(ctx, &ut); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.UserTrophy{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.UserTrophy{}, ErrParentTableRecordNotFound
-		}
-		return models.UserTrophy{}, err
+	for _, ut := range uts {
+		placeholders = append(placeholders, "(?, ?)")
+
+		args = append(args,
+			ut.UserID,
+			ut.TrophyID,
+		)
 	}
 
-	return ut, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &uts); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return uts, nil
 }
 
 func (r *Repo) VoxsphereMembers(ctx context.Context) ([]models.VoxsphereMember, error) {
@@ -123,32 +135,42 @@ func (r *Repo) VoxsphereMembers(ctx context.Context) ([]models.VoxsphereMember, 
 	return voxsphereMembers, nil
 }
 
-func (r *Repo) LinkVoxsphereMember(ctx context.Context, vme models.VoxsphereMember) (models.VoxsphereMember, error) {
+func (r *Repo) LinkVoxsphereMembers(ctx context.Context, vmes ...models.VoxsphereMember) ([]models.VoxsphereMember, error) {
 	query := `
-                INSERT INTO voxsphere_members
-                     (
-                        voxsphere_id,
-                        user_id
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO voxsphere_members
+             (
+                voxsphere_id,
+                user_id
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, vme.VoxsphereID, vme.UserID).Exec(ctx, &vme); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.VoxsphereMember{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.VoxsphereMember{}, ErrParentTableRecordNotFound
-		}
-		return models.VoxsphereMember{}, err
+	for _, vme := range vmes {
+		placeholders = append(placeholders, "(?, ?)")
+
+		args = append(args,
+			vme.VoxsphereID,
+			vme.UserID,
+		)
 	}
 
-	return vme, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &vmes); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return vmes, nil
 }
 
 func (r *Repo) VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModerator, error) {
@@ -169,32 +191,42 @@ func (r *Repo) VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModer
 	return voxsphereModerators, nil
 }
 
-func (r *Repo) LinkVoxsphereModerator(ctx context.Context, vmod models.VoxsphereModerator) (models.VoxsphereModerator, error) {
+func (r *Repo) LinkVoxsphereModerators(ctx context.Context, vmods ...models.VoxsphereModerator) ([]models.VoxsphereModerator, error) {
 	query := `
-                INSERT INTO voxsphere_moderators
-                     (
-                        voxsphere_id,
-                        user_id
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO voxsphere_moderators
+             (
+                voxsphere_id,
+                user_id
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, vmod.VoxsphereID, vmod.UserID).Exec(ctx, &vmod); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.VoxsphereModerator{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.VoxsphereModerator{}, ErrParentTableRecordNotFound
-		}
-		return models.VoxsphereModerator{}, err
+	for _, vmod := range vmods {
+		placeholders = append(placeholders, "(?, ?)")
+
+		args = append(args,
+			vmod.VoxsphereID,
+			vmod.UserID,
+		)
 	}
 
-	return vmod, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &vmods); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return vmods, nil
 }
 
 func (r *Repo) UserFlairEmojis(ctx context.Context) ([]models.UserFlairEmoji, error) {
@@ -216,34 +248,44 @@ func (r *Repo) UserFlairEmojis(ctx context.Context) ([]models.UserFlairEmoji, er
 	return UserFlairEmojis, nil
 }
 
-func (r *Repo) LinkUserFlairEmoji(ctx context.Context, ufe models.UserFlairEmoji) (models.UserFlairEmoji, error) {
+func (r *Repo) LinkUserFlairEmojis(ctx context.Context, ufes ...models.UserFlairEmoji) ([]models.UserFlairEmoji, error) {
 	query := `
-                INSERT INTO user_flair_emojis
-                     (
-                        emoji_id,
-                        user_flair_id,
-                        order_index
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO user_flair_emojis
+             (
+                emoji_id,
+                user_flair_id,
+                order_index
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, ufe.EmojiID, ufe.UserFlairID, ufe.OrderIndex).Exec(ctx); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.UserFlairEmoji{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.UserFlairEmoji{}, ErrParentTableRecordNotFound
-		}
-		return models.UserFlairEmoji{}, err
+	for _, ufe := range ufes {
+		placeholders = append(placeholders, "(?, ?, ?)")
+
+		args = append(args,
+			ufe.EmojiID,
+			ufe.UserFlairID,
+			ufe.OrderIndex,
+		)
 	}
 
-	return ufe, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &ufes); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return ufes, nil
 }
 
 func (r *Repo) UserFlairCustomEmojis(ctx context.Context) ([]models.UserFlairCustomEmoji, error) {
@@ -265,34 +307,44 @@ func (r *Repo) UserFlairCustomEmojis(ctx context.Context) ([]models.UserFlairCus
 	return UserFlairCustomEmojis, nil
 }
 
-func (r *Repo) LinkUserFlairCustomEmoji(ctx context.Context, ufce models.UserFlairCustomEmoji) (models.UserFlairCustomEmoji, error) {
+func (r *Repo) LinkUserFlairCustomEmojis(ctx context.Context, ufces ...models.UserFlairCustomEmoji) ([]models.UserFlairCustomEmoji, error) {
 	query := `
-                INSERT INTO user_flair_custom_emojis
-                     (
-                        custom_emoji_id,
-                        user_flair_id,
-                        order_index
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO user_flair_custom_emojis
+             (
+                custom_emoji_id,
+                user_flair_id,
+                order_index
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(query, ufce.CustomEmojiID, ufce.UserFlairID, ufce.OrderIndex).Exec(ctx, &ufce); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.UserFlairCustomEmoji{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.UserFlairCustomEmoji{}, ErrParentTableRecordNotFound
-		}
-		return models.UserFlairCustomEmoji{}, err
+	for _, ufce := range ufces {
+		placeholders = append(placeholders, "(?, ?, ?)")
+
+		args = append(args,
+			ufce.CustomEmojiID,
+			ufce.UserFlairID,
+			ufce.OrderIndex,
+		)
 	}
 
-	return ufce, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &ufces); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return ufces, nil
 }
 
 func (r *Repo) UserFlairDescriptions(ctx context.Context) ([]models.UserFlairDescription, error) {
@@ -314,34 +366,45 @@ func (r *Repo) UserFlairDescriptions(ctx context.Context) ([]models.UserFlairDes
 	return UserFlairDescriptions, nil
 }
 
-func (r *Repo) LinkUserFlairDescription(ctx context.Context, ufd models.UserFlairDescription) (models.UserFlairDescription, error) {
+func (r *Repo) LinkUserFlairDescriptions(ctx context.Context, ufds ...models.UserFlairDescription) ([]models.UserFlairDescription, error) {
 	query := `
-                INSERT INTO user_flair_descriptions
-                     (
-                        user_flair_id,
-                        order_index,
-                        description
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO user_flair_descriptions
+             (
+                user_flair_id,
+                order_index,
+                description
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, ufd.UserFlairID, ufd.OrderIndex, ufd.Description).Exec(ctx, &ufd); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.UserFlairDescription{}, ErrDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.UserFlairDescription{}, ErrParentTableRecordNotFound
-		}
-		return models.UserFlairDescription{}, err
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+
+	for _, ufd := range ufds {
+		placeholders = append(placeholders, "(?, ?, ?)")
+
+		args = append(args,
+			ufd.UserFlairID,
+			ufd.OrderIndex,
+			ufd.Description,
+		)
 	}
 
-	return ufd, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &ufds); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return ufds, nil
 }
 
 func (r *Repo) PostFlairEmojis(ctx context.Context) ([]models.PostFlairEmoji, error) {
@@ -363,34 +426,37 @@ func (r *Repo) PostFlairEmojis(ctx context.Context) ([]models.PostFlairEmoji, er
 	return PostFlairEmojis, nil
 }
 
-func (r *Repo) LinkPostFlairEmoji(ctx context.Context, pfe models.PostFlairEmoji) (models.PostFlairEmoji, error) {
+func (r *Repo) LinkPostFlairEmojis(ctx context.Context, pfes ...models.PostFlairEmoji) ([]models.PostFlairEmoji, error) {
 	query := `
-                INSERT INTO post_flair_emojis
-                     (
-                        emoji_id,
-                        post_flair_id,
-                        order_index
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO post_flair_emojis
+             (
+                emoji_id,
+                post_flair_id,
+                order_index
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, pfe.EmojiID, pfe.PostFlairID, pfe.OrderIndex).Exec(ctx); err != nil {
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, pfe := range pfes {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		args = append(args, pfe.EmojiID, pfe.PostFlairID, pfe.OrderIndex)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &pfes); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.PostFlairEmoji{}, ErrDuplicateID
+			return nil, ErrDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.PostFlairEmoji{}, ErrParentTableRecordNotFound
+			return nil, ErrParentTableRecordNotFound
 		}
-		return models.PostFlairEmoji{}, err
+		return nil, err
 	}
 
-	return pfe, nil
+	return pfes, nil
 }
 
 func (r *Repo) PostFlairCustomEmojis(ctx context.Context) ([]models.PostFlairCustomEmoji, error) {
@@ -412,34 +478,37 @@ func (r *Repo) PostFlairCustomEmojis(ctx context.Context) ([]models.PostFlairCus
 	return PostFlairCustomEmojis, nil
 }
 
-func (r *Repo) LinkPostFlairCustomEmoji(ctx context.Context, pfce models.PostFlairCustomEmoji) (models.PostFlairCustomEmoji, error) {
+func (r *Repo) LinkPostFlairCustomEmojis(ctx context.Context, pfces ...models.PostFlairCustomEmoji) ([]models.PostFlairCustomEmoji, error) {
 	query := `
-                INSERT INTO post_flair_custom_emojis
-                     (
-                        custom_emoji_id,
-                        post_flair_id,
-                        order_index
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO post_flair_custom_emojis
+             (
+                custom_emoji_id,
+                post_flair_id,
+                order_index
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, pfce.CustomEmojiID, pfce.PostFlairID, pfce.OrderIndex).Exec(ctx, &pfce); err != nil {
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, pfce := range pfces {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		args = append(args, pfce.CustomEmojiID, pfce.PostFlairID, pfce.OrderIndex)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &pfces); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.PostFlairCustomEmoji{}, ErrDuplicateID
+			return nil, ErrDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.PostFlairCustomEmoji{}, ErrParentTableRecordNotFound
+			return nil, ErrParentTableRecordNotFound
 		}
-		return models.PostFlairCustomEmoji{}, err
+		return nil, err
 	}
 
-	return pfce, nil
+	return pfces, nil
 }
 
 func (r *Repo) PostFlairDescriptions(ctx context.Context) ([]models.PostFlairDescription, error) {
@@ -461,34 +530,37 @@ func (r *Repo) PostFlairDescriptions(ctx context.Context) ([]models.PostFlairDes
 	return PostFlairDescriptions, nil
 }
 
-func (r *Repo) LinkPostFlairDescription(ctx context.Context, pfd models.PostFlairDescription) (models.PostFlairDescription, error) {
+func (r *Repo) LinkPostFlairDescriptions(ctx context.Context, pfds ...models.PostFlairDescription) ([]models.PostFlairDescription, error) {
 	query := `
-                INSERT INTO post_flair_descriptions
-                     (
-                        post_flair_id,
-                        order_index,
-                        description
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO post_flair_descriptions
+             (
+                post_flair_id,
+                order_index,
+                description
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, pfd.PostFlairID, pfd.OrderIndex, pfd.Description).Exec(ctx, &pfd); err != nil {
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, pfd := range pfds {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		args = append(args, pfd.PostFlairID, pfd.OrderIndex, pfd.Description)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &pfds); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.PostFlairDescription{}, ErrDuplicateID
+			return nil, ErrDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.PostFlairDescription{}, ErrParentTableRecordNotFound
+			return nil, ErrParentTableRecordNotFound
 		}
-		return models.PostFlairDescription{}, err
+		return nil, err
 	}
 
-	return pfd, nil
+	return pfds, nil
 }
 
 func (r *Repo) PostAwards(ctx context.Context) ([]models.PostAward, error) {
@@ -509,30 +581,34 @@ func (r *Repo) PostAwards(ctx context.Context) ([]models.PostAward, error) {
 	return post_awards, nil
 }
 
-func (r *Repo) LinkPostAward(ctx context.Context, pa models.PostAward) (models.PostAward, error) {
+func (r *Repo) LinkPostAwards(ctx context.Context, pas ...models.PostAward) ([]models.PostAward, error) {
 	query := `
-                INSERT INTO post_awards
-                     (
-                        post_id,
-                        award_id
-                    )
-                VALUES (
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO post_awards
+             (
+                post_id,
+                award_id
+            )
+        VALUES 
+    `
 
-	if _, err := r.db.NewRaw(query, pa.PostID, pa.AwardID).Exec(ctx, &pa); err != nil {
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, pa := range pas {
+		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		args = append(args, pa.PostID, pa.AwardID)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &pas); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.PostAward{}, ErrDuplicateID
+			return nil, ErrDuplicateID
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.PostAward{}, ErrParentTableRecordNotFound
+			return nil, ErrParentTableRecordNotFound
 		}
-		return models.PostAward{}, err
+		return nil, err
 	}
 
-	return pa, nil
+	return pas, nil
 }

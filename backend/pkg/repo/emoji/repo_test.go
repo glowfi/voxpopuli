@@ -173,28 +173,30 @@ func TestRepo_EmojiByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddEmoji(t *testing.T) {
+func TestRepo_AddEmojis(t *testing.T) {
 	type args struct {
-		emoji models.Emoji
+		emojis []models.Emoji
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantEmoji    models.Emoji
-		wantEmojis   []models.Emoji
-		wantErr      error
+		name              string
+		fixtureFiles      []string
+		args              args
+		wantInsertedEmoji []models.Emoji
+		wantEmojis        []models.Emoji
+		wantErr           error
 	}{
 		{
 			name:         "duplicate emoji id :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "emojis.yml"},
 			args: args{
-				emoji: models.Emoji{
-					ID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title: "new text",
+				emojis: []models.Emoji{
+					{
+						ID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Title: "new text",
+					},
 				},
 			},
-			wantEmoji: models.Emoji{},
+			wantInsertedEmoji: nil,
 			wantEmojis: []models.Emoji{
 				{
 					ID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -208,17 +210,21 @@ func TestRepo_AddEmoji(t *testing.T) {
 			wantErr: emojirepo.ErrEmojiDuplicateIDorText,
 		},
 		{
-			name:         "add emoji :POS",
+			name:         "add emojis :POS",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "emojis.yml"},
 			args: args{
-				emoji: models.Emoji{
+				emojis: []models.Emoji{
+					{
+						ID:    uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Title: "new text",
+					},
+				},
+			},
+			wantInsertedEmoji: []models.Emoji{
+				{
 					ID:    uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					Title: "new text",
 				},
-			},
-			wantEmoji: models.Emoji{
-				ID:    uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				Title: "new text",
 			},
 			wantEmojis: []models.Emoji{
 				{
@@ -242,10 +248,10 @@ func TestRepo_AddEmoji(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := emojirepo.NewRepo(db)
 
-			gotEmoji, gotErr := pgrepo.AddEmoji(context.Background(), tt.args.emoji)
+			gotInsertedEmojis, gotErr := pgrepo.AddEmojis(context.Background(), tt.args.emojis...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantEmoji, gotEmoji, "expect emoji to match")
+			assert.Equal(t, tt.wantInsertedEmoji, gotInsertedEmojis, "expect inserted emojis to match")
 
 			gotEmojis, err := pgrepo.Emojis(context.Background())
 

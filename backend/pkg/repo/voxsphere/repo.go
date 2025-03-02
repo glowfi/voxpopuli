@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -26,7 +27,7 @@ var (
 type Repository interface {
 	Voxspheres() ([]models.Voxsphere, error)
 	VoxsphereByID(context.Context, uuid.UUID) (models.Voxsphere, error)
-	AddVoxsphere(context.Context, models.Voxsphere) (models.Voxsphere, error)
+	AddVoxspheres(context.Context, ...models.Voxsphere) ([]models.Voxsphere, error)
 	UpdateVoxsphere(context.Context, models.Voxsphere) (models.Voxsphere, error)
 	DeleteVoxsphere(context.Context, uuid.UUID) error
 }
@@ -111,76 +112,71 @@ func (r *Repo) VoxsphereByID(ctx context.Context, ID uuid.UUID) (models.Voxspher
 	return voxsphere, nil
 }
 
-func (r *Repo) AddVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (models.Voxsphere, error) {
+func (r *Repo) AddVoxspheres(ctx context.Context, voxspheres ...models.Voxsphere) ([]models.Voxsphere, error) {
 	query := `
-	        INSERT INTO
-	            voxspheres (
-	                id,
-	                title,
-	                topic_id,
-	                public_description,
-	                community_icon,
-	                banner_background_image,
-	                banner_background_color,
-	                key_color,
-	                primary_color,
-	                over18,
-	                spoilers_enabled,
-	                created_at,
-	                created_at_unix,
-	                updated_at
-	            )
-	        VALUES (
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?,
-	            ?
-	        )
-	        RETURNING *
-	    `
+        INSERT INTO
+            voxspheres (
+                id,
+                title,
+                topic_id,
+                public_description,
+                community_icon,
+                banner_background_image,
+                banner_background_color,
+                key_color,
+                primary_color,
+                over18,
+                spoilers_enabled,
+                created_at,
+                created_at_unix,
+                updated_at
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	timestamp := time.Now()
-	voxsphere.CreatedAt = timestamp
-	voxsphere.UpdatedAt = timestamp
-	voxsphere.CreatedAtUnix = timestamp.Unix()
+	for _, voxsphere := range voxspheres {
+		timestamp := time.Now()
+		voxsphere.CreatedAt = timestamp
+		voxsphere.UpdatedAt = timestamp
+		voxsphere.CreatedAtUnix = timestamp.Unix()
 
-	if _, err := r.db.NewRaw(query,
-		voxsphere.ID,
-		voxsphere.Title,
-		voxsphere.TopicID,
-		voxsphere.PublicDescription,
-		voxsphere.CommunityIcon,
-		voxsphere.BannerBackgroundImage,
-		voxsphere.BannerBackgroundColor,
-		voxsphere.KeyColor,
-		voxsphere.PrimaryColor,
-		voxsphere.Over18,
-		voxsphere.SpoilersEnabled,
-		voxsphere.CreatedAt,
-		voxsphere.CreatedAtUnix,
-		voxsphere.UpdatedAt).Exec(ctx, &voxsphere); err != nil {
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		args = append(args,
+			voxsphere.ID,
+			voxsphere.Title,
+			voxsphere.TopicID,
+			voxsphere.PublicDescription,
+			voxsphere.CommunityIcon,
+			voxsphere.BannerBackgroundImage,
+			voxsphere.BannerBackgroundColor,
+			voxsphere.KeyColor,
+			voxsphere.PrimaryColor,
+			voxsphere.Over18,
+			voxsphere.SpoilersEnabled,
+			voxsphere.CreatedAt,
+			voxsphere.CreatedAtUnix,
+			voxsphere.UpdatedAt,
+		)
+	}
+
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &voxspheres); err != nil {
 		// if _, err := r.db.NewInsert().Model(&voxsphere).Exec(context.Background()); err != nil {
 		var pgdriverErr pgdriver.Error
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.Voxsphere{}, ErrVoxsphereDuplicateIDorTitle
+			return nil, ErrVoxsphereDuplicateIDorTitle
 		}
 		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.Voxsphere{}, ErrVoxsphereParentTableRecordNotFound
+			return nil, ErrVoxsphereParentTableRecordNotFound
 		}
-		return models.Voxsphere{}, err
+		return nil, err
 	}
 
-	return voxsphere, nil
+	return voxspheres, nil
 }
 
 func (r *Repo) UpdateVoxsphere(ctx context.Context, voxsphere models.Voxsphere) (models.Voxsphere, error) {

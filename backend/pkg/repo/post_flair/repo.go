@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	"github.com/google/uuid"
@@ -25,7 +26,7 @@ var (
 type Repository interface {
 	PostFlairs(ctx context.Context) ([]models.PostFlair, error)
 	PostFlairByID(ctx context.Context, ID uuid.UUID) (models.PostFlair, error)
-	AddPostFlair(ctx context.Context, postFlair models.PostFlair) (models.PostFlair, error)
+	AddPostFlairs(ctx context.Context, postFlair ...models.PostFlair) (models.PostFlair, error)
 	UpdatePostFlair(ctx context.Context, postFlair models.PostFlair) (models.PostFlair, error)
 	DeletePostFlair(ctx context.Context, ID uuid.UUID) error
 }
@@ -84,45 +85,49 @@ func (r *Repo) PostFlairByID(ctx context.Context, ID uuid.UUID) (models.PostFlai
 	return postFlair, nil
 }
 
-func (r *Repo) AddPostFlair(ctx context.Context, postFlair models.PostFlair) (models.PostFlair, error) {
+func (r *Repo) AddPostFlairs(ctx context.Context, postFlairs ...models.PostFlair) ([]models.PostFlair, error) {
 	query := `
-                INSERT INTO
-                    post_flairs (
-                        id,
-                        post_id,
-                        voxsphere_id,
-                        full_text,
-                        background_color
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            post_flairs (
+                id,
+                post_id,
+                voxsphere_id,
+                full_text,
+                background_color
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	if _, err := r.db.NewRaw(
-		query,
-		postFlair.ID,
-		postFlair.PostID,
-		postFlair.VoxsphereID,
-		postFlair.FullText,
-		postFlair.BackgroundColor,
-	).Exec(ctx, &postFlair); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.PostFlair{}, ErrPostFlairDuplicateID
-		}
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
-			return models.PostFlair{}, ErrPostFlairParentTableRecordNotFound
-		}
-		return models.PostFlair{}, err
+	for _, postFlair := range postFlairs {
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?)")
+
+		args = append(args,
+			postFlair.ID,
+			postFlair.PostID,
+			postFlair.VoxsphereID,
+			postFlair.FullText,
+			postFlair.BackgroundColor,
+		)
 	}
 
-	return postFlair, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(
+		query, args...).Exec(ctx, &postFlairs); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrPostFlairDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrPostFlairParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return postFlairs, nil
 }
 
 func (r *Repo) UpdatePostFlair(ctx context.Context, postFlair models.PostFlair) (models.PostFlair, error) {

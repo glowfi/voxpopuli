@@ -556,29 +556,31 @@ func TestRepo_PostMediaByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddPostMedia(t *testing.T) {
+func TestRepo_AddPostMedias(t *testing.T) {
 	type args struct {
-		postMedia models.PostMedia
+		postMedias []models.PostMedia
 	}
 	tests := []struct {
-		name           string
-		fixtureFiles   []string
-		args           args
-		wantPostMedia  models.PostMedia
-		wantPostMedias []models.PostMedia
-		wantErr        error
+		name                   string
+		fixtureFiles           []string
+		args                   args
+		wantInsertedPostMedias []models.PostMedia
+		wantPostMedias         []models.PostMedia
+		wantErr                error
 	}{
 		{
 			name:         "duplicate media id :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_medias.yml"},
 			args: args{
-				postMedia: models.PostMedia{
-					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaType: models.MediaTypeImage,
+				postMedias: []models.PostMedia{
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaType: models.MediaTypeImage,
+					},
 				},
 			},
-			wantPostMedia: models.PostMedia{},
+			wantInsertedPostMedias: nil,
 			wantPostMedias: []models.PostMedia{
 				{
 					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -612,13 +614,15 @@ func TestRepo_AddPostMedia(t *testing.T) {
 			name:         "post not present in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_medias.yml"},
 			args: args{
-				postMedia: models.PostMedia{
-					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-					PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					MediaType: models.MediaTypeImage,
+				postMedias: []models.PostMedia{
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+						PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						MediaType: models.MediaTypeImage,
+					},
 				},
 			},
-			wantPostMedia: models.PostMedia{},
+			wantInsertedPostMedias: nil,
 			wantPostMedias: []models.PostMedia{
 				{
 					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -649,19 +653,23 @@ func TestRepo_AddPostMedia(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name:         "add post media :POS",
+			name:         "add post medias :POS",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_medias.yml"},
 			args: args{
-				postMedia: models.PostMedia{
+				postMedias: []models.PostMedia{
+					{
+						ID:        uuid.MustParse("00000000-0000-0000-0000-000000000006"),
+						PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaType: models.MediaTypeImage,
+					},
+				},
+			},
+			wantInsertedPostMedias: []models.PostMedia{
+				{
 					ID:        uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 					PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					MediaType: models.MediaTypeImage,
 				},
-			},
-			wantPostMedia: models.PostMedia{
-				ID:        uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-				PostID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				MediaType: models.MediaTypeImage,
 			},
 			wantPostMedias: []models.PostMedia{
 				{
@@ -703,10 +711,10 @@ func TestRepo_AddPostMedia(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := mediarepo.NewRepo(db)
 
-			gotPostMedia, gotErr := pgrepo.AddPostMedia(context.Background(), tt.args.postMedia)
+			gotInsertedPostMedias, gotErr := pgrepo.AddPostMedias(context.Background(), tt.args.postMedias...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantPostMedia, gotPostMedia, "expect postMedia to match")
+			assert.Equal(t, tt.wantInsertedPostMedias, gotInsertedPostMedias, "expect inserted postMedias to match")
 
 			gotPostMedias, err := pgrepo.PostMedias(context.Background())
 
@@ -1156,17 +1164,17 @@ func TestRepo_ImageByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddImage(t *testing.T) {
+func TestRepo_AddImages(t *testing.T) {
 	type args struct {
-		image models.Image
+		images []models.Image
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantImage    models.Image
-		wantImages   []models.Image
-		wantErr      error
+		name               string
+		fixtureFiles       []string
+		args               args
+		wantInsertedImages []models.Image
+		wantImages         []models.Image
+		wantErr            error
 	}{
 		{
 			name: "duplicate image id :NEG",
@@ -1180,13 +1188,15 @@ func TestRepo_AddImage(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				image: models.Image{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					ImageMetadata: []models.ImageMetadata{},
+				images: []models.Image{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						ImageMetadata: []models.ImageMetadata{},
+					},
 				},
 			},
-			wantImage: models.Image{},
+			wantInsertedImages: nil,
 			wantImages: []models.Image{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -1229,13 +1239,15 @@ func TestRepo_AddImage(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				image: models.Image{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					ImageMetadata: []models.ImageMetadata{},
+				images: []models.Image{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						ImageMetadata: []models.ImageMetadata{},
+					},
 				},
 			},
-			wantImage: models.Image{},
+			wantInsertedImages: nil,
 			wantImages: []models.Image{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -1278,16 +1290,20 @@ func TestRepo_AddImage(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				image: models.Image{
+				images: []models.Image{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ImageMetadata: []models.ImageMetadata{},
+					},
+				},
+			},
+			wantInsertedImages: []models.Image{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					ImageMetadata: []models.ImageMetadata{},
 				},
-			},
-			wantImage: models.Image{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				ImageMetadata: []models.ImageMetadata{},
 			},
 			wantImages: []models.Image{
 				{
@@ -1329,10 +1345,10 @@ func TestRepo_AddImage(t *testing.T) {
 		db := setupPostgres(t, tt.fixtureFiles...)
 		pgrepo := mediarepo.NewRepo(db)
 
-		gotImage, gotErr := pgrepo.AddImage(context.Background(), tt.args.image)
+		gotInsertedImages, gotErr := pgrepo.AddImages(context.Background(), tt.args.images...)
 
 		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-		assert.Equal(t, tt.wantImage, gotImage, "expect image to match")
+		assert.Equal(t, tt.wantInsertedImages, gotInsertedImages, "expect inserted image to match")
 
 		gotImages, err := pgrepo.Images(context.Background())
 
@@ -1764,17 +1780,17 @@ func TestRepo_ImageMetadataByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddImageMetadata(t *testing.T) {
+func TestRepo_AddImageMetadatas(t *testing.T) {
 	type args struct {
-		imageMetadata models.ImageMetadata
+		imageMetadatas []models.ImageMetadata
 	}
 	tests := []struct {
-		name               string
-		fixtureFiles       []string
-		args               args
-		wantImageMetadata  models.ImageMetadata
-		wantImageMetadatas []models.ImageMetadata
-		wantErr            error
+		name                       string
+		fixtureFiles               []string
+		args                       args
+		wantInsertedImageMetadatas []models.ImageMetadata
+		wantImageMetadatas         []models.ImageMetadata
+		wantErr                    error
 	}{
 		{
 			name: "duplicate image metadata :NEG",
@@ -1788,18 +1804,20 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				imageMetadata: models.ImageMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				imageMetadatas: []models.ImageMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantImageMetadata: models.ImageMetadata{},
+			wantInsertedImageMetadatas: nil,
 			wantImageMetadatas: []models.ImageMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -1836,18 +1854,20 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				imageMetadata: models.ImageMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				imageMetadatas: []models.ImageMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantImageMetadata: models.ImageMetadata{},
+			wantInsertedImageMetadatas: nil,
 			wantImageMetadatas: []models.ImageMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -1873,7 +1893,7 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add image metadata :POS",
+			name: "add image metadatas :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -1884,7 +1904,21 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 				"image_metadatas.yml",
 			},
 			args: args{
-				imageMetadata: models.ImageMetadata{
+				imageMetadatas: []models.ImageMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedImageMetadatas: []models.ImageMetadata{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Height:        2160,
@@ -1894,16 +1928,6 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 					CreatedAtUnix: 1725091300,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 				},
-			},
-			wantImageMetadata: models.ImageMetadata{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Height:        2160,
-				Width:         3840,
-				Url:           "https://example.com/image3.jpg",
-				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-				CreatedAtUnix: 1725091300,
-				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 			},
 			wantImageMetadatas: []models.ImageMetadata{
 				{
@@ -1946,19 +1970,21 @@ func TestRepo_AddImageMetadata(t *testing.T) {
 			pgrepo := mediarepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotImageMetadata, gotErr := pgrepo.AddImageMetadata(context.Background(), tt.args.imageMetadata)
+			gotInsertedImageMetadatas, gotErr := pgrepo.AddImageMetadatas(context.Background(), tt.args.imageMetadatas...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotImageMetadata.UpdatedAt,
-				gotImageMetadata.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotImageMetadata.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotImageMetadata.UpdatedAt, startTime, endTime)
+			for _, gotInsertedImageMetadata := range gotInsertedImageMetadatas {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedImageMetadata.UpdatedAt,
+					gotInsertedImageMetadata.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedImageMetadata.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedImageMetadata.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
@@ -2416,17 +2442,17 @@ func TestRepo_GifByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddGif(t *testing.T) {
+func TestRepo_AddGifs(t *testing.T) {
 	type args struct {
-		gif models.Gif
+		gifs []models.Gif
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantGif      models.Gif
-		wantGifs     []models.Gif
-		wantErr      error
+		name            string
+		fixtureFiles    []string
+		args            args
+		wantInsertedGif []models.Gif
+		wantGifs        []models.Gif
+		wantErr         error
 	}{
 		{
 			name: "duplicate gif :NEG",
@@ -2440,24 +2466,26 @@ func TestRepo_AddGif(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gif: models.Gif{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					GifMetadata: []models.GifMetadata{
-						{
-							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-							GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-							Height:        2160,
-							Width:         3840,
-							Url:           "https://example.com/image3.jpg",
-							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-							CreatedAtUnix: 1725091300,
-							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				gifs: []models.Gif{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						GifMetadata: []models.GifMetadata{
+							{
+								ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+								GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+								Height:        2160,
+								Width:         3840,
+								Url:           "https://example.com/image3.jpg",
+								CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+								CreatedAtUnix: 1725091300,
+								UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+							},
 						},
 					},
 				},
 			},
-			wantGif: models.Gif{},
+			wantInsertedGif: nil,
 			wantGifs: []models.Gif{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -2500,24 +2528,26 @@ func TestRepo_AddGif(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gif: models.Gif{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					GifMetadata: []models.GifMetadata{
-						{
-							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-							GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-							Height:        2160,
-							Width:         3840,
-							Url:           "https://example.com/image3.jpg",
-							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-							CreatedAtUnix: 1725091300,
-							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				gifs: []models.Gif{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						GifMetadata: []models.GifMetadata{
+							{
+								ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+								GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+								Height:        2160,
+								Width:         3840,
+								Url:           "https://example.com/image3.jpg",
+								CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+								CreatedAtUnix: 1725091300,
+								UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+							},
 						},
 					},
 				},
 			},
-			wantGif: models.Gif{},
+			wantInsertedGif: nil,
 			wantGifs: []models.Gif{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -2549,7 +2579,7 @@ func TestRepo_AddGif(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add gif :POS",
+			name: "add gifs :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -2560,14 +2590,18 @@ func TestRepo_AddGif(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gif: models.Gif{
+				gifs: []models.Gif{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					},
+				},
+			},
+			wantInsertedGif: []models.Gif{
+				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				},
-			},
-			wantGif: models.Gif{
-				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 			},
 			wantGifs: []models.Gif{
 				{
@@ -2608,10 +2642,10 @@ func TestRepo_AddGif(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := mediarepo.NewRepo(db)
 
-			gotGif, gotErr := pgrepo.AddGif(context.Background(), tt.args.gif)
+			gotInsertedGifs, gotErr := pgrepo.AddGifs(context.Background(), tt.args.gifs...)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantGif, gotGif, "expect gif to match")
+			assert.Equal(t, tt.wantInsertedGif, gotInsertedGifs, "expect inserted gif to match")
 
 			gotGifs, err := pgrepo.Gifs(context.Background())
 
@@ -3094,17 +3128,17 @@ func TestRepo_GifMetadataByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddGifMetadata(t *testing.T) {
+func TestRepo_AddGifMetadatas(t *testing.T) {
 	type args struct {
-		gifMetadata models.GifMetadata
+		gifMetadatas []models.GifMetadata
 	}
 	tests := []struct {
-		name             string
-		fixtureFiles     []string
-		args             args
-		wantGifMetadata  models.GifMetadata
-		wantGifMetadatas []models.GifMetadata
-		wantErr          error
+		name                     string
+		fixtureFiles             []string
+		args                     args
+		wantInsertedGifMetadatas []models.GifMetadata
+		wantGifMetadatas         []models.GifMetadata
+		wantErr                  error
 	}{
 		{
 			name: "duplicate gif metadata :NEG",
@@ -3118,18 +3152,20 @@ func TestRepo_AddGifMetadata(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gifMetadata: models.GifMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				gifMetadatas: []models.GifMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantGifMetadata: models.GifMetadata{},
+			wantInsertedGifMetadatas: nil,
 			wantGifMetadatas: []models.GifMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -3166,18 +3202,20 @@ func TestRepo_AddGifMetadata(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gifMetadata: models.GifMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				gifMetadatas: []models.GifMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantGifMetadata: models.GifMetadata{},
+			wantInsertedGifMetadatas: nil,
 			wantGifMetadatas: []models.GifMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -3203,7 +3241,7 @@ func TestRepo_AddGifMetadata(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add gif metadata :NEG",
+			name: "add gif metadatas :NEG",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -3214,18 +3252,20 @@ func TestRepo_AddGifMetadata(t *testing.T) {
 				"gif_metadatas.yml",
 			},
 			args: args{
-				gifMetadata: models.GifMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				gifMetadatas: []models.GifMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantGifMetadata: models.GifMetadata{},
+			wantInsertedGifMetadatas: nil,
 			wantGifMetadatas: []models.GifMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -3267,19 +3307,21 @@ func TestRepo_AddGifMetadata(t *testing.T) {
 			pgrepo := mediarepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotGifMetadata, gotErr := pgrepo.AddGifMetadata(context.Background(), tt.args.gifMetadata)
+			gotInsertedGifMetadatas, gotErr := pgrepo.AddGifMetadatas(context.Background(), tt.args.gifMetadatas...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotGifMetadata.UpdatedAt,
-				gotGifMetadata.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotGifMetadata.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotGifMetadata.UpdatedAt, startTime, endTime)
+			for _, gotInsertedGifMetadata := range gotInsertedGifMetadatas {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedGifMetadata.UpdatedAt,
+					gotInsertedGifMetadata.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedGifMetadata.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedGifMetadata.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotGifMetadatas, err := pgrepo.GifMetadatas(context.Background())
@@ -3702,17 +3744,17 @@ func TestRepo_VideoByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddVideo(t *testing.T) {
+func TestRepo_AddVideos(t *testing.T) {
 	type args struct {
-		video models.Video
+		videos []models.Video
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantVideo    models.Video
-		wantVideos   []models.Video
-		wantErr      error
+		name               string
+		fixtureFiles       []string
+		args               args
+		wantInsertedVideos []models.Video
+		wantVideos         []models.Video
+		wantErr            error
 	}{
 		{
 			name: "duplicate video :NEG",
@@ -3725,18 +3767,20 @@ func TestRepo_AddVideo(t *testing.T) {
 				"videos.yml",
 			},
 			args: args{
-				video: models.Video{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-					Url:           "https://example.com/video.mp4",
-					Height:        1080,
-					Width:         1920,
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix: 1725091100,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				videos: []models.Video{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+						Url:           "https://example.com/video.mp4",
+						Height:        1080,
+						Width:         1920,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantVideo: models.Video{},
+			wantInsertedVideos: nil,
 			wantVideos: []models.Video{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -3762,18 +3806,20 @@ func TestRepo_AddVideo(t *testing.T) {
 				"videos.yml",
 			},
 			args: args{
-				video: models.Video{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Url:           "https://example.com/video2.mp4",
-					Height:        1080,
-					Width:         1920,
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix: 1725091100,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				videos: []models.Video{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Url:           "https://example.com/video2.mp4",
+						Height:        1080,
+						Width:         1920,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantVideo: models.Video{},
+			wantInsertedVideos: nil,
 			wantVideos: []models.Video{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -3789,7 +3835,7 @@ func TestRepo_AddVideo(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add video :POS",
+			name: "add videos :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -3799,7 +3845,21 @@ func TestRepo_AddVideo(t *testing.T) {
 				"videos.yml",
 			},
 			args: args{
-				video: models.Video{
+				videos: []models.Video{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Url:           "https://example.com/videonew.mp4",
+						Height:        1080,
+						Width:         1920,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedVideos: []models.Video{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Url:           "https://example.com/videonew.mp4",
@@ -3809,16 +3869,6 @@ func TestRepo_AddVideo(t *testing.T) {
 					CreatedAtUnix: 1725091100,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 				},
-			},
-			wantVideo: models.Video{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Url:           "https://example.com/videonew.mp4",
-				Height:        1080,
-				Width:         1920,
-				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-				CreatedAtUnix: 1725091100,
-				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 			},
 			wantVideos: []models.Video{
 				{
@@ -3851,19 +3901,21 @@ func TestRepo_AddVideo(t *testing.T) {
 			pgrepo := mediarepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotVideo, gotErr := pgrepo.AddVideo(context.Background(), tt.args.video)
+			gotInsertedVideos, gotErr := pgrepo.AddVideos(context.Background(), tt.args.videos...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotVideo.UpdatedAt,
-				gotVideo.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotVideo.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotVideo.UpdatedAt, startTime, endTime)
+			for _, gotInsertedVideo := range gotInsertedVideos {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedVideo.UpdatedAt,
+					gotInsertedVideo.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedVideo.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedVideo.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotVideos, err := pgrepo.Videos(context.Background())
@@ -4226,17 +4278,17 @@ func TestRepo_LinkByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddLink(t *testing.T) {
+func TestRepo_AddLinks(t *testing.T) {
 	type args struct {
-		link models.Link
+		links []models.Link
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantLink     models.Link
-		wantLinks    []models.Link
-		wantErr      error
+		name             string
+		fixtureFiles     []string
+		args             args
+		wantInsertedLink []models.Link
+		wantLinks        []models.Link
+		wantErr          error
 	}{
 		{
 			name: "duplicate link :NEG",
@@ -4249,16 +4301,18 @@ func TestRepo_AddLink(t *testing.T) {
 				"links.yml",
 			},
 			args: args{
-				link: models.Link{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-					Link:          "https://example.com/video.mp4",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix: 1725091100,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				links: []models.Link{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+						Link:          "https://example.com/video.mp4",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantLink: models.Link{},
+			wantInsertedLink: nil,
 			wantLinks: []models.Link{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -4282,16 +4336,18 @@ func TestRepo_AddLink(t *testing.T) {
 				"links.yml",
 			},
 			args: args{
-				link: models.Link{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Link:          "https://example.com/video.mp4",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix: 1725091100,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				links: []models.Link{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Link:          "https://example.com/video.mp4",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantLink: models.Link{},
+			wantInsertedLink: nil,
 			wantLinks: []models.Link{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -4305,7 +4361,7 @@ func TestRepo_AddLink(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add link :POS",
+			name: "add links :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -4315,7 +4371,19 @@ func TestRepo_AddLink(t *testing.T) {
 				"links.yml",
 			},
 			args: args{
-				link: models.Link{
+				links: []models.Link{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Link:          "https://example.com/videonew.mp4",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedLink: []models.Link{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Link:          "https://example.com/videonew.mp4",
@@ -4323,14 +4391,6 @@ func TestRepo_AddLink(t *testing.T) {
 					CreatedAtUnix: 1725091100,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 				},
-			},
-			wantLink: models.Link{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Link:          "https://example.com/videonew.mp4",
-				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-				CreatedAtUnix: 1725091100,
-				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 			},
 			wantLinks: []models.Link{
 				{
@@ -4359,19 +4419,21 @@ func TestRepo_AddLink(t *testing.T) {
 			pgrepo := mediarepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotLink, gotErr := pgrepo.AddLink(context.Background(), tt.args.link)
+			gotInsertedLinks, gotErr := pgrepo.AddLinks(context.Background(), tt.args.links...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotLink.UpdatedAt,
-				gotLink.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotLink.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotLink.UpdatedAt, startTime, endTime)
+			for _, gotInsertedLink := range gotInsertedLinks {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedLink.UpdatedAt,
+					gotInsertedLink.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedLink.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedLink.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotLinks, err := pgrepo.Links(context.Background())
@@ -4776,17 +4838,17 @@ func TestRepo_GalleryByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddGallery(t *testing.T) {
+func TestRepo_AddGalleries(t *testing.T) {
 	type args struct {
-		gallery models.Gallery
+		galleries []models.Gallery
 	}
 	tests := []struct {
-		name          string
-		fixtureFiles  []string
-		args          args
-		wantGallery   models.Gallery
-		wantGalleries []models.Gallery
-		wantErr       error
+		name                  string
+		fixtureFiles          []string
+		args                  args
+		wantInsertedGalleries []models.Gallery
+		wantGalleries         []models.Gallery
+		wantErr               error
 	}{
 		{
 			name: "duplicate gallery id :NEG",
@@ -4800,12 +4862,14 @@ func TestRepo_AddGallery(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				gallery: models.Gallery{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+				galleries: []models.Gallery{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					},
 				},
 			},
-			wantGallery: models.Gallery{},
+			wantInsertedGalleries: nil,
 			wantGalleries: []models.Gallery{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -4878,12 +4942,14 @@ func TestRepo_AddGallery(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				gallery: models.Gallery{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				galleries: []models.Gallery{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+					},
 				},
 			},
-			wantGallery: models.Gallery{},
+			wantInsertedGalleries: nil,
 			wantGalleries: []models.Gallery{
 				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -4945,7 +5011,7 @@ func TestRepo_AddGallery(t *testing.T) {
 			wantErr: mediarepo.ErrParentTableRecordNotFound,
 		},
 		{
-			name: "add gallery :POS",
+			name: "add galleries :POS",
 			fixtureFiles: []string{
 				"topics.yml",
 				"voxspheres.yml",
@@ -4956,14 +5022,18 @@ func TestRepo_AddGallery(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				gallery: models.Gallery{
+				galleries: []models.Gallery{
+					{
+						ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					},
+				},
+			},
+			wantInsertedGalleries: []models.Gallery{
+				{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 				},
-			},
-			wantGallery: models.Gallery{
-				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 			},
 			wantGalleries: []models.Gallery{
 				{
@@ -5034,10 +5104,10 @@ func TestRepo_AddGallery(t *testing.T) {
 		db := setupPostgres(t, tt.fixtureFiles...)
 		pgrepo := mediarepo.NewRepo(db)
 
-		gotGallery, gotErr := pgrepo.AddGallery(context.Background(), tt.args.gallery)
+		gotInsertedGalleries, gotErr := pgrepo.AddGalleries(context.Background(), tt.args.galleries...)
 
 		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-		assert.Equal(t, tt.wantGallery, gotGallery, "expect gallery to match")
+		assert.Equal(t, tt.wantInsertedGalleries, gotInsertedGalleries, "expect inserted galleries to match")
 
 		gotGalleries, err := pgrepo.Galleries(context.Background())
 
@@ -5642,17 +5712,17 @@ func TestRepo_GalleryMetadataByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddGalleryMetadata(t *testing.T) {
+func TestRepo_AddGalleryMetadatas(t *testing.T) {
 	type args struct {
-		galleryMetadata models.GalleryMetadata
+		galleryMetadatas []models.GalleryMetadata
 	}
 	tests := []struct {
-		name                 string
-		fixtureFiles         []string
-		args                 args
-		wantGalleryMetadata  models.GalleryMetadata
-		wantGalleryMetadatas []models.GalleryMetadata
-		wantErr              error
+		name                        string
+		fixtureFiles                []string
+		args                        args
+		wantInsertedGalleryMetadata []models.GalleryMetadata
+		wantGalleryMetadatas        []models.GalleryMetadata
+		wantErr                     error
 	}{
 		{
 			name: "duplicate image metadata :NEG",
@@ -5666,19 +5736,21 @@ func TestRepo_AddGalleryMetadata(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				galleryMetadata: models.GalleryMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					OrderIndex:    0,
-					Height:        1080,
-					Width:         1920,
-					Url:           "https://example.com/gallery11.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
-					CreatedAtUnix: 1725091100,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				galleryMetadatas: []models.GalleryMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						OrderIndex:    0,
+						Height:        1080,
+						Width:         1920,
+						Url:           "https://example.com/gallery11.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						CreatedAtUnix: 1725091100,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					},
 				},
 			},
-			wantGalleryMetadata: models.GalleryMetadata{},
+			wantInsertedGalleryMetadata: nil,
 			wantGalleryMetadatas: []models.GalleryMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -5739,18 +5811,20 @@ func TestRepo_AddGalleryMetadata(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				galleryMetadata: models.GalleryMetadata{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Height:        2160,
-					Width:         3840,
-					Url:           "https://example.com/image3.jpg",
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091300,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				galleryMetadatas: []models.GalleryMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+						GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/image3.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantGalleryMetadata: models.GalleryMetadata{},
+			wantInsertedGalleryMetadata: nil,
 			wantGalleryMetadatas: []models.GalleryMetadata{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -5811,7 +5885,21 @@ func TestRepo_AddGalleryMetadata(t *testing.T) {
 				"gallery_metadatas.yml",
 			},
 			args: args{
-				galleryMetadata: models.GalleryMetadata{
+				galleryMetadatas: []models.GalleryMetadata{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+						GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Height:        2160,
+						Width:         3840,
+						Url:           "https://example.com/imagenew.jpg",
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091300,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedGalleryMetadata: []models.GalleryMetadata{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
 					GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Height:        2160,
@@ -5821,16 +5909,6 @@ func TestRepo_AddGalleryMetadata(t *testing.T) {
 					CreatedAtUnix: 1725091300,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 				},
-			},
-			wantGalleryMetadata: models.GalleryMetadata{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-				GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				Height:        2160,
-				Width:         3840,
-				Url:           "https://example.com/imagenew.jpg",
-				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-				CreatedAtUnix: 1725091300,
-				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 			},
 			wantGalleryMetadatas: []models.GalleryMetadata{
 				{
@@ -5897,19 +5975,21 @@ func TestRepo_AddGalleryMetadata(t *testing.T) {
 			pgrepo := mediarepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotGalleryMetadata, gotErr := pgrepo.AddGalleryMetadata(context.Background(), tt.args.galleryMetadata)
+			gotInsertedGalleryMetadatas, gotErr := pgrepo.AddGalleryMetadatas(context.Background(), tt.args.galleryMetadatas...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotGalleryMetadata.UpdatedAt,
-				gotGalleryMetadata.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotGalleryMetadata.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotGalleryMetadata.UpdatedAt, startTime, endTime)
+			for _, gotInsertedGalleryMetadata := range gotInsertedGalleryMetadatas {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedGalleryMetadata.UpdatedAt,
+					gotInsertedGalleryMetadata.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedGalleryMetadata.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedGalleryMetadata.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())

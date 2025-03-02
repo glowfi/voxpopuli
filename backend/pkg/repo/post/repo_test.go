@@ -240,38 +240,40 @@ func TestRepo_PostByID(t *testing.T) {
 	}
 }
 
-func TestRepo_AddPost(t *testing.T) {
+func TestRepo_AddPosts(t *testing.T) {
 	type args struct {
-		post models.Post
+		posts []models.Post
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantPost     models.Post
-		wantPosts    []models.Post
-		wantErr      error
+		name              string
+		fixtureFiles      []string
+		args              args
+		wantInsertedPosts []models.Post
+		wantPosts         []models.Post
+		wantErr           error
 	}{
 		{
 			name:         "duplicate post id :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml"},
 			args: args{
-				post: models.Post{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:         "Example Post Title 2",
-					Text:          "This is an example post text 2.",
-					TextHtml:      "<p>This is an example post text 2 in HTML.</p>",
-					Ups:           20,
-					Over18:        true,
-					Spoiler:       true,
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
-					CreatedAtUnix: 1725091120,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				posts: []models.Post{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Title:         "Example Post Title 2",
+						Text:          "This is an example post text 2.",
+						TextHtml:      "<p>This is an example post text 2 in HTML.</p>",
+						Ups:           20,
+						Over18:        true,
+						Spoiler:       true,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						CreatedAtUnix: 1725091120,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					},
 				},
 			},
-			wantPost: models.Post{},
+			wantInsertedPosts: nil,
 			wantPosts: []models.Post{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -308,22 +310,24 @@ func TestRepo_AddPost(t *testing.T) {
 			name:         "author does not exist in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml"},
 			args: args{
-				post: models.Post{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:         "Example Post Title 3",
-					Text:          "This is an example post text 3.",
-					TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
-					Ups:           30,
-					Over18:        true,
-					Spoiler:       true,
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091120,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				posts: []models.Post{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Title:         "Example Post Title 3",
+						Text:          "This is an example post text 3.",
+						TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
+						Ups:           30,
+						Over18:        true,
+						Spoiler:       true,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091120,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantPost: models.Post{},
+			wantInsertedPosts: nil,
 			wantPosts: []models.Post{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -360,22 +364,24 @@ func TestRepo_AddPost(t *testing.T) {
 			name:         "voxsphere does not exist in parent table :NEG",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml"},
 			args: args{
-				post: models.Post{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					Title:         "Example Post Title 3",
-					Text:          "This is an example post text 3.",
-					TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
-					Ups:           30,
-					Over18:        true,
-					Spoiler:       true,
-					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-					CreatedAtUnix: 1725091120,
-					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				posts: []models.Post{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+						Title:         "Example Post Title 3",
+						Text:          "This is an example post text 3.",
+						TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
+						Ups:           30,
+						Over18:        true,
+						Spoiler:       true,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091120,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
 				},
 			},
-			wantPost: models.Post{},
+			wantInsertedPosts: nil,
 			wantPosts: []models.Post{
 				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
@@ -409,10 +415,28 @@ func TestRepo_AddPost(t *testing.T) {
 			wantErr: postrepo.ErrPostParentTableRecordNotFound,
 		},
 		{
-			name:         "add post :POS",
+			name:         "add posts :POS",
 			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts.yml"},
 			args: args{
-				post: models.Post{
+				posts: []models.Post{
+					{
+						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Title:         "Example Post Title 3",
+						Text:          "This is an example post text 3.",
+						TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
+						Ups:           30,
+						Over18:        true,
+						Spoiler:       true,
+						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+						CreatedAtUnix: 1725091120,
+						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					},
+				},
+			},
+			wantInsertedPosts: []models.Post{
+				{
 					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
@@ -426,20 +450,6 @@ func TestRepo_AddPost(t *testing.T) {
 					CreatedAtUnix: 1725091120,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 				},
-			},
-			wantPost: models.Post{
-				ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-				AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				Title:         "Example Post Title 3",
-				Text:          "This is an example post text 3.",
-				TextHtml:      "<p>This is an example post text 3 in HTML.</p>",
-				Ups:           30,
-				Over18:        true,
-				Spoiler:       true,
-				CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
-				CreatedAtUnix: 1725091120,
-				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
 			},
 			wantPosts: []models.Post{
 				{
@@ -494,19 +504,21 @@ func TestRepo_AddPost(t *testing.T) {
 			pgrepo := postrepo.NewRepo(db)
 
 			startTime := time.Now()
-			gotPost, gotErr := pgrepo.AddPost(context.Background(), tt.args.post)
+			gotInsertedPosts, gotErr := pgrepo.AddPosts(context.Background(), tt.args.posts...)
 			endTime := time.Now()
 
-			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(
-				t,
-				gotPost.UpdatedAt,
-				gotPost.CreatedAt,
-				"expect CreatedAt and UpdatedAt to be same",
-			)
-			if tt.wantErr == nil {
-				assertTimeWithinRange(t, gotPost.CreatedAt, startTime, endTime)
-				assertTimeWithinRange(t, gotPost.UpdatedAt, startTime, endTime)
+			for _, gotInsertedPost := range gotInsertedPosts {
+				assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
+				assert.Equal(
+					t,
+					gotInsertedPost.UpdatedAt,
+					gotInsertedPost.CreatedAt,
+					"expect CreatedAt and UpdatedAt to be same",
+				)
+				if tt.wantErr == nil {
+					assertTimeWithinRange(t, gotInsertedPost.CreatedAt, startTime, endTime)
+					assertTimeWithinRange(t, gotInsertedPost.UpdatedAt, startTime, endTime)
+				}
 			}
 
 			gotPosts, err := pgrepo.Posts(context.Background())

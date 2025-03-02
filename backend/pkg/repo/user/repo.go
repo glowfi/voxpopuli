@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -24,7 +25,7 @@ var (
 type Repository interface {
 	Users() ([]models.User, error)
 	UserByID(context.Context, uuid.UUID) (models.User, error)
-	AddUser(context.Context, models.User) (models.User, error)
+	AddUsers(context.Context, ...models.User) ([]models.User, error)
 	UpdateUser(context.Context, models.User) (models.User, error)
 	DeleteUser(context.Context, uuid.UUID) error
 }
@@ -99,71 +100,66 @@ func (r *Repo) UserByID(ctx context.Context, ID uuid.UUID) (models.User, error) 
 	return user, nil
 }
 
-func (r *Repo) AddUser(ctx context.Context, user models.User) (models.User, error) {
+func (r *Repo) AddUsers(ctx context.Context, users ...models.User) ([]models.User, error) {
 	query := `
-                INSERT INTO
-                    users (
-                        id,
-                        name,
-                        public_description,
-                        avatar_img,
-                        banner_img,
-                        iconcolor,
-                        keycolor,
-                        primarycolor,
-                        over18,
-                        suspended,
-                        created_at,
-                        created_at_unix,
-                        updated_at
-                    )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                RETURNING *
-            `
+        INSERT INTO
+            users (
+                id,
+                name,
+                public_description,
+                avatar_img,
+                banner_img,
+                iconcolor,
+                keycolor,
+                primarycolor,
+                over18,
+                suspended,
+                created_at,
+                created_at_unix,
+                updated_at
+            )
+        VALUES 
+    `
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
 
-	timestamp := time.Now()
-	user.CreatedAt = timestamp
-	user.UpdatedAt = timestamp
-	user.CreatedAtUnix = timestamp.Unix()
+	for _, user := range users {
+		timestamp := time.Now()
+		user.CreatedAt = timestamp
+		user.UpdatedAt = timestamp
+		user.CreatedAtUnix = timestamp.Unix()
 
-	if _, err := r.db.NewRaw(
-		query,
-		user.ID,
-		user.Name,
-		user.PublicDescription,
-		user.AvatarImg,
-		user.BannerImg,
-		user.Iconcolor,
-		user.Keycolor,
-		user.Primarycolor,
-		user.Over18,
-		user.Suspended,
-		user.CreatedAt,
-		user.CreatedAtUnix,
-		user.UpdatedAt,
-	).Exec(ctx, &user); err != nil {
-		var pgdriverErr pgdriver.Error
-		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
-			return models.User{}, ErrUserDuplicateIDorName
-		}
-		return models.User{}, err
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		args = append(args,
+			user.ID,
+			user.Name,
+			user.PublicDescription,
+			user.AvatarImg,
+			user.BannerImg,
+			user.Iconcolor,
+			user.Keycolor,
+			user.Primarycolor,
+			user.Over18,
+			user.Suspended,
+			user.CreatedAt,
+			user.CreatedAtUnix,
+			user.UpdatedAt,
+		)
 	}
 
-	return user, nil
+	query += strings.Join(placeholders, ", ")
+	query += " RETURNING *"
+
+	if _, err := r.db.NewRaw(
+		query, args...).Exec(ctx, &users); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrUserDuplicateIDorName
+		}
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (r *Repo) UpdateUser(ctx context.Context, user models.User) (models.User, error) {
