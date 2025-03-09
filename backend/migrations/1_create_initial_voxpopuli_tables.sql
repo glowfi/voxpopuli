@@ -71,21 +71,26 @@ CREATE TABLE emojis (
 CREATE TABLE custom_emojis(
     id UUID PRIMARY KEY,
     voxsphere_id UUID NOT NULL,
-    url TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     title VARCHAR(128) NOT NULL,
-    CONSTRAINT uk_voxsphere_id_link_text UNIQUE(voxsphere_id,title),
+    CONSTRAINT uk_voxsphere_id_title UNIQUE(voxsphere_id,title),
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE user_flairs(
     id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
-    background_color VARCHAR(8),
-    CONSTRAINT uk_user_id_voxsphere_id UNIQUE(user_id,voxsphere_id),
-    CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    background_color VARCHAR(16),
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE user_user_flairs(
+    user_id UUID NOT NULL,
+    user_flair_id UUID NOT NULL,
+    PRIMARY KEY(user_id,user_flair_id),
+    CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_user_flair_id FOREIGN KEY(user_flair_id) REFERENCES user_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE user_flair_custom_emojis (
@@ -149,7 +154,7 @@ CREATE TABLE posts (
     id UUID PRIMARY KEY,
     author_id UUID NOT NULL,
     voxsphere_id UUID NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    title TEXT NOT NULL,
     text TEXT,
     text_html TEXT,
     ups INTEGER NOT NULL,
@@ -190,7 +195,7 @@ CREATE TABLE image_metadatas (
     image_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -208,7 +213,7 @@ CREATE TABLE gif_metadatas (
     gif_id UUID NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -218,7 +223,7 @@ CREATE TABLE gif_metadatas (
 CREATE TABLE videos (
     id UUID PRIMARY KEY,
     media_id UUID NOT NULL,
-    url TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -239,7 +244,7 @@ CREATE TABLE gallery_metadatas (
     order_index INTEGER NOT NULL,
     height INTEGER NOT NULL,
     width INTEGER NOT NULL,
-    url TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at_unix BIGINT NOT NULL,
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -291,13 +296,20 @@ CREATE TABLE post_awards (
 
 CREATE TABLE post_flairs(
     id UUID PRIMARY KEY,
-    post_id UUID NOT NULL UNIQUE,
     voxsphere_id UUID NOT NULL,
     full_text VARCHAR(255) NOT NULL,
-    background_color VARCHAR(8),
-    CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    background_color VARCHAR(16),
     CONSTRAINT fk_voxsphere_id FOREIGN KEY(voxsphere_id) REFERENCES voxspheres(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE post_post_flairs(
+    post_id UUID NOT NULL,
+    post_flair_id UUID NOT NULL,
+    PRIMARY KEY(post_id,post_flair_id),
+    CONSTRAINT fk_post_id FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_post_flair_id FOREIGN KEY(post_flair_id) REFERENCES post_flairs(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 
 CREATE TABLE post_flair_custom_emojis (
     custom_emoji_id UUID NOT NULL,
@@ -355,7 +367,6 @@ CREATE UNIQUE INDEX "user_name" ON "users"("name");
 -- Create indexes for foreign key columns
 CREATE INDEX idx_voxsphere_topic_id ON voxspheres (topic_id);
 CREATE INDEX idx_rules_voxsphere_id ON rules (voxsphere_id);
-CREATE INDEX idx_user_flairs_user_id ON user_flairs (user_id);
 CREATE INDEX idx_user_flairs_voxsphere_id ON user_flairs (voxsphere_id);
 CREATE INDEX idx_user_flair_emojis_user_flair_id ON user_flair_emojis (user_flair_id);
 CREATE INDEX idx_user_flair_descriptions_user_flair_id ON user_flair_descriptions (user_flair_id);
@@ -378,7 +389,6 @@ CREATE INDEX idx_comments_parent_comment_id ON comments (parent_comment_id);
 CREATE INDEX idx_comments_post_id ON comments (post_id);
 CREATE INDEX idx_post_awards_post_id ON post_awards (post_id);
 CREATE INDEX idx_post_awards_award_id ON post_awards (award_id);
-CREATE INDEX idx_post_flairs_post_id ON post_flairs (post_id);
 CREATE INDEX idx_post_flairs_voxsphere_id ON post_flairs (voxsphere_id);
 CREATE INDEX idx_post_flair_emojis_post_flair_id ON post_flair_emojis (post_flair_id);
 CREATE INDEX idx_post_flair_descriptions_post_flair_id ON post_flair_descriptions (post_flair_id);
@@ -387,8 +397,6 @@ CREATE INDEX idx_post_flair_descriptions_post_flair_id ON post_flair_description
 CREATE INDEX idx_voxspheres_title ON voxspheres (title);
 CREATE INDEX idx_voxspheres_public_description ON voxspheres (public_description);
 CREATE INDEX idx_posts_title ON posts (title);
-CREATE INDEX idx_posts_text ON posts (text);
-CREATE INDEX idx_comments_body ON comments (body);
 CREATE INDEX idx_users_name ON users (name);
 CREATE INDEX idx_users_public_description ON users (public_description);
 
@@ -417,15 +425,12 @@ DROP INDEX idx_videos_created_at;
 DROP INDEX idx_link_created_at;
 DROP INDEX idx_users_public_description;
 DROP INDEX idx_users_name;
-DROP INDEX idx_comments_body;
-DROP INDEX idx_posts_text;
 DROP INDEX idx_posts_title;
 DROP INDEX idx_voxspheres_public_description;
 DROP INDEX idx_voxspheres_title;
 DROP INDEX idx_post_flair_descriptions_post_flair_id;
 DROP INDEX idx_post_flair_emojis_post_flair_id;
 DROP INDEX idx_post_flairs_voxsphere_id;
-DROP INDEX idx_post_flairs_post_id;
 DROP INDEX idx_post_awards_award_id;
 DROP INDEX idx_post_awards_post_id;
 DROP INDEX idx_comments_post_id;
@@ -448,7 +453,6 @@ DROP INDEX idx_user_trophies_user_id;
 DROP INDEX idx_user_flair_descriptions_user_flair_id;
 DROP INDEX idx_user_flair_emojis_user_flair_id;
 DROP INDEX idx_user_flairs_voxsphere_id;
-DROP INDEX idx_user_flairs_user_id;
 DROP INDEX idx_rules_voxsphere_id;
 DROP INDEX idx_voxsphere_topic_id;
 

@@ -22,34 +22,40 @@ var (
 )
 
 type Repository interface {
-	UserTrophies(ctx context.Context) ([]models.UserTrophy, error)
+	UserTrophies(context.Context) ([]models.UserTrophy, error)
 	LinkUserTrophies(context.Context, ...models.UserTrophy) ([]models.UserTrophy, error)
 
-	VoxsphereMembers(ctx context.Context) ([]models.VoxsphereMember, error)
+	VoxsphereMembers(context.Context) ([]models.VoxsphereMember, error)
 	LinkVoxsphereMembers(context.Context, ...models.VoxsphereMember) ([]models.VoxsphereMember, error)
 
-	VoxsphereModerators(ctx context.Context) ([]models.VoxsphereModerator, error)
+	VoxsphereModerators(context.Context) ([]models.VoxsphereModerator, error)
 	LinkVoxsphereModerators(context.Context, ...models.VoxsphereModerator) ([]models.VoxsphereModerator, error)
 
-	UserFlairEmojis(ctx context.Context) ([]models.UserFlairEmoji, error)
+	PostPostFlairs(context.Context) ([]models.PostPostFlair, error)
+	LinkPostPostFlairs(context.Context, ...models.PostPostFlair) ([]models.PostPostFlair, error)
+
+	UserUserFlair(context.Context) ([]models.UserUserFlair, error)
+	LinkUserUserFlair(context.Context, ...models.UserUserFlair) ([]models.UserUserFlair, error)
+
+	UserFlairEmojis(context.Context) ([]models.UserFlairEmoji, error)
 	LinkUserFlairEmojis(context.Context, ...models.UserFlairEmoji) ([]models.UserFlairEmoji, error)
 
-	UserFlairCustomEmojis(ctx context.Context) ([]models.UserFlairCustomEmoji, error)
+	UserFlairCustomEmojis(context.Context) ([]models.UserFlairCustomEmoji, error)
 	LinkUserFlairCustomEmojis(context.Context, ...models.UserFlairCustomEmoji) ([]models.UserFlairCustomEmoji, error)
 
-	UserFlairDescriptions(ctx context.Context) ([]models.UserFlairDescription, error)
+	UserFlairDescriptions(context.Context) ([]models.UserFlairDescription, error)
 	LinkUserFlairDescriptions(context.Context, ...models.UserFlairDescription) ([]models.UserFlairDescription, error)
 
-	PostFlairEmojis(ctx context.Context) ([]models.PostFlairEmoji, error)
+	PostFlairEmojis(context.Context) ([]models.PostFlairEmoji, error)
 	LinkPostFlairEmojis(context.Context, ...models.PostFlairEmoji) ([]models.PostFlairEmoji, error)
 
-	PostFlairCustomEmojis(ctx context.Context) ([]models.PostFlairCustomEmoji, error)
+	PostFlairCustomEmojis(context.Context) ([]models.PostFlairCustomEmoji, error)
 	LinkPostFlairCustomEmojis(context.Context, ...models.PostFlairCustomEmoji) ([]models.PostFlairCustomEmoji, error)
 
-	PostFlairDescriptions(ctx context.Context) ([]models.PostFlairDescription, error)
+	PostFlairDescriptions(context.Context) ([]models.PostFlairDescription, error)
 	LinkPostFlairDescriptions(context.Context, ...models.PostFlairDescription) ([]models.PostFlairDescription, error)
 
-	PostAwards(ctx context.Context) ([]models.PostAward, error)
+	PostAwards(context.Context) ([]models.PostAward, error)
 	LinkPostAwards(context.Context, ...models.PostAward) ([]models.PostAward, error)
 }
 
@@ -611,4 +617,98 @@ func (r *Repo) LinkPostAwards(ctx context.Context, pas ...models.PostAward) ([]m
 	}
 
 	return pas, nil
+}
+
+func (r *Repo) PostPostFlairs(ctx context.Context) ([]models.PostPostFlair, error) {
+	var postPostFlairs []models.PostPostFlair
+
+	query := `
+		SELECT 
+			post_id,
+			post_flair_id
+		FROM
+			post_post_flairs
+	`
+
+	_, err := r.db.NewRaw(query).Exec(ctx, &postPostFlairs)
+	if err != nil {
+		return []models.PostPostFlair{}, err
+	}
+	return postPostFlairs, nil
+}
+
+func (r *Repo) LinkPostPostFlairs(ctx context.Context, ppfs ...models.PostPostFlair) ([]models.PostPostFlair, error) {
+	query := `
+		INSERT INTO post_post_flairs
+			(post_id, post_flair_id)
+		VALUES 
+	`
+
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, ppf := range ppfs {
+		placeholders = append(placeholders, "(?, ?)")
+		args = append(args, ppf.PostID, ppf.PostFlairID)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &ppfs); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return ppfs, nil
+}
+
+func (r *Repo) UserUserFlairs(ctx context.Context) ([]models.UserUserFlair, error) {
+	var userUserFlairs []models.UserUserFlair
+
+	query := `
+		SELECT 
+			user_id,
+			user_flair_id
+		FROM
+			user_user_flairs
+	`
+
+	_, err := r.db.NewRaw(query).Exec(ctx, &userUserFlairs)
+	if err != nil {
+		return []models.UserUserFlair{}, err
+	}
+	return userUserFlairs, nil
+}
+
+func (r *Repo) LinkUserUserFlairs(ctx context.Context, uufs ...models.UserUserFlair) ([]models.UserUserFlair, error) {
+	query := `
+		INSERT INTO user_user_flairs
+			(user_id, user_flair_id)
+		VALUES 
+	`
+
+	args := make([]interface{}, 0)
+	placeholders := make([]string, 0)
+	for _, uuf := range uufs {
+		placeholders = append(placeholders, "(?, ?)")
+		args = append(args, uuf.UserID, uuf.UserFlairID)
+	}
+	query += strings.Join(placeholders, ", ") + " RETURNING *"
+
+	if _, err := r.db.NewRaw(query, args...).Exec(ctx, &uufs); err != nil {
+		var pgdriverErr pgdriver.Error
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgUniqueViolation {
+			return nil, ErrDuplicateID
+		}
+		if errors.As(err, &pgdriverErr) && pgdriverErr.Field('C') == pgConstraintViolation {
+			return nil, ErrParentTableRecordNotFound
+		}
+		return nil, err
+	}
+
+	return uufs, nil
 }

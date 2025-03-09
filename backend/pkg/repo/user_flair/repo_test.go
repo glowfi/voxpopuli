@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
-	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
 	userflaireRepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user_flair"
 	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
@@ -45,7 +44,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
-	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.UserFlair)(nil))
 
 	// drop all rows of the topic,voxsphere,user,user_flairs table
@@ -53,9 +51,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Voxsphere)(nil)).Exec(context.Background()); err != nil {
-		t.Fatal("truncate table failed:", err)
-	}
-	if _, err := db.NewTruncateTable().Cascade().Model((*models.User)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserFlair)(nil)).Exec(context.Background()); err != nil {
@@ -100,18 +95,16 @@ func TestRepo_UserFlairs(t *testing.T) {
 	}{
 		{
 			name:         "user flairs :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -152,7 +145,7 @@ func TestRepo_UserFlairByID(t *testing.T) {
 	}{
 		{
 			name:         "user flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			},
@@ -161,13 +154,12 @@ func TestRepo_UserFlairByID(t *testing.T) {
 		},
 		{
 			name:         "user flair found :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 			wantUserFlair: models.UserFlair{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				FullText:        "Flair 1",
 				BackgroundColor: "#FFFFFF",
@@ -202,12 +194,11 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 	}{
 		{
 			name:         "duplicate user flair id :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlairs: []models.UserFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -218,14 +209,12 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -235,12 +224,11 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 		},
 		{
 			name:         "voxsphere not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlairs: []models.UserFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -251,14 +239,12 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -268,12 +254,11 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 		},
 		{
 			name:         "add user flairs :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlairs: []models.UserFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -283,7 +268,6 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 			wantInsertedUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "new text",
 					BackgroundColor: "#FFFFFF",
@@ -292,21 +276,18 @@ func TestRepo_AddUserFlairs(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "new text",
 					BackgroundColor: "#FFFFFF",
@@ -348,11 +329,10 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 	}{
 		{
 			name:         "user flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlair: models.UserFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
@@ -362,14 +342,12 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -379,11 +357,10 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 		},
 		{
 			name:         "voxsphere is not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlair: models.UserFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
@@ -393,45 +370,12 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					FullText:        "Flair 2",
-					BackgroundColor: "#000000",
-				},
-			},
-			wantErr: userflaireRepo.ErrUserFlairParentTableRecordNotFound,
-		},
-		{
-			name:         "user is not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
-			args: args{
-				userFlair: models.UserFlair{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					FullText:        "updated text",
-					BackgroundColor: "#000000",
-				},
-			},
-			wantUserFlair: models.UserFlair{},
-			wantUserFlairs: []models.UserFlair{
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					FullText:        "Flair 1",
-					BackgroundColor: "#FFFFFF",
-				},
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -441,11 +385,10 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 		},
 		{
 			name:         "update user flair :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				userFlair: models.UserFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
@@ -453,7 +396,6 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 			},
 			wantUserFlair: models.UserFlair{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				FullText:        "updated text",
 				BackgroundColor: "#000000",
@@ -461,14 +403,12 @@ func TestRepo_UpdateUserFlair(t *testing.T) {
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -508,21 +448,19 @@ func TestRepo_DeleteUserFlair(t *testing.T) {
 	}{
 		{
 			name:         "user flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			},
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -532,14 +470,13 @@ func TestRepo_DeleteUserFlair(t *testing.T) {
 		},
 		{
 			name:         "user flair deleted :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "user_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 			wantUserFlairs: []models.UserFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -567,14 +504,13 @@ func TestRepo_DeleteUserFlair(t *testing.T) {
 
 func TestRepo_ForeignKeyCascade(t *testing.T) {
 	t.Run("on deleting voxsphere from parent table , no child references should exist in user_flairs table", func(t *testing.T) {
-		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml")
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "user_flairs.yml")
 		userFlairPgrepo := userflaireRepo.NewRepo(db)
 		voxspherePgrepo := voxrepo.NewRepo(db)
 
 		wantUserFlairs := []models.UserFlair{
 			{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				FullText:        "Flair 2",
 				BackgroundColor: "#000000",
@@ -584,31 +520,6 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
 
 		assert.NoError(t, err, "expect no error while deleting voxsphere")
-
-		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
-
-		assert.NoError(t, err, "expect no error while getting user flairs")
-		assertUserFlairs(t, wantUserFlairs, gotUserFlairs)
-	})
-
-	t.Run("on deleting user from parent table , no child references should exist in user_flairs table", func(t *testing.T) {
-		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml")
-		userFlairPgrepo := userflaireRepo.NewRepo(db)
-		userPgrepo := userrepo.NewRepo(db)
-
-		wantUserFlairs := []models.UserFlair{
-			{
-				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				UserID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				FullText:        "Flair 2",
-				BackgroundColor: "#000000",
-			},
-		}
-
-		err := userPgrepo.DeleteUser(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
-
-		assert.NoError(t, err, "expect no error while deleting user")
 
 		gotUserFlairs, err := userFlairPgrepo.UserFlairs(context.Background())
 

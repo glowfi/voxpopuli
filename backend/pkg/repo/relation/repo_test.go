@@ -69,6 +69,8 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.PostFlairEmoji)(nil))
 	db.RegisterModel((*models.PostFlairDescription)(nil))
 	db.RegisterModel((*models.PostAward)(nil))
+	db.RegisterModel((*models.PostPostFlair)(nil))
+	db.RegisterModel((*models.UserUserFlair)(nil))
 
 	// drop all rows of the user,trophies table
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background()); err != nil {
@@ -126,6 +128,12 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostAward)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostPostFlair)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.UserUserFlair)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -1988,5 +1996,339 @@ func TestRepo_LinkPostAwards(t *testing.T) {
 
 		assert.NoError(t, gotErr)
 		assert.Equal(t, []models.PostAward(nil), gotPostAwards, "expect post awards to match")
+	})
+}
+
+func TestRepo_PostPostFlairs(t *testing.T) {
+	tests := []struct {
+		name               string
+		fixtureFiles       []string
+		wantPostPostFlairs []models.PostPostFlair
+		wantErr            error
+	}{
+		{
+			name:               "no post post flairs :POS",
+			fixtureFiles:       []string{},
+			wantPostPostFlairs: nil,
+			wantErr:            nil,
+		},
+		{
+			name: "post post flairs :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts.yml",
+				"post_flairs.yml",
+				"post_post_flairs.yml",
+			},
+			wantPostPostFlairs: []models.PostPostFlair{
+				{
+					PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				},
+				{
+					PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				},
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotPostPostFlairs, gotErr := pgrepo.PostPostFlairs(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantPostPostFlairs, gotPostPostFlairs, "expect post_post_flairs to match")
+		})
+	}
+}
+
+func TestRepo_UserUserFlairs(t *testing.T) {
+	tests := []struct {
+		name               string
+		fixtureFiles       []string
+		wantUserUserFlairs []models.UserUserFlair
+		wantErr            error
+	}{
+		{
+			name: "user user flairs :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"user_flairs.yml",
+				"user_user_flairs.yml",
+			},
+			wantUserUserFlairs: []models.UserUserFlair{
+				{
+					UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				},
+				{
+					UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name:               "no user user flairs :POS",
+			fixtureFiles:       []string{},
+			wantUserUserFlairs: nil,
+			wantErr:            nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupPostgres(t, tt.fixtureFiles...)
+			pgrepo := relationrepo.NewRepo(db)
+
+			gotUserUserFlairs, gotErr := pgrepo.UserUserFlairs(context.Background())
+
+			assert.ErrorIs(t, tt.wantErr, gotErr, "expect error to match")
+			assert.Equal(t, tt.wantUserUserFlairs, gotUserUserFlairs, "expect user_user_flairs to match")
+		})
+	}
+}
+
+func TestRepo_LinkPostPostFlairs(t *testing.T) {
+	t.Run("duplicate post_id, post_flair_id while linking post and post flair :NEG", func(t *testing.T) {
+		db := setupPostgres(
+			t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"posts.yml",
+			"post_flairs.yml",
+			"post_post_flairs.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostPostFlairs, gotErr := pgrepo.LinkPostPostFlairs(
+			context.Background(),
+			models.PostPostFlair{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, []models.PostPostFlair(nil), gotPostPostFlairs, "expect post post flair to match")
+	})
+
+	t.Run("post not found while linking post and post flair :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml", "post_post_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostPostFlairs, gotErr := pgrepo.LinkPostPostFlairs(
+			context.Background(),
+			models.PostPostFlair{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, []models.PostPostFlair(nil), gotPostPostFlairs, "expect post post flair to match")
+	})
+
+	t.Run("post flair not found while linking post and post flair :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml", "post_post_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostPostFlairs, gotErr := pgrepo.LinkPostPostFlairs(
+			context.Background(),
+			models.PostPostFlair{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, []models.PostPostFlair(nil), gotPostPostFlairs, "expect post post flair to match")
+	})
+
+	t.Run("link post and post flair :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml", "post_post_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotPostPostFlairs, gotErr := pgrepo.LinkPostPostFlairs(
+			context.Background(),
+			models.PostPostFlair{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, []models.PostPostFlair{
+			{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		}, gotPostPostFlairs, "expect post post flair to match")
+	})
+
+	t.Run("on deleting post id child references get deleted in post_post_flairs table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml", "post_post_flairs.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		postPgrepo := postrepo.NewRepo(db)
+
+		gotErr := postPgrepo.DeletePost(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostPostFlairs, gotErr := relationPgrepo.PostPostFlairs(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostPostFlair{
+			{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		}, gotPostPostFlairs, "expect post post flairs to match")
+	})
+
+	t.Run("on deleting post flair id child references get deleted in post_post_flairs table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml", "post_post_flairs.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		postFlairPgrepo := postFlairrepo.NewRepo(db)
+
+		gotErr := postFlairPgrepo.DeletePostFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000002"))
+
+		assert.NoError(t, gotErr)
+
+		gotPostPostFlairs, gotErr := relationPgrepo.PostPostFlairs(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.PostPostFlair{
+			{
+				PostID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				PostFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		}, gotPostPostFlairs, "expect post post flairs to match")
+	})
+}
+
+func TestRepo_LinkUserUserFlairs(t *testing.T) {
+	t.Run("duplicate user_id, user_flair_id while linking user and user flair :NEG", func(t *testing.T) {
+		db := setupPostgres(
+			t,
+			"topics.yml",
+			"voxspheres.yml",
+			"users.yml",
+			"user_flairs.yml",
+			"user_user_flairs.yml",
+		)
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserUserFlairs, gotErr := pgrepo.LinkUserUserFlairs(
+			context.Background(),
+			models.UserUserFlair{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrDuplicateID, gotErr, "expect error to match")
+		assert.Equal(t, []models.UserUserFlair(nil), gotUserUserFlairs, "expect user user flair to match")
+	})
+
+	t.Run("user not found while linking user and user flair :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml", "user_user_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserUserFlairs, gotErr := pgrepo.LinkUserUserFlairs(
+			context.Background(),
+			models.UserUserFlair{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, []models.UserUserFlair(nil), gotUserUserFlairs, "expect user user flair to match")
+	})
+
+	t.Run("user flair not found while linking user and user flair :NEG", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml", "user_user_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserUserFlairs, gotErr := pgrepo.LinkUserUserFlairs(
+			context.Background(),
+			models.UserUserFlair{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000009"),
+			},
+		)
+
+		assert.ErrorIs(t, relationrepo.ErrParentTableRecordNotFound, gotErr, "expect error to match")
+		assert.Equal(t, []models.UserUserFlair(nil), gotUserUserFlairs, "expect user user flair to match")
+	})
+
+	t.Run("link user and user flair :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml", "user_user_flairs.yml")
+		pgrepo := relationrepo.NewRepo(db)
+
+		gotUserUserFlairs, gotErr := pgrepo.LinkUserUserFlairs(
+			context.Background(),
+			models.UserUserFlair{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		)
+
+		assert.ErrorIs(t, nil, gotErr, "expect error to match")
+		assert.Equal(t, []models.UserUserFlair{
+			{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		}, gotUserUserFlairs, "expect user user flair to match")
+	})
+
+	t.Run("on deleting user id child references get deleted in user_user_flairs table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml", "user_user_flairs.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		userPgrepo := userrepo.NewRepo(db)
+
+		gotErr := userPgrepo.DeleteUser(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
+
+		assert.NoError(t, gotErr)
+
+		gotUserUserFlairs, gotErr := relationPgrepo.UserUserFlairs(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserUserFlair{
+			{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+			},
+		}, gotUserUserFlairs, "expect user user flairs to match")
+	})
+
+	t.Run("on deleting user flair id child references get deleted in user_user_flairs table :POS", func(t *testing.T) {
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "user_flairs.yml", "user_user_flairs.yml")
+		relationPgrepo := relationrepo.NewRepo(db)
+		userFlairPgrepo := userFlairrepo.NewRepo(db)
+
+		gotErr := userFlairPgrepo.DeleteUserFlair(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000002"))
+
+		assert.NoError(t, gotErr)
+
+		gotUserUserFlairs, gotErr := relationPgrepo.UserUserFlairs(context.Background())
+
+		assert.NoError(t, gotErr)
+		assert.Equal(t, []models.UserUserFlair{
+			{
+				UserID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+				UserFlairID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		}, gotUserUserFlairs, "expect user user flairs to match")
 	})
 }

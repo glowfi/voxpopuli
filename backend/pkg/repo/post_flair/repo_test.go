@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
-	postRepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	postflaireRepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post_flair"
 	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
 	"github.com/google/uuid"
@@ -46,7 +45,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.Topic)(nil))
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
-	db.RegisterModel((*models.Post)(nil))
 	db.RegisterModel((*models.PostFlair)(nil))
 
 	// drop all rows of the topic,voxsphere,post,post_flairs table
@@ -57,9 +55,6 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.User)(nil)).Exec(context.Background()); err != nil {
-		t.Fatal("truncate table failed:", err)
-	}
-	if _, err := db.NewTruncateTable().Cascade().Model((*models.Post)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostFlair)(nil)).Exec(context.Background()); err != nil {
@@ -104,18 +99,16 @@ func TestRepo_PostFlairs(t *testing.T) {
 	}{
 		{
 			name:         "post flairs :POS",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -156,7 +149,7 @@ func TestRepo_PostFlairByID(t *testing.T) {
 	}{
 		{
 			name:         "post flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			},
@@ -165,13 +158,12 @@ func TestRepo_PostFlairByID(t *testing.T) {
 		},
 		{
 			name:         "post flair found :POS",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 			wantPostFlair: models.PostFlair{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				FullText:        "Flair 1",
 				BackgroundColor: "#FFFFFF",
@@ -206,12 +198,11 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 	}{
 		{
 			name:         "duplicate post flair id :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlairs: []models.PostFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -222,95 +213,26 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
 				},
 			},
 			wantErr: postflaireRepo.ErrPostFlairDuplicateID,
-		},
-		{
-			name:         "duplicate post id :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
-			args: args{
-				postFlairs: []models.PostFlair{
-					{
-						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						FullText:        "new text",
-						BackgroundColor: "#FFFFFF",
-					},
-				},
-			},
-			wantInsertedPostFlairs: nil,
-			wantPostFlairs: []models.PostFlair{
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					FullText:        "Flair 1",
-					BackgroundColor: "#FFFFFF",
-				},
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					FullText:        "Flair 2",
-					BackgroundColor: "#000000",
-				},
-			},
-			wantErr: postflaireRepo.ErrPostFlairDuplicateID,
-		},
-		{
-			name:         "post not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
-			args: args{
-				postFlairs: []models.PostFlair{
-					{
-						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000006"),
-						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						FullText:        "new text",
-						BackgroundColor: "#FFFFFF",
-					},
-				},
-			},
-			wantInsertedPostFlairs: nil,
-			wantPostFlairs: []models.PostFlair{
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					FullText:        "Flair 1",
-					BackgroundColor: "#FFFFFF",
-				},
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					FullText:        "Flair 2",
-					BackgroundColor: "#000000",
-				},
-			},
-			wantErr: postflaireRepo.ErrPostFlairParentTableRecordNotFound,
 		},
 		{
 			name:         "voxsphere not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlairs: []models.PostFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -321,14 +243,12 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -338,12 +258,11 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 		},
 		{
 			name:         "add post flairs :POS",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlairs: []models.PostFlair{
 					{
 						ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-						PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 						VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						FullText:        "new text",
 						BackgroundColor: "#FFFFFF",
@@ -353,7 +272,6 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 			wantInsertedPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "new text",
 					BackgroundColor: "#FFFFFF",
@@ -362,21 +280,18 @@ func TestRepo_AddPostFlairs(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000003"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "new text",
 					BackgroundColor: "#FFFFFF",
@@ -418,11 +333,10 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 	}{
 		{
 			name:         "post flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlair: models.PostFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#FFFFFF",
@@ -432,14 +346,12 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -448,43 +360,11 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 			wantErr: postflaireRepo.ErrPostFlairNotFound,
 		},
 		{
-			name:         "post not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
-			args: args{
-				postFlair: models.PostFlair{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000009"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					FullText:        "new text",
-					BackgroundColor: "#FFFFFF",
-				},
-			},
-			wantPostFlair: models.PostFlair{},
-			wantPostFlairs: []models.PostFlair{
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					FullText:        "Flair 1",
-					BackgroundColor: "#FFFFFF",
-				},
-				{
-					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					FullText:        "Flair 2",
-					BackgroundColor: "#000000",
-				},
-			},
-			wantErr: postflaireRepo.ErrPostFlairParentTableRecordNotFound,
-		},
-		{
 			name:         "voxsphere not present in parent table :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlair: models.PostFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000009"),
 					FullText:        "new text",
 					BackgroundColor: "#FFFFFF",
@@ -494,14 +374,12 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -511,11 +389,10 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 		},
 		{
 			name:         "update post flair :POS",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				postFlair: models.PostFlair{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
@@ -523,7 +400,6 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 			},
 			wantPostFlair: models.PostFlair{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-				PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 				FullText:        "updated text",
 				BackgroundColor: "#000000",
@@ -531,14 +407,12 @@ func TestRepo_UpdatePostFlair(t *testing.T) {
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "updated text",
 					BackgroundColor: "#000000",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -579,21 +453,19 @@ func TestRepo_DeletePostFlair(t *testing.T) {
 	}{
 		{
 			name:         "post flair not found :NEG",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000006"),
 			},
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					FullText:        "Flair 1",
 					BackgroundColor: "#FFFFFF",
 				},
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -603,14 +475,13 @@ func TestRepo_DeletePostFlair(t *testing.T) {
 		},
 		{
 			name:         "post flair deleted :POS",
-			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "posts.yml", "post_flairs.yml"},
+			fixtureFiles: []string{"topics.yml", "users.yml", "voxspheres.yml", "post_flairs.yml"},
 			args: args{
 				ID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 			wantPostFlairs: []models.PostFlair{
 				{
 					ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					FullText:        "Flair 2",
 					BackgroundColor: "#000000",
@@ -638,14 +509,13 @@ func TestRepo_DeletePostFlair(t *testing.T) {
 
 func TestRepo_ForeignKeyCascade(t *testing.T) {
 	t.Run("on deleting voxsphere from parent table , no child references should exist in post_flairs table", func(t *testing.T) {
-		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml")
+		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "post_flairs.yml")
 		postFlairPgrepo := postflaireRepo.NewRepo(db)
 		voxspherePgrepo := voxrepo.NewRepo(db)
 
 		wantPostFlairs := []models.PostFlair{
 			{
 				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				FullText:        "Flair 2",
 				BackgroundColor: "#000000",
@@ -655,31 +525,6 @@ func TestRepo_ForeignKeyCascade(t *testing.T) {
 		err := voxspherePgrepo.DeleteVoxsphere(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
 
 		assert.NoError(t, err, "expect no error while deleting voxsphere")
-
-		gotPostFlairs, err := postFlairPgrepo.PostFlairs(context.Background())
-
-		assert.NoError(t, err, "expect no error while getting post flairs")
-		assertPostFlairs(t, wantPostFlairs, gotPostFlairs)
-	})
-
-	t.Run("on deleting post from parent table , no child references should exist in post_flairs table", func(t *testing.T) {
-		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "posts.yml", "post_flairs.yml")
-		postFlairPgrepo := postflaireRepo.NewRepo(db)
-		postPgrepo := postRepo.NewRepo(db)
-
-		wantPostFlairs := []models.PostFlair{
-			{
-				ID:              uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				PostID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				VoxsphereID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				FullText:        "Flair 2",
-				BackgroundColor: "#000000",
-			},
-		}
-
-		err := postPgrepo.DeletePost(context.Background(), uuid.MustParse("00000000-0000-0000-0000-000000000001"))
-
-		assert.NoError(t, err, "expect no error while deleting post")
 
 		gotPostFlairs, err := postFlairPgrepo.PostFlairs(context.Background())
 

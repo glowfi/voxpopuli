@@ -31,7 +31,7 @@ type Subreddit struct {
 	PublicDescription     string           `json:"public_description"`
 	CommunityIcon         string           `json:"community_icon"`
 	BannerBackgroundImage string           `json:"banner_background_image"`
-	Category              string           `json:"category"`
+	Topic                 string           `json:"topic"`
 	Rules                 []SubredditRule  `json:"rules"`
 	Flairs                []SubredditFlair `json:"flairs"`
 	UserFlairs            []SubredditFlair `json:"user_flairs"`

@@ -45,7 +45,6 @@ func (r *Repo) UserFlairs(ctx context.Context) ([]models.UserFlair, error) {
 	query := `
                 SELECT
                     id,
-                    user_id,
                     voxsphere_id,
                     full_text,
                     background_color
@@ -66,7 +65,6 @@ func (r *Repo) UserFlairByID(ctx context.Context, ID uuid.UUID) (models.UserFlai
 	query := `
                 SELECT
                     id,
-                    user_id,
                     voxsphere_id,
                     full_text,
                     background_color
@@ -90,7 +88,6 @@ func (r *Repo) AddUserFlairs(ctx context.Context, userFlairs ...models.UserFlair
         INSERT INTO
             user_flairs (
                 id,
-                user_id,
                 voxsphere_id,
                 full_text,
                 background_color
@@ -101,11 +98,10 @@ func (r *Repo) AddUserFlairs(ctx context.Context, userFlairs ...models.UserFlair
 	placeholders := make([]string, 0)
 
 	for _, userFlair := range userFlairs {
-		placeholders = append(placeholders, "(?, ?, ?, ?, ?)")
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
 
 		args = append(args,
 			userFlair.ID,
-			userFlair.UserID,
 			userFlair.VoxsphereID,
 			userFlair.FullText,
 			userFlair.BackgroundColor,
@@ -135,7 +131,6 @@ func (r *Repo) UpdateUserFlair(ctx context.Context, userFlair models.UserFlair) 
                 UPDATE
                     user_flairs
                 SET
-                    user_id = ?,
                     voxsphere_id = ?,
                     full_text = ?,
                     background_color = ?
@@ -146,7 +141,6 @@ func (r *Repo) UpdateUserFlair(ctx context.Context, userFlair models.UserFlair) 
 
 	res, err := r.db.NewRaw(
 		query,
-		userFlair.UserID,
 		userFlair.VoxsphereID,
 		userFlair.FullText,
 		userFlair.BackgroundColor,

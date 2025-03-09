@@ -45,7 +45,6 @@ func (r *Repo) PostFlairs(ctx context.Context) ([]models.PostFlair, error) {
 	query := `
                 SELECT
                     id,
-                    post_id,
                     voxsphere_id,
                     full_text,
                     background_color
@@ -66,7 +65,6 @@ func (r *Repo) PostFlairByID(ctx context.Context, ID uuid.UUID) (models.PostFlai
 	query := `
                 SELECT
                     id,
-                    post_id,
                     voxsphere_id,
                     full_text,
                     background_color
@@ -90,7 +88,6 @@ func (r *Repo) AddPostFlairs(ctx context.Context, postFlairs ...models.PostFlair
         INSERT INTO
             post_flairs (
                 id,
-                post_id,
                 voxsphere_id,
                 full_text,
                 background_color
@@ -101,11 +98,10 @@ func (r *Repo) AddPostFlairs(ctx context.Context, postFlairs ...models.PostFlair
 	placeholders := make([]string, 0)
 
 	for _, postFlair := range postFlairs {
-		placeholders = append(placeholders, "(?, ?, ?, ?, ?)")
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
 
 		args = append(args,
 			postFlair.ID,
-			postFlair.PostID,
 			postFlair.VoxsphereID,
 			postFlair.FullText,
 			postFlair.BackgroundColor,
@@ -135,7 +131,6 @@ func (r *Repo) UpdatePostFlair(ctx context.Context, postFlair models.PostFlair) 
                 UPDATE
                     post_flairs
                 SET
-                    post_id = ?,
                     voxsphere_id = ?,
                     full_text = ?,
                     background_color = ?
@@ -146,7 +141,6 @@ func (r *Repo) UpdatePostFlair(ctx context.Context, postFlair models.PostFlair) 
 
 	res, err := r.db.NewRaw(
 		query,
-		postFlair.PostID,
 		postFlair.VoxsphereID,
 		postFlair.FullText,
 		postFlair.BackgroundColor,

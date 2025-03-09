@@ -1,6 +1,9 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
+)
 
 type UserTrophy struct {
 	UserID   uuid.UUID `json:"user_id"`
@@ -15,6 +18,12 @@ type VoxsphereMember struct {
 type VoxsphereModerator struct {
 	VoxsphereID uuid.UUID `json:"voxsphere_id"`
 	UserID      uuid.UUID `json:"user_id"`
+}
+
+type UserUserFlair struct {
+	bun.BaseModel `bun:"table:user_user_flairs"`
+	UserID        uuid.UUID `json:"user_id"`
+	UserFlairID   uuid.UUID `json:"user_flair_id"`
 }
 
 type UserFlairEmoji struct {
@@ -33,6 +42,12 @@ type UserFlairDescription struct {
 	UserFlairID uuid.UUID `json:"user_flair_id"`
 	OrderIndex  int32     `json:"order_index"`
 	Description string    `json:"description"`
+}
+
+type PostPostFlair struct {
+	bun.BaseModel `bun:"table:post_post_flairs"`
+	PostID        uuid.UUID `json:"post_id"`
+	PostFlairID   uuid.UUID `json:"post_flair_id"`
 }
 
 type PostFlairEmoji struct {
