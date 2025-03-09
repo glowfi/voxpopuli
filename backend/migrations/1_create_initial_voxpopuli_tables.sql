@@ -498,6 +498,8 @@ DROP TABLE user_flairs CASCADE;
 DROP TABLE user_flair_emojis CASCADE;
 DROP TABLE user_flair_custom_emojis CASCADE;
 DROP TABLE user_flair_descriptions CASCADE;
+DROP TABLE post_post_flairs CASCADE;
+DROP TABLE user_user_flairs CASCADE;
 
 DROP TYPE media_type;
 
