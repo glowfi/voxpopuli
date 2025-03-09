@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_splitIntoWordsAndEmojis(t *testing.T) {
+func Test_SplitStringIntoCustomEmojisAndWords(t *testing.T) {
 	type args struct {
 		input string
 	}
@@ -65,10 +65,95 @@ func Test_splitIntoWordsAndEmojis(t *testing.T) {
 			},
 			wantResult: []string{":e3:", ":ce3:", "hello"},
 		},
+		{
+			name: "case 8:",
+			args: args{
+				input: "Science &amp; Technology 🧬:hey: :hello:",
+			},
+			wantResult: []string{"Science &amp; Technology 🧬", ":hey:", " ", ":hello:"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotResult := helper.SplitIntoWordsAndEmojis(tt.args.input)
+			gotResult := helper.SplitStringIntoCustomEmojisAndWords(tt.args.input)
+			assert.Equal(t, tt.wantResult, gotResult, "expect results to match")
+		})
+	}
+}
+
+func Test_SplitStringIntoStandardEmojisAndWords(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantResult []string
+	}{
+		{
+			name: "case 1:",
+			args: args{
+				input: "🧬Science &amp; Technology 🧬",
+			},
+			wantResult: []string{"🧬", "Science &amp; Technology ", "🧬"},
+		},
+		{
+			name: "case 2:",
+			args: args{
+				input: "🧬🧬 hello🧬hey",
+			},
+			wantResult: []string{"🧬", "🧬", " hello", "🧬", "hey"},
+		},
+		{
+			name: "case 3:",
+			args: args{
+				input: " hello hey    hi🧬  🧬",
+			},
+			wantResult: []string{" hello hey    hi", "🧬", "  ", "🧬"},
+		},
+		{
+			name: "case 4:",
+			args: args{
+				input: "🙂🙂  hey🙂🙂 hello",
+			},
+			wantResult: []string{"🙂", "🙂", "  hey", "🙂", "🙂", " hello"},
+		},
+		{
+			name: "case 5:",
+			args: args{
+				input: "  hey🙂🙂 hello🙂",
+			},
+			wantResult: []string{"  hey", "🙂", "🙂", " hello", "🙂"},
+		},
+		{
+			name: "case 6:",
+			args: args{
+				input: "JEFFREE⭐",
+			},
+			wantResult: []string{"JEFFREE", "⭐"},
+		},
+		{
+			name: "case 7:",
+			args: args{
+				input: "#️⃣1️⃣ WORLD FIRST!",
+			},
+			wantResult: []string{
+				"#️⃣",
+				"1️⃣",
+				" WORLD FIRST!",
+			},
+		},
+		{
+			name: "case 8:",
+			args: args{
+				input: "ぁé́́hello1️⃣1️⃣world 1️⃣hello  1️⃣hey 1️⃣",
+			},
+			wantResult: []string{"ぁé́́hello", "1️⃣", "1️⃣", "world ", "1️⃣", "hello  ", "1️⃣", "hey ", "1️⃣"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotResult := helper.SplitStringIntoStandardEmojisAndWords(tt.args.input)
 			assert.Equal(t, tt.wantResult, gotResult, "expect results to match")
 		})
 	}
