@@ -1,7 +1,12 @@
+import Posts from '@/posts/posts';
 import React from 'react';
 
 const Page = () => {
-    return <div>hello</div>;
+    return (
+        <div>
+            <Posts />
+        </div>
+    );
 };
 
 export default Page;
