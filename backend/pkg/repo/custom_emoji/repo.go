@@ -24,8 +24,8 @@ var (
 	ErrCustomEmojiParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
-	CustomEmojis() ([]models.CustomEmoji, error)
+type CustomEmojiRepository interface {
+	CustomEmojis(context.Context) ([]models.CustomEmoji, error)
 	CustomEmojiByID(context.Context, uuid.UUID) (models.CustomEmoji, error)
 	AddCustomEmojis(context.Context, ...models.CustomEmoji) ([]models.CustomEmoji, error)
 	UpdateCustomEmoji(context.Context, models.CustomEmoji) (models.CustomEmoji, error)

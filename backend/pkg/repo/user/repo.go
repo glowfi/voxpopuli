@@ -22,8 +22,8 @@ var (
 	ErrUserDuplicateIDorName = errors.New("user duplicate id or name")
 )
 
-type Repository interface {
-	Users() ([]models.User, error)
+type UserRepository interface {
+	Users(context.Context) ([]models.User, error)
 	UserByID(context.Context, uuid.UUID) (models.User, error)
 	AddUsers(context.Context, ...models.User) ([]models.User, error)
 	UpdateUser(context.Context, models.User) (models.User, error)

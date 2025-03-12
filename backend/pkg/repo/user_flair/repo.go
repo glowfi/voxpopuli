@@ -23,8 +23,8 @@ var (
 	ErrUserFlairParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
-	UserFlairs() ([]models.UserFlair, error)
+type UserFlairRepository interface {
+	UserFlairs(context.Context) ([]models.UserFlair, error)
 	UserFlairByID(context.Context, uuid.UUID) (models.UserFlair, error)
 	AddUserFlairs(context.Context, ...models.UserFlair) ([]models.UserFlair, error)
 	UpdateUserFlair(context.Context, models.UserFlair) (models.UserFlair, error)

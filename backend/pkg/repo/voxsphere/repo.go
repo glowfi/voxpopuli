@@ -24,8 +24,8 @@ var (
 	ErrVoxsphereParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
-	Voxspheres() ([]models.Voxsphere, error)
+type VoxsphereRepository interface {
+	Voxspheres(context.Context) ([]models.Voxsphere, error)
 	VoxsphereByID(context.Context, uuid.UUID) (models.Voxsphere, error)
 	AddVoxspheres(context.Context, ...models.Voxsphere) ([]models.Voxsphere, error)
 	UpdateVoxsphere(context.Context, models.Voxsphere) (models.Voxsphere, error)

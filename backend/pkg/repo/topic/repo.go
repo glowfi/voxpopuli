@@ -21,8 +21,8 @@ var (
 	ErrTopicDuplicateIDorName = errors.New("topic duplicate id or name")
 )
 
-type Repository interface {
-	Topics() ([]models.Topic, error)
+type TopicRepository interface {
+	Topics(context.Context) ([]models.Topic, error)
 	TopicByID(context.Context, uuid.UUID) (models.Topic, error)
 	AddTopics(context.Context, ...models.Topic) ([]models.Topic, error)
 	UpdateTopic(context.Context, models.Topic) (models.Topic, error)

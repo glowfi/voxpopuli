@@ -1,0 +1,66 @@
+- model: Post
+  rows:
+    - id: 00000000-0000-0000-0000-000000000001
+      author_id: 00000000-0000-0000-0000-000000000001
+      voxsphere_id: 00000000-0000-0000-0000-000000000001
+      title: Example Post Title 1
+      text: This is an example post text 1.
+      text_html: This is an example post text 1 in HTML.
+      ups: 10
+      over18: false
+      spoiler: false
+      created_at: 2024-10-10T10:10:10Z
+      created_at_unix: 1725091100
+      updated_at: 2024-10-10T10:10:10Z
+
+    - id: 00000000-0000-0000-0000-000000000002
+      author_id: 00000000-0000-0000-0000-000000000002
+      voxsphere_id: 00000000-0000-0000-0000-000000000002
+      title: Example Post Title 2
+      text: This is an example post text 2.
+      text_html: This is an example post text 2 in HTML.
+      ups: 20
+      over18: true
+      spoiler: true
+      created_at: 2024-10-10T10:10:20Z
+      created_at_unix: 1725091120
+      updated_at: 2024-10-10T10:10:20Z
+
+    - id: 00000000-0000-0000-0000-000000000003
+      author_id: 00000000-0000-0000-0000-000000000002
+      voxsphere_id: 00000000-0000-0000-0000-000000000002
+      title: Example Post Title 3
+      text: This is an example post text 3.
+      text_html: This is an example post text 3 in HTML.
+      ups: 30
+      over18: false
+      spoiler: false
+      created_at: 2024-10-10T10:10:30Z
+      created_at_unix: 1725091140
+      updated_at: 2024-10-10T10:10:30Z
+
+    - id: 00000000-0000-0000-0000-000000000004
+      author_id: 00000000-0000-0000-0000-000000000001
+      voxsphere_id: 00000000-0000-0000-0000-000000000001
+      title: Example Post Title 4
+      text: This is an example post text 4.
+      text_html: This is an example post text 4 in HTML.
+      ups: 40
+      over18: true
+      spoiler: false
+      created_at: 2024-10-10T10:10:40Z
+      created_at_unix: 1725091160
+      updated_at: 2024-10-10T10:10:40Z
+
+    - id: 00000000-0000-0000-0000-000000000005
+      author_id: 00000000-0000-0000-0000-000000000002
+      voxsphere_id: 00000000-0000-0000-0000-000000000002
+      title: Example Post Title 5
+      text: This is an example post text 5.
+      text_html: This is an example post text 5 in HTML.
+      ups: 50
+      over18: false
+      spoiler: true
+      created_at: 2024-10-10T10:10:50Z
+      created_at_unix: 1725091180
+      updated_at: 2024-10-10T10:10:50Z

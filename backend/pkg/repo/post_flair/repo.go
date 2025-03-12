@@ -23,7 +23,7 @@ var (
 	ErrPostFlairParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
+type PostFlairRepository interface {
 	PostFlairs(ctx context.Context) ([]models.PostFlair, error)
 	PostFlairByID(ctx context.Context, ID uuid.UUID) (models.PostFlair, error)
 	AddPostFlairs(ctx context.Context, postFlair ...models.PostFlair) (models.PostFlair, error)

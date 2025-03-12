@@ -21,7 +21,7 @@ var (
 	ErrDuplicateID               = errors.New("duplicate id")
 )
 
-type Repository interface {
+type RelationRepository interface {
 	UserTrophies(context.Context) ([]models.UserTrophy, error)
 	LinkUserTrophies(context.Context, ...models.UserTrophy) ([]models.UserTrophy, error)
 

@@ -24,8 +24,9 @@ var (
 	ErrPostParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
-	Posts() ([]models.Post, error)
+type PostRepository interface {
+	PostsPaginated(ctx context.Context, skip int, limit int) ([]models.Post, error)
+	Posts(context.Context) ([]models.Post, error)
 	PostByID(context.Context, uuid.UUID) (models.Post, error)
 	AddPosts(context.Context, ...models.Post) ([]models.Post, error)
 	UpdatePost(context.Context, models.Post) (models.Post, error)
@@ -38,6 +39,38 @@ type Repo struct {
 
 func NewRepo(db *bun.DB) *Repo {
 	return &Repo{db: db}
+}
+
+func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Post, error) {
+	var posts []models.Post
+
+	query := `
+        SELECT
+            p.id,
+            p.author_id,
+            p.voxsphere_id,
+            p.title,
+            p.text,
+            p.text_html,
+            p.ups,
+            p.over18,
+            p.spoiler,
+            p.created_at,
+            p.created_at_unix,
+            p.updated_at
+        FROM
+            posts p
+        ORDER BY
+            p.id
+        LIMIT ?
+        OFFSET ?;
+    `
+
+	_, err := r.db.NewRaw(query, limit, skip).Exec(ctx, &posts)
+	if err != nil {
+		return []models.Post{}, err
+	}
+	return posts, nil
 }
 
 func (r *Repo) Posts(ctx context.Context) ([]models.Post, error) {

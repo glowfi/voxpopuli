@@ -25,7 +25,7 @@ var (
 	ErrParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
+type MediaRepository interface {
 	// post media
 	PostMedias(context.Context) ([]models.PostMedia, error)
 	PostMediaByID(context.Context, uuid.UUID) (models.PostMedia, error)

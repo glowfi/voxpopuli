@@ -22,8 +22,8 @@ var (
 	ErrEmojiDuplicateIDorText = errors.New("emoji duplicate id or text")
 )
 
-type Repository interface {
-	Emojis() ([]models.Emoji, error)
+type EmojiRepository interface {
+	Emojis(context.Context) ([]models.Emoji, error)
 	EmojiByID(context.Context, uuid.UUID) (models.Emoji, error)
 	AddEmojis(context.Context, ...models.Emoji) ([]models.Emoji, error)
 	UpdateEmoji(context.Context, models.Emoji) (models.Emoji, error)

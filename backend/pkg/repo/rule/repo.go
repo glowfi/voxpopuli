@@ -22,7 +22,7 @@ var (
 )
 
 type RuleRepository interface {
-	Rules() ([]models.Rule, error)
+	Rules(context.Context) ([]models.Rule, error)
 	RuleByID(context.Context, uuid.UUID) (models.Rule, error)
 	RulesByVoxsphereID(context.Context, uuid.UUID) ([]models.Rule, error)
 	AddRules(context.Context, ...models.Rule) ([]models.Rule, error)

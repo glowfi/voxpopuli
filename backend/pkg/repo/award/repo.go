@@ -22,8 +22,8 @@ var (
 	ErrAwardDuplicateIDorTitle = errors.New("award duplicate id or title")
 )
 
-type Repository interface {
-	Awards() ([]models.Award, error)
+type AwardRepository interface {
+	Awards(context.Context) ([]models.Award, error)
 	AwardByID(context.Context, uuid.UUID) (models.Award, error)
 	AddAwards(context.Context, ...models.Award) ([]models.Award, error)
 	UpdateAward(context.Context, models.Award) (models.Award, error)

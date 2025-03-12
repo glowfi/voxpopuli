@@ -25,8 +25,8 @@ var (
 	ErrCommentParentTableRecordNotFound = errors.New("record does not exist in the parent table")
 )
 
-type Repository interface {
-	Comments() ([]models.Comment, error)
+type CommentsRepository interface {
+	Comments(context.Context) ([]models.Comment, error)
 	CommentByID(context.Context, uuid.UUID) (models.Comment, error)
 	AddComments(context.Context, ...models.Comment) ([]models.Comment, error)
 	UpdateComment(context.Context, models.Comment) (models.Comment, error)

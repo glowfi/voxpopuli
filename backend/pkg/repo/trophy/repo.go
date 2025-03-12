@@ -21,8 +21,8 @@ var (
 	ErrTrophyDuplicateIDorTitle = errors.New("trophy duplicate id or title")
 )
 
-type Repository interface {
-	Trophies() ([]models.Trophy, error)
+type TrophyRepository interface {
+	Trophies(context.Context) ([]models.Trophy, error)
 	TrophyByID(context.Context, uuid.UUID) (models.Trophy, error)
 	AddTrophies(context.Context, ...models.Trophy) ([]models.Trophy, error)
 	UpdateTrophy(context.Context, models.Trophy) (models.Trophy, error)
