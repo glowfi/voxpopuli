@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/glowfi/voxpopuli/backend/internal/middleware"
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	postsvc "github.com/glowfi/voxpopuli/backend/pkg/service/post"
 	transport "github.com/glowfi/voxpopuli/backend/pkg/transport"
@@ -74,7 +75,14 @@ func main() {
 
 	// Create a root router
 	rootRouter := http.NewServeMux()
-	rootRouter.Handle("/api/", apiHandler)
+
+	// create middleware stack
+	corsOptions := middleware.DefaultCORSOptions()
+	stack := middleware.CreateStack(
+		middleware.Logging,
+		middleware.CORS(corsOptions),
+	)
+	rootRouter.Handle("/api/", stack(apiHandler))
 
 	// Create an HTTP server
 	s := &http.Server{
