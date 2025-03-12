@@ -5,6 +5,7 @@ go 1.23.2
 require (
 	github.com/forPelevin/gomoji v1.3.0
 	github.com/google/uuid v1.6.0
+	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0
 	github.com/uptrace/bun v1.2.10
 	github.com/uptrace/bun/dbfixture v1.2.10
@@ -13,14 +14,7 @@ require (
 	github.com/uptrace/bun/extra/bundebug v1.2.10
 )
 
-require (
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 // indirect
-	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
-	golang.org/x/tools v0.28.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-)
+require gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

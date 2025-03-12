@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/internal/middleware"
@@ -14,6 +14,7 @@ import (
 	postsvc "github.com/glowfi/voxpopuli/backend/pkg/service/post"
 	transport "github.com/glowfi/voxpopuli/backend/pkg/transport"
 	posttransport "github.com/glowfi/voxpopuli/backend/pkg/transport/post"
+	"github.com/rs/zerolog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -31,6 +32,9 @@ func main() {
 	dbHost := "127.0.0.1:5432"
 	dbName := "voxpopuli"
 
+	// Initialize logger
+	logger := zerolog.New(os.Stdout)
+
 	// Create a context that can be canceled
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -40,11 +44,11 @@ func main() {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 	db := bun.NewDB(sqldb, pgdialect.New())
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err).Msg("")
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Println(err)
+			logger.Err(err).Msg("db connection failed to close")
 		}
 	}()
 
@@ -63,13 +67,13 @@ func main() {
 	// Create a new server
 	server, err := transport.NewServer(services, transports)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err).Msg("server creation failed")
 	}
 
 	// Create an HTTP handler for the server
 	apiHandler, err := server.HTTPHandler(ctx)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err).Msg("api handler failed to start")
 	}
 	apiHandler = http.StripPrefix("/api", apiHandler)
 
@@ -96,8 +100,8 @@ func main() {
 	}
 
 	// Start the server
-	log.Printf("Server listening on port %d", port)
+	logger.Info().Msg(fmt.Sprintf("Server listening on port %d", port))
 	if err := s.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		logger.Fatal().Err(err).Msg("http server exited")
 	}
 }
