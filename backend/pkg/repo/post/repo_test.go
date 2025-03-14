@@ -3,6 +3,7 @@ package postrepo_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"slices"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
+	mediarepo "github.com/glowfi/voxpopuli/backend/pkg/repo/media"
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	userrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/user"
 	voxrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/voxsphere"
@@ -48,6 +50,15 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.Voxsphere)(nil))
 	db.RegisterModel((*models.User)(nil))
 	db.RegisterModel((*models.Post)(nil))
+	db.RegisterModel((*models.PostMedia)(nil))
+	db.RegisterModel((*models.Image)(nil))
+	db.RegisterModel((*models.ImageMetadata)(nil))
+	db.RegisterModel((*models.Gif)(nil))
+	db.RegisterModel((*models.GifMetadata)(nil))
+	db.RegisterModel((*models.Gallery)(nil))
+	db.RegisterModel((*models.GalleryMetadata)(nil))
+	db.RegisterModel((*models.Video)(nil))
+	db.RegisterModel((*models.Link)(nil))
 
 	// drop all rows of the topics,voxspheres table
 	_, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background())
@@ -61,6 +72,33 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Post)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.PostMedia)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Image)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.ImageMetadata)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Gif)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.GifMetadata)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Gallery)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.GalleryMetadata)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Video)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Link)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -88,6 +126,135 @@ func assertTimeWithinRange(t *testing.T, time, start, end time.Time) {
 	end = end.UTC()
 
 	assert.WithinRange(t, time, start, end)
+}
+
+// mapToStruct is a helper function to unmarshal the content into the appropriate struct
+func mapToStruct(content interface{}, out interface{}) error {
+	contentBytes, err := json.Marshal(content)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(contentBytes, out)
+}
+
+func assertPostMedias(t *testing.T, expectedMedias, actualMedias []any, mediaType models.MediaType) {
+	t.Helper()
+
+	if len(expectedMedias) != len(actualMedias) {
+		t.Fatalf("length of expectedMedias (%d) and actualMedias (%d) do not match for media type %s", len(expectedMedias), len(actualMedias), mediaType)
+	}
+
+	switch mediaType {
+	case models.MediaTypeImage:
+		var expectedImages []models.ImageMetadata
+		var actualImages []models.ImageMetadata
+
+		if err := mapToStruct(expectedMedias, &expectedImages); err != nil {
+			t.Fatalf("failed to cast expected media to image metadata for media type %s: %v", mediaType, err)
+		}
+
+		if err := mapToStruct(actualMedias, &actualImages); err != nil {
+			t.Fatalf("failed to cast actual media to image metadata for media type %s: %v", mediaType, err)
+		}
+
+		mediarepo.AssertImageMetadatasWithTimestamp(t, expectedImages, actualImages)
+
+	case models.MediaTypeGif:
+		var expectedGifs []models.GifMetadata
+		var actualGifs []models.GifMetadata
+
+		if err := mapToStruct(expectedMedias, &expectedGifs); err != nil {
+			t.Fatalf("failed to cast expected media to gif metadata for media type %s: %v", mediaType, err)
+		}
+
+		if err := mapToStruct(actualMedias, &actualGifs); err != nil {
+			t.Fatalf("failed to cast actual media to gif metadata for media type %s: %v", mediaType, err)
+		}
+
+		mediarepo.AssertGifMetadatasWithTimestamp(t, expectedGifs, actualGifs)
+
+	case models.MediaTypeGallery:
+		var expectedGalleries []models.GalleryMetadata
+		var actualGalleries []models.GalleryMetadata
+
+		if err := mapToStruct(expectedMedias, &expectedGalleries); err != nil {
+			t.Fatalf("failed to cast expected media to gallery metadata for media type %s: %v", mediaType, err)
+		}
+
+		if err := mapToStruct(actualMedias, &actualGalleries); err != nil {
+			t.Fatalf("failed to cast actual media to gallery metadata for media type %s: %v", mediaType, err)
+		}
+
+		mediarepo.AssertGalleryMetadatasWithTimestamp(t, expectedGalleries, actualGalleries)
+
+	case models.MediaTypeVideo:
+		var expectedVideos []models.Video
+		var actualVideos []models.Video
+
+		if err := mapToStruct(expectedMedias, &expectedVideos); err != nil {
+			t.Fatalf("failed to cast expected media to video for media type %s: %v", mediaType, err)
+		}
+
+		if err := mapToStruct(actualMedias, &actualVideos); err != nil {
+			t.Fatalf("failed to cast actual media to video for media type %s: %v", mediaType, err)
+		}
+
+		mediarepo.AssertVideosWithTimestamp(t, expectedVideos, actualVideos)
+
+	case models.MediaTypeLink:
+		var expectedLinks []models.Link
+		var actualLinks []models.Link
+
+		if err := mapToStruct(expectedMedias, &expectedLinks); err != nil {
+			t.Fatalf("failed to cast expected media to link for media type %s: %v", mediaType, err)
+		}
+
+		if err := mapToStruct(actualMedias, &actualLinks); err != nil {
+			t.Fatalf("failed to cast actual media to link for media type %s: %v", mediaType, err)
+		}
+
+		mediarepo.AssertLinksWitTimestamp(t, expectedLinks, actualLinks)
+
+	default:
+		t.Fatal("unsupported media type")
+	}
+}
+
+func assertPaginatedPosts(t *testing.T, wantPaginatedPost, gotPaginatedPost models.PostPaginated) {
+	assert.Equal(t, wantPaginatedPost.ID, gotPaginatedPost.ID, "expected id to match")
+	assert.Equal(t, wantPaginatedPost.AuthorID, gotPaginatedPost.AuthorID, "expected author id to match")
+	assert.Equal(t, wantPaginatedPost.VoxsphereID, gotPaginatedPost.VoxsphereID, "expected voxsphere id to match")
+	assert.Equal(t, wantPaginatedPost.Title, gotPaginatedPost.Title, "expected title to match")
+	assert.Equal(t, wantPaginatedPost.Text, gotPaginatedPost.Text, "expected text to match")
+	assert.Equal(t, wantPaginatedPost.TextHtml, gotPaginatedPost.TextHtml, "expected text html to match")
+	assert.Equal(t, wantPaginatedPost.MediaType, gotPaginatedPost.MediaType, "expected media type to match")
+	assert.Equal(t, wantPaginatedPost.Ups, gotPaginatedPost.Ups, "expected ups to match")
+	assert.Equal(t, wantPaginatedPost.Over18, gotPaginatedPost.Over18, "expected over 18 to match")
+	assert.Equal(t, wantPaginatedPost.Spoiler, gotPaginatedPost.Spoiler, "expected spoiler to match")
+	assert.Equal(t, wantPaginatedPost.CreatedAt, gotPaginatedPost.CreatedAt, "expect CreatedAt to match")
+	assert.Equal(t, wantPaginatedPost.CreatedAtUnix, gotPaginatedPost.CreatedAtUnix, "expect CreatedAtUnix to match")
+	assert.Equal(t, wantPaginatedPost.UpdatedAt, gotPaginatedPost.UpdatedAt, "expect UpdatedAt to match")
+}
+
+func assertPaginatedPostsWithoutTimestampAndMedias(t *testing.T, wantPaginatedPosts, gotPaginatedPosts []models.PostPaginated) {
+	t.Helper()
+
+	if len(wantPaginatedPosts) != len(gotPaginatedPosts) {
+		t.Fatal("length of wantPosts and gotPosts do not match")
+	}
+
+	for _, wantPaginatedPost := range wantPaginatedPosts {
+		idx := slices.IndexFunc(gotPaginatedPosts, func(p models.PostPaginated) bool {
+			return p.ID == wantPaginatedPost.ID
+		})
+
+		if idx == -1 {
+			t.Fatal(fmt.Sprintf("post %v of ID %v is not present in gotPaginatedPosts", wantPaginatedPost.Title, wantPaginatedPost.ID))
+			return
+		}
+		assertPaginatedPosts(t, wantPaginatedPost, gotPaginatedPosts[idx])
+		assertPostMedias(t, wantPaginatedPost.Medias, gotPaginatedPosts[idx].Medias, gotPaginatedPosts[idx].MediaType)
+	}
 }
 
 func assertPostWithoutTimestamp(t *testing.T, wantPost, gotPost models.Post) {
@@ -949,27 +1116,189 @@ func TestRepo_PostsPaginated(t *testing.T) {
 		limit int
 	}
 	tests := []struct {
-		name         string
-		fixtureFiles []string
-		args         args
-		wantPosts    []models.Post
-		wantErr      error
+		name               string
+		fixtureFiles       []string
+		args               args
+		wantPostsPaginated []models.PostPaginated
+		wantErr            error
 	}{
 		{
-			name:         "paginated posts skip 3 limit 2 :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts_paginated.yml"},
-			args: args{
-				skip:  3,
-				limit: 2,
+			name: "paginated posts skip 0 limit 5 :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts_paginated.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+				"gifs.yml",
+				"gif_metadatas.yml",
+				"images.yml",
+				"image_metadatas.yml",
+				"links.yml",
+				"videos.yml",
 			},
-			wantPosts: []models.Post{
+			args: args{
+				skip:  0,
+				limit: 5,
+			},
+			wantPostsPaginated: []models.PostPaginated{
 				{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:         "Example Post Title 4",
-					Text:          "This is an example post text 4.",
-					TextHtml:      "This is an example post text 4 in HTML.",
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "Example Post Title 1",
+					Text:        "This is an example post text 1.",
+					TextHtml:    "This is an example post text 1 in HTML.",
+					MediaType:   models.MediaTypeImage,
+					Medias: []any{
+						models.ImageMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/image1.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						models.ImageMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/image2.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+					Ups:           10,
+					Over18:        false,
+					Spoiler:       false,
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+					CreatedAtUnix: 1725091100,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "Example Post Title 2",
+					Text:        "This is an example post text 2.",
+					TextHtml:    "This is an example post text 2 in HTML.",
+					MediaType:   models.MediaTypeGif,
+					Medias: []any{
+						models.GifMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/image1.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						models.GifMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GifID:         uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/image2.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+					Ups:           20,
+					Over18:        true,
+					Spoiler:       true,
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+					CreatedAtUnix: 1725091120,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "Example Post Title 3",
+					Text:        "This is an example post text 3.",
+					TextHtml:    "This is an example post text 3 in HTML.",
+					MediaType:   models.MediaTypeGallery,
+					Medias: []any{
+						models.GalleryMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery11.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						models.GalleryMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							OrderIndex:    0,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery12.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+						models.GalleryMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        720,
+							Width:         1280,
+							Url:           "https://example.com/gallery21.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+						models.GalleryMetadata{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							GalleryID:     uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+							OrderIndex:    1,
+							Height:        1080,
+							Width:         1920,
+							Url:           "https://example.com/gallery22.jpg",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+							CreatedAtUnix: 1725091101,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+						},
+					},
+					Ups:           30,
+					Over18:        false,
+					Spoiler:       false,
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+					CreatedAtUnix: 1725091140,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "Example Post Title 4",
+					Text:        "This is an example post text 4.",
+					TextHtml:    "This is an example post text 4 in HTML.",
+					MediaType:   models.MediaTypeVideo,
+					Medias: []any{
+						models.Video{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							Url:           "https://example.com/video.mp4",
+							Height:        1080,
+							Width:         1920,
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+					},
 					Ups:           40,
 					Over18:        true,
 					Spoiler:       false,
@@ -978,12 +1307,23 @@ func TestRepo_PostsPaginated(t *testing.T) {
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 40, 0, time.UTC),
 				},
 				{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					Title:         "Example Post Title 5",
-					Text:          "This is an example post text 5.",
-					TextHtml:      "This is an example post text 5 in HTML.",
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "Example Post Title 5",
+					Text:        "This is an example post text 5.",
+					TextHtml:    "This is an example post text 5 in HTML.",
+					MediaType:   models.MediaTypeLink,
+					Medias: []any{
+						models.Link{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+							Link:          "https://example.com/video.mp4",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+					},
 					Ups:           50,
 					Over18:        false,
 					Spoiler:       true,
@@ -995,20 +1335,47 @@ func TestRepo_PostsPaginated(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:         "paginated posts skip 3 limit 1 :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts_paginated.yml"},
+			name: "paginated posts skip 3 limit 2 :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts_paginated.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+				"gifs.yml",
+				"gif_metadatas.yml",
+				"images.yml",
+				"image_metadatas.yml",
+				"links.yml",
+				"videos.yml",
+			},
 			args: args{
 				skip:  3,
-				limit: 1,
+				limit: 2,
 			},
-			wantPosts: []models.Post{
+			wantPostsPaginated: []models.PostPaginated{
 				{
-					ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-					AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Title:         "Example Post Title 4",
-					Text:          "This is an example post text 4.",
-					TextHtml:      "This is an example post text 4 in HTML.",
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Title:       "Example Post Title 4",
+					Text:        "This is an example post text 4.",
+					TextHtml:    "This is an example post text 4 in HTML.",
+					MediaType:   models.MediaTypeVideo,
+					Medias: []any{
+						models.Video{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+							Url:           "https://example.com/video.mp4",
+							Height:        1080,
+							Width:         1920,
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+					},
 					Ups:           40,
 					Over18:        true,
 					Spoiler:       false,
@@ -1016,18 +1383,57 @@ func TestRepo_PostsPaginated(t *testing.T) {
 					CreatedAtUnix: 1725091160,
 					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 40, 0, time.UTC),
 				},
+				{
+					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Title:       "Example Post Title 5",
+					Text:        "This is an example post text 5.",
+					TextHtml:    "This is an example post text 5 in HTML.",
+					MediaType:   models.MediaTypeLink,
+					Medias: []any{
+						models.Link{
+							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+							Link:          "https://example.com/video.mp4",
+							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							CreatedAtUnix: 1725091100,
+							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+						},
+					},
+					Ups:           50,
+					Over18:        false,
+					Spoiler:       true,
+					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 50, 0, time.UTC),
+					CreatedAtUnix: 1725091180,
+					UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 50, 0, time.UTC),
+				},
 			},
 			wantErr: nil,
 		},
 		{
-			name:         "paginated posts skip 100 limit 100 :POS",
-			fixtureFiles: []string{"topics.yml", "voxspheres.yml", "users.yml", "posts_paginated.yml"},
+			name: "paginated posts skip 100 limit 100 :POS",
+			fixtureFiles: []string{
+				"topics.yml",
+				"voxspheres.yml",
+				"users.yml",
+				"posts_paginated.yml",
+				"post_medias.yml",
+				"galleries.yml",
+				"gallery_metadatas.yml",
+				"gifs.yml",
+				"gif_metadatas.yml",
+				"images.yml",
+				"image_metadatas.yml",
+				"links.yml",
+				"videos.yml",
+			},
 			args: args{
 				skip:  100,
 				limit: 100,
 			},
-			wantPosts: nil,
-			wantErr:   nil,
+			wantPostsPaginated: nil,
+			wantErr:            nil,
 		},
 		{
 			name:         "no posts :POS",
@@ -1036,8 +1442,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				skip:  100,
 				limit: 100,
 			},
-			wantPosts: nil,
-			wantErr:   nil,
+			wantPostsPaginated: nil,
+			wantErr:            nil,
 		},
 	}
 	for _, tt := range tests {
@@ -1045,10 +1451,10 @@ func TestRepo_PostsPaginated(t *testing.T) {
 			db := setupPostgres(t, tt.fixtureFiles...)
 			pgrepo := postrepo.NewRepo(db)
 
-			gotPosts, gotErr := pgrepo.PostsPaginated(context.Background(), tt.args.skip, tt.args.limit)
+			gotPostsPaginated, gotErr := pgrepo.PostsPaginated(context.Background(), tt.args.skip, tt.args.limit)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assert.Equal(t, tt.wantPosts, gotPosts, "expect posts to match")
+			assertPaginatedPostsWithoutTimestampAndMedias(t, tt.wantPostsPaginated, gotPostsPaginated)
 		})
 	}
 }

@@ -144,311 +144,6 @@ func assertPostMedias(t *testing.T, wantPostMedias, gotPostMedias []models.PostM
 	}
 }
 
-func assertImageMetadataWithoutTimestamp(t *testing.T, wantImageMetadata, gotImageMetadata models.ImageMetadata) {
-	assert.Equal(t, wantImageMetadata.ID, gotImageMetadata.ID, "expected id to match")
-	assert.Equal(t, wantImageMetadata.ImageID, gotImageMetadata.ImageID, "expected image id to match")
-	assert.Equal(t, wantImageMetadata.Height, gotImageMetadata.Height, "expected height to match")
-	assert.Equal(t, wantImageMetadata.Width, gotImageMetadata.Width, "expected width to match")
-	assert.Equal(t, wantImageMetadata.Url, gotImageMetadata.Url, "expected url to match")
-}
-
-func assertImageMetadatasWithoutTimestamp(t *testing.T, wantImageMetadatas, gotImageMetadatas []models.ImageMetadata) {
-	t.Helper()
-
-	if len(wantImageMetadatas) != len(gotImageMetadatas) {
-		t.Fatal("length of wantImageMetadatas and gotImageMetadatas do not match")
-	}
-
-	for _, imageMetadata := range wantImageMetadatas {
-		idx := slices.IndexFunc(gotImageMetadatas, func(im models.ImageMetadata) bool {
-			return im.ID == imageMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID))
-			return
-		}
-		assertImageMetadataWithoutTimestamp(t, imageMetadata, gotImageMetadatas[idx])
-	}
-}
-
-func assertImageMetadatasWithTimestamp(t *testing.T, wantImageMetadatas, gotImageMetadatas []models.ImageMetadata) {
-	t.Helper()
-
-	for _, imageMetadata := range wantImageMetadatas {
-		idx := slices.IndexFunc(gotImageMetadatas, func(im models.ImageMetadata) bool {
-			return im.ID == imageMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID))
-			return
-		}
-		assert.Equal(t, imageMetadata, gotImageMetadatas[idx], "expected image metadata to match")
-	}
-}
-
-func assertImage(t *testing.T, wantImage, gotImage models.Image) {
-	assert.Equal(t, wantImage.ID, gotImage.ID, "expected id to match")
-	assert.Equal(t, wantImage.MediaID, gotImage.MediaID, "expected media id to match")
-	assertImageMetadatasWithTimestamp(t, wantImage.ImageMetadata, gotImage.ImageMetadata)
-}
-
-func assertImages(t *testing.T, wantImages, gotImages []models.Image) {
-	t.Helper()
-
-	if len(wantImages) != len(gotImages) {
-		t.Fatal("length of wantImages and gotImages do not match")
-	}
-
-	for _, image := range wantImages {
-		idx := slices.IndexFunc(gotImages, func(im models.Image) bool {
-			return im.ID == image.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image %v of ID %v is not present in gotImages", image.MediaID, image.ID))
-			return
-		}
-		assertImage(t, image, gotImages[idx])
-	}
-}
-
-func assertGifMetadataWithoutTimestamp(t *testing.T, wantGifMetadata, gotGifMetadata models.GifMetadata) {
-	assert.Equal(t, wantGifMetadata.ID, gotGifMetadata.ID, "expected id to match")
-	assert.Equal(t, wantGifMetadata.GifID, gotGifMetadata.GifID, "expected gif id to match")
-	assert.Equal(t, wantGifMetadata.Height, gotGifMetadata.Height, "expected height to match")
-	assert.Equal(t, wantGifMetadata.Width, gotGifMetadata.Width, "expected width to match")
-	assert.Equal(t, wantGifMetadata.Url, gotGifMetadata.Url, "expected url to match")
-}
-
-func assertGifMetadatasWithoutTimestamp(t *testing.T, wantGifMetadatas, gotGifMetadatas []models.GifMetadata) {
-	t.Helper()
-
-	if len(wantGifMetadatas) != len(gotGifMetadatas) {
-		t.Fatal("length of wantGifMetadatas and gotGifMetadatas do not match")
-	}
-
-	for _, gifMetadata := range wantGifMetadatas {
-		idx := slices.IndexFunc(gotGifMetadatas, func(gm models.GifMetadata) bool {
-			return gm.ID == gifMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID))
-			return
-		}
-		assertGifMetadataWithoutTimestamp(t, gifMetadata, gotGifMetadatas[idx])
-	}
-}
-
-func assertGifMetadatasWithTimestamp(t *testing.T, wantGifMetadatas, gotGifMetadatas []models.GifMetadata) {
-	t.Helper()
-
-	for _, gifMetadata := range wantGifMetadatas {
-		idx := slices.IndexFunc(gotGifMetadatas, func(gm models.GifMetadata) bool {
-			return gm.ID == gifMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID))
-			return
-		}
-		assert.Equal(t, gifMetadata, gotGifMetadatas[idx], "expected gif metadata to match")
-	}
-}
-
-func assertGif(t *testing.T, wantGif, gotGif models.Gif) {
-	assert.Equal(t, wantGif.ID, gotGif.ID, "expected id to match")
-	assert.Equal(t, wantGif.MediaID, gotGif.MediaID, "expected media id to match")
-	assertGifMetadatasWithTimestamp(t, wantGif.GifMetadata, gotGif.GifMetadata)
-}
-
-func assertGifs(t *testing.T, wantGifs, gotGifs []models.Gif) {
-	t.Helper()
-
-	if len(wantGifs) != len(gotGifs) {
-		t.Fatal("length of wantGifs and gotGifs do not match")
-	}
-
-	for _, gif := range wantGifs {
-		idx := slices.IndexFunc(gotGifs, func(g models.Gif) bool {
-			return g.ID == gif.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif %v of ID %v is not present in gotGifs", gif.MediaID, gif.ID))
-			return
-		}
-		assertGif(t, gif, gotGifs[idx])
-	}
-}
-
-func assertLinkWithoutTimestamp(t *testing.T, wantLink, gotLink models.Link) {
-	assert.Equal(t, wantLink.ID, gotLink.ID, "expect link id to match")
-	assert.Equal(t, wantLink.MediaID, gotLink.MediaID, "expect link media id to match")
-	assert.Equal(t, wantLink.Link, gotLink.Link, "expect link url to match")
-}
-
-func assertLinksWithoutTimestamp(t *testing.T, wantLinks, gotLinks []models.Link) {
-	t.Helper()
-
-	if len(wantLinks) != len(gotLinks) {
-		t.Fatal("length of wantLinks and gotLinks do not match")
-	}
-
-	for _, link := range wantLinks {
-		idx := slices.IndexFunc(gotLinks, func(im models.Link) bool {
-			return im.ID == link.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("link %v of url %v is not present in gotLinks", link.ID, link.Link))
-			return
-		}
-		assertLinkWithoutTimestamp(t, link, gotLinks[idx])
-	}
-}
-
-func assertLinksWitTimestamp(t *testing.T, wantLinks, gotLinks []models.Link) {
-	t.Helper()
-
-	if len(wantLinks) != len(gotLinks) {
-		t.Fatal("length of wantLinks and gotLinks do not match")
-	}
-
-	for _, link := range wantLinks {
-		idx := slices.IndexFunc(gotLinks, func(im models.Link) bool {
-			return im.ID == link.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("link %v of url %v is not present in gotLinks", link.ID, link.Link))
-			return
-		}
-		assert.Equal(t, link, gotLinks[idx], "expect link to match")
-	}
-}
-
-func assertVideoWithoutTimestamp(t *testing.T, wantVideo, gotVideo models.Video) {
-	assert.Equal(t, wantVideo.ID, gotVideo.ID, "expect video id to match")
-	assert.Equal(t, wantVideo.MediaID, gotVideo.MediaID, "expect video media id to match")
-	assert.Equal(t, wantVideo.Url, gotVideo.Url, "expect video url to match")
-	assert.Equal(t, wantVideo.Height, gotVideo.Height, "expect video height to match")
-	assert.Equal(t, wantVideo.Width, gotVideo.Width, "expect video width to match")
-}
-
-func assertVideosWithoutTimestamp(t *testing.T, wantVideos, gotVideos []models.Video) {
-	t.Helper()
-
-	if len(wantVideos) != len(gotVideos) {
-		t.Fatal("length of wantVideos and gotVideos do not match")
-	}
-
-	for _, video := range wantVideos {
-		idx := slices.IndexFunc(gotVideos, func(im models.Video) bool {
-			return im.ID == video.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("video %v of url %v is not present in gotVideos", video.ID, video.Url))
-			return
-		}
-		assertVideoWithoutTimestamp(t, video, gotVideos[idx])
-	}
-}
-
-func assertVideosWithTimestamp(t *testing.T, wantVideos, gotVideos []models.Video) {
-	t.Helper()
-
-	if len(wantVideos) != len(gotVideos) {
-		t.Fatal("length of wantVideos and gotVideos do not match")
-	}
-
-	for _, video := range wantVideos {
-		idx := slices.IndexFunc(gotVideos, func(im models.Video) bool {
-			return im.ID == video.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("video %v of url %v is not present in gotVideos", video.ID, video.Url))
-			return
-		}
-		assert.Equal(t, video, gotVideos[idx], "expect video to match")
-	}
-}
-
-func assertGalleryMetadataWithoutTimestamp(t *testing.T, wantGalleryMetadata, gotGalleryMetadata models.GalleryMetadata) {
-	assert.Equal(t, wantGalleryMetadata.ID, gotGalleryMetadata.ID, "expected id to match")
-	assert.Equal(t, wantGalleryMetadata.GalleryID, gotGalleryMetadata.GalleryID, "expected gallery id to match")
-	assert.Equal(t, wantGalleryMetadata.OrderIndex, gotGalleryMetadata.OrderIndex, "expected order index to match")
-	assert.Equal(t, wantGalleryMetadata.Height, gotGalleryMetadata.Height, "expected height to match")
-	assert.Equal(t, wantGalleryMetadata.Width, gotGalleryMetadata.Width, "expected width to match")
-	assert.Equal(t, wantGalleryMetadata.Url, gotGalleryMetadata.Url, "expected url to match")
-}
-
-func assertGalleryMetadatasWithoutTimestamp(t *testing.T, wantGalleryMetadatas, gotGalleryMetadatas []models.GalleryMetadata) {
-	t.Helper()
-
-	if len(wantGalleryMetadatas) != len(gotGalleryMetadatas) {
-		t.Fatal("length of wantGalleryMetadatas and gotGalleryMetadatas do not match")
-	}
-
-	for _, galleryMetadata := range wantGalleryMetadatas {
-		idx := slices.IndexFunc(gotGalleryMetadatas, func(gm models.GalleryMetadata) bool {
-			return gm.ID == galleryMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
-			return
-		}
-		assertGalleryMetadataWithoutTimestamp(t, galleryMetadata, gotGalleryMetadatas[idx])
-	}
-}
-
-func assertGalleryMetadatasWithTimestamp(t *testing.T, wantGalleryMetadatas, gotGalleryMetadatas []models.GalleryMetadata) {
-	t.Helper()
-
-	for _, galleryMetadata := range wantGalleryMetadatas {
-		idx := slices.IndexFunc(gotGalleryMetadatas, func(gm models.GalleryMetadata) bool {
-			return gm.ID == galleryMetadata.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
-			return
-		}
-		assert.Equal(t, galleryMetadata, gotGalleryMetadatas[idx], "expected gallery metadata to match")
-	}
-}
-
-func assertGallery(t *testing.T, wantGallery, gotGallery models.Gallery) {
-	assert.Equal(t, wantGallery.ID, gotGallery.ID, "expected id to match")
-	assert.Equal(t, wantGallery.MediaID, gotGallery.MediaID, "expected media id to match")
-	assertGalleryMetadatasWithTimestamp(t, wantGallery.GalleryMetadata, gotGallery.GalleryMetadata)
-}
-
-func assertGalleries(t *testing.T, wantGalleries, gotGalleries []models.Gallery) {
-	t.Helper()
-
-	if len(wantGalleries) != len(gotGalleries) {
-		t.Fatal("length of wantGalleries and gotGalleries do not match")
-	}
-
-	for _, gallery := range wantGalleries {
-		idx := slices.IndexFunc(gotGalleries, func(g models.Gallery) bool {
-			return g.ID == gallery.ID
-		})
-
-		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery %v of ID %v is not present in gotGalleries", gallery.MediaID, gallery.ID))
-			return
-		}
-		assertGallery(t, gallery, gotGalleries[idx])
-	}
-}
-
 func TestRepo_PostMedias(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -1075,7 +770,7 @@ func TestRepo_Images(t *testing.T) {
 			gotImages, gotErr := pgrepo.Images(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertImages(t, tt.wantImages, gotImages)
+			mediarepo.AssertImages(t, tt.wantImages, gotImages)
 		})
 	}
 }
@@ -1159,7 +854,7 @@ func TestRepo_ImageByID(t *testing.T) {
 			gotImage, gotErr := pgrepo.ImageByID(context.Background(), tt.args.ID)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertImage(t, tt.wantImage, gotImage)
+			mediarepo.AssertImage(t, tt.wantImage, gotImage)
 		})
 	}
 }
@@ -1353,7 +1048,7 @@ func TestRepo_AddImages(t *testing.T) {
 		gotImages, err := pgrepo.Images(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting images")
-		assertImages(t, tt.wantImages, gotImages)
+		mediarepo.AssertImages(t, tt.wantImages, gotImages)
 	}
 }
 
@@ -1530,7 +1225,7 @@ func TestRepo_UpdateImage(t *testing.T) {
 			gotImages, err := pgrepo.Images(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting images")
-			assertImages(t, tt.wantImages, gotImages)
+			mediarepo.AssertImages(t, tt.wantImages, gotImages)
 		})
 	}
 }
@@ -1620,7 +1315,7 @@ func TestRepo_DeleteImage(t *testing.T) {
 			gotImages, err := pgrepo.Images(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting images")
-			assertImages(t, tt.wantImages, gotImages)
+			mediarepo.AssertImages(t, tt.wantImages, gotImages)
 		})
 	}
 }
@@ -1646,7 +1341,7 @@ func TestRepo_ImageForeignKeyCascade(t *testing.T) {
 		gotImages, err := pgrepo.Images(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting images")
-		assertImages(t, nil, gotImages)
+		mediarepo.AssertImages(t, nil, gotImages)
 	})
 }
 
@@ -1707,7 +1402,7 @@ func TestRepo_ImageMetadatas(t *testing.T) {
 			gotImageMetadatas, gotErr := pgrepo.ImageMetadatas(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertImageMetadatasWithTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
+			mediarepo.AssertImageMetadatasWithTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
 		})
 	}
 }
@@ -1990,7 +1685,7 @@ func TestRepo_AddImageMetadatas(t *testing.T) {
 			gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting image metadatas")
-			assertImageMetadatasWithoutTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
+			mediarepo.AssertImageMetadatasWithoutTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
 		})
 	}
 }
@@ -2165,7 +1860,7 @@ func TestRepo_UpdateImageMetadata(t *testing.T) {
 			gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting image metdatas")
-			assertImageMetadatasWithoutTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
+			mediarepo.AssertImageMetadatasWithoutTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
 		})
 	}
 }
@@ -2260,7 +1955,7 @@ func TestRepo_DeleteImageMetadata(t *testing.T) {
 			gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting image metadatas")
-			assertImageMetadatasWithTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
+			mediarepo.AssertImageMetadatasWithTimestamp(t, tt.wantImageMetadatas, gotImageMetadatas)
 		})
 	}
 }
@@ -2286,7 +1981,7 @@ func TestRepo_ImageMetadataForeignKeyCascade(t *testing.T) {
 		gotImageMetadatas, err := pgrepo.ImageMetadatas(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting image metadatas")
-		assertImageMetadatasWithTimestamp(t, nil, gotImageMetadatas)
+		mediarepo.AssertImageMetadatasWithTimestamp(t, nil, gotImageMetadatas)
 	})
 }
 
@@ -2353,7 +2048,7 @@ func TestRepo_Gifs(t *testing.T) {
 			gotGifs, gotErr := pgrepo.Gifs(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGifs(t, tt.wantGifs, gotGifs)
+			mediarepo.AssertGifs(t, tt.wantGifs, gotGifs)
 		})
 	}
 }
@@ -2437,7 +2132,7 @@ func TestRepo_GifByID(t *testing.T) {
 			gotGif, gotErr := pgrepo.GifByID(context.Background(), tt.args.ID)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGif(t, tt.wantGif, gotGif)
+			mediarepo.AssertGif(t, tt.wantGif, gotGif)
 		})
 	}
 }
@@ -2650,7 +2345,7 @@ func TestRepo_AddGifs(t *testing.T) {
 			gotGifs, err := pgrepo.Gifs(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gifs")
-			assertGifs(t, tt.wantGifs, gotGifs)
+			mediarepo.AssertGifs(t, tt.wantGifs, gotGifs)
 		})
 	}
 }
@@ -2852,7 +2547,7 @@ func TestRepo_UpdateGif(t *testing.T) {
 			gotGifs, err := pgrepo.Gifs(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gifs")
-			assertGifs(t, tt.wantGifs, gotGifs)
+			mediarepo.AssertGifs(t, tt.wantGifs, gotGifs)
 		})
 	}
 }
@@ -2942,7 +2637,7 @@ func TestRepo_DeleteGif(t *testing.T) {
 			gotGifs, err := pgrepo.Gifs(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gifs")
-			assertGifs(t, tt.wantGifs, gotGifs)
+			mediarepo.AssertGifs(t, tt.wantGifs, gotGifs)
 		})
 	}
 }
@@ -2968,7 +2663,7 @@ func TestRepo_GifForeignKeyCascade(t *testing.T) {
 		gotGifs, err := pgrepo.Gifs(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting gifs")
-		assertGifs(t, nil, gotGifs)
+		mediarepo.AssertGifs(t, nil, gotGifs)
 	})
 }
 
@@ -3029,7 +2724,7 @@ func TestRepo_GifMetadatas(t *testing.T) {
 			gotGifMetadatas, gotErr := pgrepo.GifMetadatas(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGifMetadatasWithTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
+			mediarepo.AssertGifMetadatasWithTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
 		})
 	}
 }
@@ -3327,7 +3022,7 @@ func TestRepo_AddGifMetadatas(t *testing.T) {
 			gotGifMetadatas, err := pgrepo.GifMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gif metadatas")
-			assertGifMetadatasWithoutTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
+			mediarepo.AssertGifMetadatasWithoutTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
 		})
 	}
 }
@@ -3515,7 +3210,7 @@ func TestRepo_UpdateGifMetadata(t *testing.T) {
 			gotGifMetadatas, err := pgrepo.GifMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gif metadatas")
-			assertGifMetadatasWithoutTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
+			mediarepo.AssertGifMetadatasWithoutTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
 		})
 	}
 }
@@ -3599,7 +3294,7 @@ func TestRepo_DeleteGifMetadata(t *testing.T) {
 			gotGifMetadatas, err := pgrepo.GifMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gif metadatas")
-			assertGifMetadatasWithTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
+			mediarepo.AssertGifMetadatasWithTimestamp(t, tt.wantGifMetadatas, gotGifMetadatas)
 		})
 	}
 }
@@ -3625,7 +3320,7 @@ func TestRepo_GifMetadataForeignKeyCascade(t *testing.T) {
 		gotGifMetadatas, err := pgrepo.GifMetadatas(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting gif metadatas")
-		assertGifMetadatasWithTimestamp(t, nil, gotGifMetadatas)
+		mediarepo.AssertGifMetadatasWithTimestamp(t, nil, gotGifMetadatas)
 	})
 }
 
@@ -3674,7 +3369,7 @@ func TestRepo_Videos(t *testing.T) {
 		gotVideos, gotErr := pgrepo.Videos(context.Background())
 
 		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-		assertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
+		mediarepo.AssertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
 	}
 }
 
@@ -3921,7 +3616,7 @@ func TestRepo_AddVideos(t *testing.T) {
 			gotVideos, err := pgrepo.Videos(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting videos")
-			assertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
+			mediarepo.AssertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
 		})
 	}
 }
@@ -4066,7 +3761,7 @@ func TestRepo_UpdateVideo(t *testing.T) {
 			gotVideos, err := pgrepo.Videos(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting videos")
-			assertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
+			mediarepo.AssertVideosWithoutTimestamp(t, tt.wantVideos, gotVideos)
 		})
 	}
 }
@@ -4138,7 +3833,7 @@ func TestRepo_DeleteVideo(t *testing.T) {
 			gotVideos, err := pgrepo.Videos(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting videos")
-			assertVideosWithTimestamp(t, tt.wantVideos, gotVideos)
+			mediarepo.AssertVideosWithTimestamp(t, tt.wantVideos, gotVideos)
 		})
 	}
 }
@@ -4210,7 +3905,7 @@ func TestRepo_Links(t *testing.T) {
 		gotLinks, gotErr := pgrepo.Links(context.Background())
 
 		assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-		assertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
+		mediarepo.AssertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
 	}
 }
 
@@ -4439,7 +4134,7 @@ func TestRepo_AddLinks(t *testing.T) {
 			gotLinks, err := pgrepo.Links(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting links")
-			assertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
+			mediarepo.AssertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
 		})
 	}
 }
@@ -4568,7 +4263,7 @@ func TestRepo_UpdateLink(t *testing.T) {
 			gotLinks, err := pgrepo.Links(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting links")
-			assertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
+			mediarepo.AssertLinksWithoutTimestamp(t, tt.wantLinks, gotLinks)
 		})
 	}
 }
@@ -4625,7 +4320,7 @@ func TestRepo_DeleteLink(t *testing.T) {
 			gotLinks, err := pgrepo.Links(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting links")
-			assertLinksWitTimestamp(t, tt.wantLinks, gotLinks)
+			mediarepo.AssertLinksWitTimestamp(t, tt.wantLinks, gotLinks)
 		})
 	}
 }
@@ -4747,7 +4442,7 @@ func TestRepo_Galleries(t *testing.T) {
 			gotGalleries, gotErr := pgrepo.Galleries(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGalleries(t, tt.wantGalleries, gotGalleries)
+			mediarepo.AssertGalleries(t, tt.wantGalleries, gotGalleries)
 		})
 	}
 }
@@ -4833,7 +4528,7 @@ func TestRepo_GalleryByID(t *testing.T) {
 			gotGallery, gotErr := pgrepo.GalleryByID(context.Background(), tt.args.ID)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGallery(t, tt.wantGallery, gotGallery)
+			mediarepo.AssertGallery(t, tt.wantGallery, gotGallery)
 		})
 	}
 }
@@ -5112,7 +4807,7 @@ func TestRepo_AddGalleries(t *testing.T) {
 		gotGalleries, err := pgrepo.Galleries(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting galleries")
-		assertGalleries(t, tt.wantGalleries, gotGalleries)
+		mediarepo.AssertGalleries(t, tt.wantGalleries, gotGalleries)
 	}
 }
 
@@ -5378,7 +5073,7 @@ func TestRepo_UpdateGallery(t *testing.T) {
 		gotGalleries, err := pgrepo.Galleries(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting galleries")
-		assertGalleries(t, tt.wantGalleries, gotGalleries)
+		mediarepo.AssertGalleries(t, tt.wantGalleries, gotGalleries)
 	}
 }
 
@@ -5526,7 +5221,7 @@ func TestRepo_DeleteGallery(t *testing.T) {
 			gotGalleries, err := pgrepo.Galleries(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting galleries")
-			assertGalleries(t, tt.wantGalleries, gotGalleries)
+			mediarepo.AssertGalleries(t, tt.wantGalleries, gotGalleries)
 		})
 	}
 }
@@ -5552,7 +5247,7 @@ func TestRepo_GalleryForeignKeyCascade(t *testing.T) {
 		gotGalleries, err := pgrepo.Galleries(context.Background())
 
 		assert.NoError(t, err, "expect no error while getting galleries")
-		assertGalleries(t, nil, gotGalleries)
+		mediarepo.AssertGalleries(t, nil, gotGalleries)
 	})
 }
 
@@ -5637,7 +5332,7 @@ func TestRepo_GalleryMetadatas(t *testing.T) {
 			gotGalleryMetadatas, gotErr := pgrepo.GalleryMetadatas(context.Background())
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+			mediarepo.AssertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
 		})
 	}
 }
@@ -5995,7 +5690,7 @@ func TestRepo_AddGalleryMetadatas(t *testing.T) {
 			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gallery metadatas")
-			assertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+			mediarepo.AssertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
 		})
 	}
 }
@@ -6255,7 +5950,7 @@ func TestRepo_UpdateGalleryMetadata(t *testing.T) {
 			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gallery metadatas")
-			assertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+			mediarepo.AssertGalleryMetadatasWithoutTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
 		})
 	}
 }
@@ -6397,7 +6092,7 @@ func TestRepo_DeleteGalleryMetadata(t *testing.T) {
 			gotGalleryMetadatas, err := pgrepo.GalleryMetadatas(context.Background())
 
 			assert.NoError(t, err, "expect no error while getting gallery metadatas")
-			assertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
+			mediarepo.AssertGalleryMetadatasWithTimestamp(t, tt.wantGalleryMetadatas, gotGalleryMetadatas)
 		})
 	}
 }
@@ -6447,6 +6142,6 @@ func TestRepo_GalleryMetadataForeignKeyCascade(t *testing.T) {
 				UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
 			},
 		}
-		assertGalleryMetadatasWithTimestamp(t, wantGalleryMetadatas, gotGalleryMetadatas)
+		mediarepo.AssertGalleryMetadatasWithTimestamp(t, wantGalleryMetadatas, gotGalleryMetadatas)
 	})
 }

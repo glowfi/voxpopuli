@@ -7,12 +7,12 @@ import (
 )
 
 type PostService interface {
-	PostsPaginated(ctx context.Context, skip int, limit int) ([]models.Post, error)
+	PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error)
 }
 
 //counterfeiter:generate . PostRepository
 type PostRepository interface {
-	PostsPaginated(ctx context.Context, skip int, limit int) ([]models.Post, error)
+	PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error)
 }
 
 type Service struct {
@@ -25,6 +25,6 @@ func NewService(repo PostRepository) *Service {
 	}
 }
 
-func (s *Service) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Post, error) {
+func (s *Service) PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error) {
 	return s.repo.PostsPaginated(ctx, skip, limit)
 }

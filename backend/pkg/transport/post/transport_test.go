@@ -18,7 +18,7 @@ import (
 
 func TestTransport_PostsPaginated(t *testing.T) {
 	type mockReturns struct {
-		posts     []models.Post
+		posts     []models.PostPaginated
 		postError error
 	}
 
@@ -35,17 +35,43 @@ func TestTransport_PostsPaginated(t *testing.T) {
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{
+			name: "paginated posts skip 99 limit 99 :POS",
+			url:  fmt.Sprintf("/posts?skip=%v&limit=%v", 99, 99),
+			mockReturns: mockReturns{
+				posts:     []models.PostPaginated{},
+				postError: nil,
+			},
+			wantStatusCode: http.StatusOK,
+			wantResponse: `
+		                [
+		                ]
+		            `,
+		},
+		{
 			name: "paginated posts skip 3 limit 2 :POS",
 			url:  fmt.Sprintf("/posts?skip=%v&limit=%v", 3, 2),
 			mockReturns: mockReturns{
-				posts: []models.Post{
+				posts: []models.PostPaginated{
 					{
-						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
-						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-						Title:         "Example Post Title 4",
-						Text:          "This is an example post text 4.",
-						TextHtml:      "This is an example post text 4 in HTML.",
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+						AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Title:       "Example Post Title 4",
+						Text:        "This is an example post text 4.",
+						TextHtml:    "This is an example post text 4 in HTML.",
+						MediaType:   models.MediaTypeVideo,
+						Medias: []any{
+							models.Video{
+								ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+								MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+								Url:           "https://example.com/video.mp4",
+								Height:        1080,
+								Width:         1920,
+								CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+								CreatedAtUnix: 1725091100,
+								UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							},
+						},
 						Ups:           40,
 						Over18:        true,
 						Spoiler:       false,
@@ -54,12 +80,23 @@ func TestTransport_PostsPaginated(t *testing.T) {
 						UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 40, 0, time.UTC),
 					},
 					{
-						ID:            uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-						AuthorID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-						VoxsphereID:   uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-						Title:         "Example Post Title 5",
-						Text:          "This is an example post text 5.",
-						TextHtml:      "This is an example post text 5 in HTML.",
+						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+						AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Title:       "Example Post Title 5",
+						Text:        "This is an example post text 5.",
+						TextHtml:    "This is an example post text 5 in HTML.",
+						MediaType:   models.MediaTypeLink,
+						Medias: []any{
+							models.Link{
+								ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+								MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+								Link:          "https://example.com/video.mp4",
+								CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+								CreatedAtUnix: 1725091100,
+								UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
+							},
+						},
 						Ups:           50,
 						Over18:        false,
 						Spoiler:       true,
@@ -74,48 +111,59 @@ func TestTransport_PostsPaginated(t *testing.T) {
 			wantResponse: `
                 [
                   {
-                    "ID": "00000000-0000-0000-0000-000000000004",
-                    "AuthorID": "00000000-0000-0000-0000-000000000001",
-                    "VoxsphereID": "00000000-0000-0000-0000-000000000001",
-                    "Title": "Example Post Title 4",
-                    "Text": "This is an example post text 4.",
-                    "TextHtml": "This is an example post text 4 in HTML.",
-                    "Ups": 40,
-                    "Over18": true,
-                    "Spoiler": false,
-                    "CreatedAt": "2024-10-10T10:10:40Z",
-                    "CreatedAtUnix": 1725091160,
-                    "UpdatedAt": "2024-10-10T10:10:40Z"
+                    "id": "00000000-0000-0000-0000-000000000004",
+                    "author_id": "00000000-0000-0000-0000-000000000001",
+                    "voxsphere_id": "00000000-0000-0000-0000-000000000001",
+                    "title": "Example Post Title 4",
+                    "text": "This is an example post text 4.",
+                    "text_html": "This is an example post text 4 in HTML.",
+                    "media_type": "video",
+                    "medias": [
+                      {
+                        "id": "00000000-0000-0000-0000-000000000001",
+                        "media_id": "00000000-0000-0000-0000-000000000004",
+                        "url": "https://example.com/video.mp4",
+                        "height": 1080,
+                        "width": 1920,
+                        "created_at": "2024-10-10T10:10:10Z",
+                        "created_at_unix": 1725091100,
+                        "updated_at": "2024-10-10T10:10:10Z"
+                      }
+                    ],
+                    "ups": 40,
+                    "over18": true,
+                    "spoiler": false,
+                    "created_at": "2024-10-10T10:10:40Z",
+                    "created_at_unix": 1725091160,
+                    "updated_at": "2024-10-10T10:10:40Z"
                   },
                   {
-                    "ID": "00000000-0000-0000-0000-000000000005",
-                    "AuthorID": "00000000-0000-0000-0000-000000000002",
-                    "VoxsphereID": "00000000-0000-0000-0000-000000000002",
-                    "Title": "Example Post Title 5",
-                    "Text": "This is an example post text 5.",
-                    "TextHtml": "This is an example post text 5 in HTML.",
-                    "Ups": 50,
-                    "Over18": false,
-                    "Spoiler": true,
-                    "CreatedAt": "2024-10-10T10:10:50Z",
-                    "CreatedAtUnix": 1725091180,
-                    "UpdatedAt": "2024-10-10T10:10:50Z"
+                    "id": "00000000-0000-0000-0000-000000000005",
+                    "author_id": "00000000-0000-0000-0000-000000000002",
+                    "voxsphere_id": "00000000-0000-0000-0000-000000000002",
+                    "title": "Example Post Title 5",
+                    "text": "This is an example post text 5.",
+                    "text_html": "This is an example post text 5 in HTML.",
+                    "media_type": "link",
+                    "medias": [
+                      {
+                        "id": "00000000-0000-0000-0000-000000000001",
+                        "media_id": "00000000-0000-0000-0000-000000000005",
+                        "link": "https://example.com/video.mp4",
+                        "created_at": "2024-10-10T10:10:10Z",
+                        "created_at_unix": 1725091100,
+                        "updated_at": "2024-10-10T10:10:10Z"
+                      }
+                    ],
+                    "ups": 50,
+                    "over18": false,
+                    "spoiler": true,
+                    "created_at": "2024-10-10T10:10:50Z",
+                    "created_at_unix": 1725091180,
+                    "updated_at": "2024-10-10T10:10:50Z"
                   }
                 ]
-            `,
-		},
-		{
-			name: "paginated posts skip 99 limit 99 :POS",
-			url:  fmt.Sprintf("/posts?skip=%v&limit=%v", 3, 2),
-			mockReturns: mockReturns{
-				posts:     []models.Post{},
-				postError: nil,
-			},
-			wantStatusCode: http.StatusOK,
-			wantResponse: `
-                [
-                ]
-            `,
+		            `,
 		},
 	}
 	for _, tt := range tests {
@@ -152,6 +200,10 @@ func TestTransport_PostsPaginated(t *testing.T) {
 				recorder.Result().StatusCode,
 				"expect status code to match",
 			)
+
+			if tt.wantStatusCode == http.StatusOK {
+				assert.JSONEq(t, tt.wantResponse, recorder.Body.String())
+			}
 		})
 	}
 }

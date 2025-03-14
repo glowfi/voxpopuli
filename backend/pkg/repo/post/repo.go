@@ -25,7 +25,7 @@ var (
 )
 
 type PostRepository interface {
-	PostsPaginated(ctx context.Context, skip int, limit int) ([]models.Post, error)
+	PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error)
 	Posts(context.Context) ([]models.Post, error)
 	PostByID(context.Context, uuid.UUID) (models.Post, error)
 	AddPosts(context.Context, ...models.Post) ([]models.Post, error)
@@ -41,34 +41,247 @@ func NewRepo(db *bun.DB) *Repo {
 	return &Repo{db: db}
 }
 
-func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Post, error) {
-	var posts []models.Post
+func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error) {
+	var posts []models.PostPaginated
 
 	query := `
-        SELECT
-            p.id,
-            p.author_id,
-            p.voxsphere_id,
-            p.title,
-            p.text,
-            p.text_html,
-            p.ups,
-            p.over18,
-            p.spoiler,
-            p.created_at,
-            p.created_at_unix,
-            p.updated_at
-        FROM
-            posts p
-        ORDER BY
-            p.id
-        LIMIT ?
-        OFFSET ?;
+                WITH
+                  ps AS (
+                    SELECT
+                      p.id,
+                      p.author_id,
+                      p.voxsphere_id,
+                      p.title,
+                      p.text,
+                      p.text_html,
+                      p.ups,
+                      p.over18,
+                      p.spoiler,
+                      p.created_at,
+                      p.created_at_unix,
+                      p.updated_at
+                    FROM
+                      posts p
+                    ORDER BY
+                      p.id
+                    LIMIT
+                      ?
+                    OFFSET
+                      ?
+                  )
+                SELECT
+                  ps.*,
+                  m.media_type as media_type,
+                  CASE
+                    WHEN m.media_type = 'image' THEN (
+                      SELECT
+                        JSON_AGG(imageMetadata)
+                      FROM
+                        (
+                          SELECT
+                            JSON_BUILD_OBJECT(
+                              'id',
+                              imageMetadata.id,
+                              'image_id',
+                              imageMetadata.image_id,
+                              'height',
+                              imageMetadata.height,
+                              'width',
+                              imageMetadata.width,
+                              'url',
+                              imageMetadata.url,
+                              'created_at',
+                              TO_CHAR(
+                                imageMetadata.created_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              ),
+                              'created_at_unix',
+                              imageMetadata.created_at_unix,
+                              'updated_at',
+                              TO_CHAR(
+                                imageMetadata.updated_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              )
+                            ) AS imageMetadata
+                          FROM
+                            image_metadatas imageMetadata
+                          WHERE
+                            imageMetadata.image_id IN (
+                              SELECT
+                                i.id
+                              FROM
+                                images i
+                              WHERE
+                                i.media_id = m.id
+                            )
+                          ORDER BY
+                            imageMetadata.height
+                        ) AS orderedMetadata
+                    )
+                    WHEN m.media_type = 'gif' THEN (
+                      SELECT
+                        JSON_AGG(gifMetadata)
+                      FROM
+                        (
+                          SELECT
+                            JSON_BUILD_OBJECT(
+                              'id',
+                              gifMetadata.id,
+                              'gif_id',
+                              gifMetadata.gif_id,
+                              'height',
+                              gifMetadata.height,
+                              'width',
+                              gifMetadata.width,
+                              'url',
+                              gifMetadata.url,
+                              'created_at',
+                              TO_CHAR(
+                                gifMetadata.created_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              ),
+                              'created_at_unix',
+                              gifMetadata.created_at_unix,
+                              'updated_at',
+                              TO_CHAR(
+                                gifMetadata.updated_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              )
+                            ) AS gifMetadata
+                          FROM
+                            gif_metadatas gifMetadata
+                          WHERE
+                            gifMetadata.gif_id IN (
+                              SELECT
+                                g.id
+                              FROM
+                                gifs g
+                              WHERE
+                                g.media_id = m.id
+                            )
+                          ORDER BY
+                            gifMetadata.height
+                        ) AS orderedMetadata
+                    )
+                    WHEN m.media_type = 'gallery' THEN (
+                      SELECT
+                        JSON_AGG(galleryMetadata)
+                      FROM
+                        (
+                          SELECT
+                            JSON_BUILD_OBJECT(
+                              'id',
+                              galleryMetadata.id,
+                              'gallery_id',
+                              galleryMetadata.gallery_id,
+                              'order_index',
+                              galleryMetadata.order_index,
+                              'height',
+                              galleryMetadata.height,
+                              'width',
+                              galleryMetadata.width,
+                              'url',
+                              galleryMetadata.url,
+                              'created_at',
+                              TO_CHAR(
+                                galleryMetadata.created_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              ),
+                              'created_at_unix',
+                              galleryMetadata.created_at_unix,
+                              'updated_at',
+                              TO_CHAR(
+                                galleryMetadata.updated_at AT TIME ZONE 'UTC',
+                                'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                              )
+                            ) AS galleryMetadata
+                          FROM
+                            gallery_metadatas galleryMetadata
+                          WHERE
+                            galleryMetadata.gallery_id IN (
+                              select
+                                id
+                              from
+                                galleries
+                              where
+                                galleries.media_id = m.id
+                            )
+                          ORDER BY
+                            galleryMetadata.order_index
+                        ) AS orderedMetadata
+                    )
+                    WHEN m.media_type = 'video' THEN (
+                      SELECT
+                        JSON_AGG(
+                          JSON_BUILD_OBJECT(
+                            'id',
+                            videos.id,
+                            'media_id',
+                            videos.media_id,
+                            'url',
+                            videos.url,
+                            'height',
+                            videos.height,
+                            'width',
+                            videos.width,
+                            'created_at',
+                            TO_CHAR(
+                              videos.created_at AT TIME ZONE 'UTC',
+                              'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                            ),
+                            'created_at_unix',
+                            videos.created_at_unix,
+                            'updated_at',
+                            TO_CHAR(
+                              videos.updated_at AT TIME ZONE 'UTC',
+                              'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                            )
+                          )
+                        )
+                      FROM
+                        videos
+                      WHERE
+                        videos.media_id = m.id
+                    )
+                    WHEN m.media_type = 'link' THEN (
+                      SELECT
+                        JSON_AGG(
+                          JSON_BUILD_OBJECT(
+                            'id',
+                            links.id,
+                            'media_id',
+                            links.media_id,
+                            'link',
+                            links.link,
+                            'created_at',
+                            TO_CHAR(
+                              links.created_at AT TIME ZONE 'UTC',
+                              'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                            ),
+                            'created_at_unix',
+                            links.created_at_unix,
+                            'updated_at',
+                            TO_CHAR(
+                              links.updated_at AT TIME ZONE 'UTC',
+                              'YYYY-MM-DD"T"HH24:MI:SS"Z"'
+                            )
+                          )
+                        ) AS linkMetadata
+                      FROM
+                        links
+                      WHERE
+                        links.media_id = m.id
+                    )
+                    ELSE NULL
+                  END AS medias
+                FROM
+                  ps
+                  JOIN post_medias m ON ps.id = m.post_id;
     `
 
 	_, err := r.db.NewRaw(query, limit, skip).Exec(ctx, &posts)
 	if err != nil {
-		return []models.Post{}, err
+		return []models.PostPaginated{}, err
 	}
 	return posts, nil
 }

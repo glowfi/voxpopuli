@@ -969,13 +969,14 @@ func insertPostMedias(
 				MediaID: postMediaID,
 			}
 			galleries = append(galleries, newGallery)
+			index := 0
 			for _, galleryImages := range gallery.Images {
-				for idx, galleryImage := range galleryImages {
+				for _, galleryImage := range galleryImages {
 					newGalleryMetadataID := uuid.New()
 					newGalleryMetadata := models.GalleryMetadata{
 						ID:            newGalleryMetadataID,
 						GalleryID:     galleryID,
-						OrderIndex:    int32(idx),
+						OrderIndex:    int32(index),
 						Height:        int32(galleryImage.Y),
 						Width:         int32(galleryImage.X),
 						Url:           galleryImage.U,
@@ -985,6 +986,7 @@ func insertPostMedias(
 					}
 					galleryMetadatas = append(galleryMetadatas, newGalleryMetadata)
 				}
+				index += 1
 			}
 
 			postMedia.MediaType = models.MediaTypeGallery
@@ -1206,6 +1208,52 @@ func insertPostMedias(
 	}()
 
 	if err := gifMetadatasCI.Serve(ctx); err != nil {
+		return err
+	}
+
+	wg.Wait()
+
+	galleriesCI := NewConcurrentInserter(len(galleries), func(galleries []models.Gallery) error {
+		if _, err := mediaRepo.AddGalleries(ctx, galleries...); err != nil {
+			return err
+		}
+
+		return nil
+	}, 100*time.Millisecond, 500)
+
+	wg.Add(len(galleries))
+
+	go func() {
+		for _, gallery := range galleries {
+			galleriesCI.ResC <- gallery
+			wg.Done()
+		}
+	}()
+
+	if err := galleriesCI.Serve(ctx); err != nil {
+		return err
+	}
+
+	wg.Wait()
+
+	galleriesMetadatasCI := NewConcurrentInserter(len(galleryMetadatas), func(galleryMetadatas []models.GalleryMetadata) error {
+		if _, err := mediaRepo.AddGalleryMetadatas(ctx, galleryMetadatas...); err != nil {
+			return err
+		}
+
+		return nil
+	}, 100*time.Millisecond, 500)
+
+	wg.Add(len(galleryMetadatas))
+
+	go func() {
+		for _, galleryMetadata := range galleryMetadatas {
+			galleriesMetadatasCI.ResC <- galleryMetadata
+			wg.Done()
+		}
+	}()
+
+	if err := galleriesMetadatasCI.Serve(ctx); err != nil {
 		return err
 	}
 
@@ -2409,12 +2457,12 @@ func Run() {
 
 	fileMap := make(map[string]string)
 
-	fileMap["topics_json"] = ""
-	fileMap["trophies_json"] = ""
-	fileMap["awards_json"] = ""
-	fileMap["subreddits_json"] = ""
-	fileMap["posts_json"] = ""
-	fileMap["users_json"] = ""
+	fileMap["topics_json"] = "/home/ayush/cdx/dataset/vox-populi/3/topics.json"
+	fileMap["trophies_json"] = "/home/ayush/cdx/dataset/vox-populi/3/trophies.json"
+	fileMap["awards_json"] = "/home/ayush/cdx/dataset/vox-populi/3/awards.json"
+	fileMap["subreddits_json"] = "/home/ayush/cdx/dataset/vox-populi/3/subreddits.json"
+	fileMap["posts_json"] = "/home/ayush/cdx/dataset/vox-populi/3/posts.json"
+	fileMap["users_json"] = "/home/ayush/cdx/dataset/vox-populi/3/users.json"
 
 	// create context
 	ctx, cancel := context.WithCancel(context.Background())

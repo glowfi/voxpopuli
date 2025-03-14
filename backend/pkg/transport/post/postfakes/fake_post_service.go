@@ -10,7 +10,7 @@ import (
 )
 
 type FakePostService struct {
-	PostsPaginatedStub        func(context.Context, int, int) ([]models.Post, error)
+	PostsPaginatedStub        func(context.Context, int, int) ([]models.PostPaginated, error)
 	postsPaginatedMutex       sync.RWMutex
 	postsPaginatedArgsForCall []struct {
 		arg1 context.Context
@@ -18,18 +18,18 @@ type FakePostService struct {
 		arg3 int
 	}
 	postsPaginatedReturns struct {
-		result1 []models.Post
+		result1 []models.PostPaginated
 		result2 error
 	}
 	postsPaginatedReturnsOnCall map[int]struct {
-		result1 []models.Post
+		result1 []models.PostPaginated
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePostService) PostsPaginated(arg1 context.Context, arg2 int, arg3 int) ([]models.Post, error) {
+func (fake *FakePostService) PostsPaginated(arg1 context.Context, arg2 int, arg3 int) ([]models.PostPaginated, error) {
 	fake.postsPaginatedMutex.Lock()
 	ret, specificReturn := fake.postsPaginatedReturnsOnCall[len(fake.postsPaginatedArgsForCall)]
 	fake.postsPaginatedArgsForCall = append(fake.postsPaginatedArgsForCall, struct {
@@ -56,7 +56,7 @@ func (fake *FakePostService) PostsPaginatedCallCount() int {
 	return len(fake.postsPaginatedArgsForCall)
 }
 
-func (fake *FakePostService) PostsPaginatedCalls(stub func(context.Context, int, int) ([]models.Post, error)) {
+func (fake *FakePostService) PostsPaginatedCalls(stub func(context.Context, int, int) ([]models.PostPaginated, error)) {
 	fake.postsPaginatedMutex.Lock()
 	defer fake.postsPaginatedMutex.Unlock()
 	fake.PostsPaginatedStub = stub
@@ -69,28 +69,28 @@ func (fake *FakePostService) PostsPaginatedArgsForCall(i int) (context.Context, 
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakePostService) PostsPaginatedReturns(result1 []models.Post, result2 error) {
+func (fake *FakePostService) PostsPaginatedReturns(result1 []models.PostPaginated, result2 error) {
 	fake.postsPaginatedMutex.Lock()
 	defer fake.postsPaginatedMutex.Unlock()
 	fake.PostsPaginatedStub = nil
 	fake.postsPaginatedReturns = struct {
-		result1 []models.Post
+		result1 []models.PostPaginated
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePostService) PostsPaginatedReturnsOnCall(i int, result1 []models.Post, result2 error) {
+func (fake *FakePostService) PostsPaginatedReturnsOnCall(i int, result1 []models.PostPaginated, result2 error) {
 	fake.postsPaginatedMutex.Lock()
 	defer fake.postsPaginatedMutex.Unlock()
 	fake.PostsPaginatedStub = nil
 	if fake.postsPaginatedReturnsOnCall == nil {
 		fake.postsPaginatedReturnsOnCall = make(map[int]struct {
-			result1 []models.Post
+			result1 []models.PostPaginated
 			result2 error
 		})
 	}
 	fake.postsPaginatedReturnsOnCall[i] = struct {
-		result1 []models.Post
+		result1 []models.PostPaginated
 		result2 error
 	}{result1, result2}
 }

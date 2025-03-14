@@ -19,7 +19,7 @@ const (
 
 //counterfeiter:generate . PostService
 type PostService interface {
-	PostsPaginated(ctx context.Context, skip int, limit int) ([]models.Post, error)
+	PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error)
 }
 
 type Transport struct {

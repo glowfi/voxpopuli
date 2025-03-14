@@ -8,21 +8,23 @@ import (
 
 // CORSOptions represents the options for the CORS middleware.
 type CORSOptions struct {
-	AllowedOrigins []string
-	AllowedMethods []string
-	AllowedHeaders []string
-	ExposeHeaders  []string
-	MaxAge         int
+	AllowedOrigins   []string
+	AllowedMethods   []string
+	AllowedHeaders   []string
+	ExposeHeaders    []string
+	MaxAge           int
+	AllowCredentials bool
 }
 
 // DefaultCORSOptions returns the default CORS options.
 func DefaultCORSOptions() CORSOptions {
 	return CORSOptions{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
-		ExposeHeaders:  []string{"Content-Length"},
-		MaxAge:         3600,
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		MaxAge:           3600,
+		AllowCredentials: true,
 	}
 }
 
@@ -34,6 +36,9 @@ func CORS(options CORSOptions) Middleware {
 			for _, allowedOrigin := range options.AllowedOrigins {
 				if origin == allowedOrigin || allowedOrigin == "*" {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
+					if options.AllowCredentials {
+						w.Header().Set("Access-Control-Allow-Credentials", "true")
+					}
 					break
 				}
 			}
@@ -43,6 +48,9 @@ func CORS(options CORSOptions) Middleware {
 				w.Header().Set("Access-Control-Allow-Headers", strings.Join(options.AllowedHeaders, ","))
 				w.Header().Set("Access-Control-Expose-Headers", strings.Join(options.ExposeHeaders, ","))
 				w.Header().Set("Access-Control-Max-Age", strconv.Itoa(options.MaxAge))
+				if options.AllowCredentials {
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				}
 				w.WriteHeader(http.StatusOK)
 				return
 			}
