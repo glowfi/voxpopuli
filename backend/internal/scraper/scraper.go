@@ -2457,12 +2457,12 @@ func Run() {
 
 	fileMap := make(map[string]string)
 
-	fileMap["topics_json"] = "/home/ayush/cdx/dataset/vox-populi/3/topics.json"
-	fileMap["trophies_json"] = "/home/ayush/cdx/dataset/vox-populi/3/trophies.json"
-	fileMap["awards_json"] = "/home/ayush/cdx/dataset/vox-populi/3/awards.json"
-	fileMap["subreddits_json"] = "/home/ayush/cdx/dataset/vox-populi/3/subreddits.json"
-	fileMap["posts_json"] = "/home/ayush/cdx/dataset/vox-populi/3/posts.json"
-	fileMap["users_json"] = "/home/ayush/cdx/dataset/vox-populi/3/users.json"
+	fileMap["topics_json"] = ""
+	fileMap["trophies_json"] = ""
+	fileMap["awards_json"] = ""
+	fileMap["subreddits_json"] = ""
+	fileMap["posts_json"] = ""
+	fileMap["users_json"] = ""
 
 	// create context
 	ctx, cancel := context.WithCancel(context.Background())
