@@ -3,19 +3,19 @@ import { useState, useEffect } from 'react';
 
 axios.defaults.baseURL = process.env.API_ENDPOINT;
 
-interface UseAxiosOptions {
-    url: string;
-    method: 'get' | 'post' | 'put' | 'delete' | 'patch';
-    body?: string;
-    headers?: string;
-    params?: { [key: string]: string | number | boolean }; // query parameters
-    pathParams?: { [key: string]: string | number | boolean }; // path parameters
-}
-
 interface UseAxiosResponse {
     response: any;
     error: AxiosError | null;
     loading: boolean;
+}
+
+interface UseAxiosProps {
+    url: string;
+    method: 'get' | 'post' | 'put' | 'delete' | 'patch';
+    body?: string;
+    headers?: string;
+    params?: { [key: string]: string | number | boolean };
+    pathParams?: { [key: string]: string | number | boolean };
 }
 
 const useAxios = ({
@@ -25,7 +25,7 @@ const useAxios = ({
     headers,
     params,
     pathParams
-}: UseAxiosOptions): UseAxiosResponse => {
+}: UseAxiosProps): UseAxiosResponse => {
     const [response, setResponse] = useState<any>();
     const [error, setError] = useState<AxiosError | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
