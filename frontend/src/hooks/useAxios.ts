@@ -1,70 +1,77 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import { useState, useEffect } from 'react';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import { useEffect, useState } from 'react';
 
 axios.defaults.baseURL = process.env.API_ENDPOINT;
 
-interface UseAxiosResponse {
-    response: any;
+type Method = 'GET' | 'POST' | 'HEAD' | 'PUT' | 'PATCH' | 'DELETE';
+type ResponseType = 'arraybuffer' | 'document' | 'json' | 'text' | 'stream';
+
+export interface UseAxiosReturns {
+    data: AxiosResponse | null;
+    status: number | null;
     error: AxiosError | null;
     loading: boolean;
 }
 
-interface UseAxiosProps {
+export interface UseAxiosArgs {
     url: string;
-    method: 'get' | 'post' | 'put' | 'delete' | 'patch';
-    body?: string;
-    headers?: string;
+    method: Method;
+    baseURL?: string;
+    headers?: { [key: string]: string };
     params?: { [key: string]: string | number | boolean };
-    pathParams?: { [key: string]: string | number | boolean };
+    payload?: string | number | boolean | object | null;
+    timeout?: number;
+    withCredentials?: boolean;
+    responseType?: ResponseType;
 }
 
 const useAxios = ({
     url,
     method,
-    body,
+    baseURL,
     headers,
     params,
-    pathParams
-}: UseAxiosProps): UseAxiosResponse => {
-    const [response, setResponse] = useState<any>();
-    const [error, setError] = useState<AxiosError | null>(null);
+    payload,
+    timeout,
+    withCredentials,
+    responseType
+}: UseAxiosArgs): UseAxiosReturns => {
+    const [data, setData] = useState<AxiosResponse | null>(null);
+    const [status, setStatus] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
-
-    const fetchData = async () => {
-        try {
-            const config: AxiosRequestConfig = {
-                method,
-                url: getPathWithParams(url, pathParams),
-                headers: headers ? JSON.parse(headers) : undefined,
-                data: body ? JSON.parse(body) : undefined,
-                params: params
-            };
-
-            const res: AxiosResponse = await axios(config);
-            setResponse(res.data);
-        } catch (err: any) {
-            setError(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getPathWithParams = (
-        path: string,
-        params: { [key: string]: string | number | boolean } | undefined
-    ) => {
-        if (!params) return path;
-        return Object.keys(params).reduce(
-            (acc, key) => acc.replace(`:${key}`, `${params[key]}`),
-            path
-        );
-    };
+    const [error, setError] = useState<AxiosError | null>(null);
 
     useEffect(() => {
-        fetchData();
-    }, [method, url, body, headers, params, pathParams]);
+        axios({
+            url,
+            method,
+            baseURL,
+            headers,
+            params,
+            data: payload,
+            timeout,
+            withCredentials,
+            responseType
+        })
+            .then(({ data, status }: AxiosResponse) => {
+                setData(data);
+                setStatus(status);
+            })
+            .catch((error: AxiosError) => setError(error))
+            .finally(() => setLoading(false));
+    }, [
+        url,
+        method,
+        baseURL,
+        headers,
+        params,
+        payload,
+        timeout,
+        withCredentials,
+        responseType
+    ]);
 
-    return { response, error, loading };
+    return { data, status, error, loading };
 };
 
 export default useAxios;
