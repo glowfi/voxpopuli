@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/glowfi/voxpopuli/backend/internal/middleware"
@@ -82,11 +84,11 @@ func main() {
 
 	// create middleware stack
 	corsOptions := middleware.DefaultCORSOptions()
-	stack := middleware.CreateStack(
+	middlewareStack := middleware.CreateStack(
 		middleware.Logging,
 		middleware.CORS(corsOptions),
 	)
-	rootRouter.Handle("/api/", stack(apiHandler))
+	rootRouter.Handle("/api/", middlewareStack(apiHandler))
 
 	// Create an HTTP server
 	s := &http.Server{
@@ -99,9 +101,28 @@ func main() {
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	// Start the server
-	logger.Info().Msg(fmt.Sprintf("Server listening on port %d", port))
-	if err := s.ListenAndServe(); err != nil {
-		logger.Fatal().Err(err).Msg("http server exited")
+	// Channel to listen for interrupt signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Start the server in a goroutine so it doesn't block
+	go func() {
+		// Start the server
+		logger.Info().Msg(fmt.Sprintf("Server listening on port %d", port))
+		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("http server exited")
+		}
+	}()
+
+	// Wait for interrupt signal
+	<-stop
+
+	// Shutdown the server
+	logger.Info().Msg("Shutting down server...")
+	ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+	if err := s.Shutdown(ctxShutdown); err != nil {
+		logger.Fatal().Err(err).Msg("server shutdown failed")
 	}
+	logger.Info().Msg("Server shut down")
 }
