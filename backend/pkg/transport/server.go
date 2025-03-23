@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -21,26 +22,38 @@ const (
 	TRACE   = "TRACE"
 )
 
-type HTTPHandlerFunc func(ctx context.Context, h http.Handler) http.HandlerFunc
+// HTTPHandlerFactory creates an HTTP handler function.
+type HTTPHandlerFactory func(ctx context.Context, h http.Handler) http.HandlerFunc
 
+// Route represents an HTTP route.
 type Route struct {
 	Name        string
 	HttpMethod  string
 	HttpPath    string
-	HttpHandler HTTPHandlerFunc
+	HttpHandler HTTPHandlerFactory
 }
 
+// Services represents the services used by the server.
 type Services struct {
 	Post post.PostService
 }
 
+// Server represents the HTTP server.
 type Server struct {
 	routes   []Route
 	services Services
 }
 
+// NewServer creates a new server.
 func NewServer(services Services) (*Server, error) {
-	postsTransport := post.NewTransport(services.Post)
+	return &Server{
+		services: services,
+	}, nil
+}
+
+// SetupRoutes sets up the routes for the server.
+func (s *Server) SetupRoutes() error {
+	postsTransport := post.NewTransport(s.services.Post)
 
 	routes := []Route{
 		// posts api
@@ -52,43 +65,55 @@ func NewServer(services Services) (*Server, error) {
 		},
 	}
 
-	return &Server{
-		routes:   routes,
-		services: services,
-	}, nil
+	s.routes = routes
+
+	return nil
 }
 
+// HTTPHandler returns the HTTP handler for the server.
 func (s *Server) HTTPHandler(ctx context.Context) (http.Handler, error) {
 	router := http.NewServeMux()
 
-	if err := HTTPRouter(ctx, router, s.routes); err != nil {
+	if err := s.setupHTTPRouter(ctx, router); err != nil {
 		return nil, err
 	}
 
 	return router, nil
 }
 
-func HTTPRouter(ctx context.Context, router *http.ServeMux, routes []Route) error {
-	for _, r := range routes {
-		if r.Name == "" {
-			return fmt.Errorf("empty route name")
+func (s *Server) setupHTTPRouter(ctx context.Context, router *http.ServeMux) error {
+	for _, r := range s.routes {
+		if err := s.validateRoute(r); err != nil {
+			return err
 		}
 
-		if r.HttpPath == "" || r.HttpMethod == "" {
-			continue
-		}
-
-		if r.HttpHandler == nil {
-			return fmt.Errorf("nil http handler factory: %s", r.Name)
-		}
-
-		switch r.HttpMethod {
-		case GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE:
-			handlerFunc := r.HttpHandler(ctx, router)
-			router.HandleFunc(fmt.Sprintf("%v %v", r.HttpMethod, r.HttpPath), handlerFunc)
-		default:
-			return fmt.Errorf("invalid http method: %s", r.HttpMethod)
-		}
+		handlerFunc := r.HttpHandler(ctx, router)
+		router.HandleFunc(r.HttpPath, handlerFunc)
 	}
 	return nil
+}
+
+func (s *Server) validateRoute(r Route) error {
+	if r.Name == "" {
+		return errors.New("empty route name")
+	}
+
+	if r.HttpPath == "" {
+		return errors.New("empty HTTP path")
+	}
+
+	if r.HttpMethod == "" {
+		return errors.New("empty HTTP method")
+	}
+
+	if r.HttpHandler == nil {
+		return fmt.Errorf("nil HTTP handler factory: %s", r.Name)
+	}
+
+	switch r.HttpMethod {
+	case GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE:
+		return nil
+	default:
+		return fmt.Errorf("invalid HTTP method: %s", r.HttpMethod)
+	}
 }

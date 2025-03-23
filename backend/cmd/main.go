@@ -15,30 +15,27 @@ import (
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	postsvc "github.com/glowfi/voxpopuli/backend/pkg/service/post"
 	transport "github.com/glowfi/voxpopuli/backend/pkg/transport"
+	"github.com/oklog/run"
 	"github.com/rs/zerolog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 )
 
-const (
-	port        = 8080
-	databaseDSN = "postgres://%s:%s@%s/%s?sslmode=disable"
-)
-
 func main() {
-	// Load configuration
-	dbUsername := "postgres"
-	dbPassword := "postgres"
-	dbHost := "127.0.0.1:5432"
-	dbName := "voxpopuli"
-
 	// Initialize logger
 	logger := zerolog.New(os.Stdout)
 
 	// Create a context that can be canceled
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, shutdownFunc := context.WithCancel(context.Background())
+	defer shutdownFunc()
+
+	// Setup database
+	databaseDSN := "postgres://%s:%s@%s/%s?sslmode=disable"
+	dbUsername := "postgres"
+	dbPassword := "postgres"
+	dbHost := "127.0.0.1:5432"
+	dbName := "voxpopuli"
 
 	// Connect to the database
 	dsn := fmt.Sprintf(databaseDSN, dbUsername, dbPassword, dbHost, dbName)
@@ -61,18 +58,18 @@ func main() {
 		Post: postSvc,
 	}
 
-	// Create a new server
-	server, err := transport.NewServer(services)
+	// Create a new transportServer
+	transportServer, err := transport.NewServer(services)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("server creation failed")
 	}
 
 	// Create an HTTP handler for the server
-	apiHandler, err := server.HTTPHandler(ctx)
+	httpHandler, err := transportServer.HTTPHandler(ctx)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("api handler failed to start")
+		logger.Fatal().Err(err).Msg("http handler failed to start")
 	}
-	apiHandler = http.StripPrefix("/api", apiHandler)
+	httpHandler = http.StripPrefix("/api", httpHandler)
 
 	// Create a root router
 	rootRouter := http.NewServeMux()
@@ -83,41 +80,47 @@ func main() {
 		middleware.Logging,
 		middleware.CORS(corsOptions),
 	)
-	rootRouter.Handle("/api/", middlewareStack(apiHandler))
+	rootRouter.Handle("/api/", middlewareStack(httpHandler))
 
 	// Create an HTTP server
-	s := &http.Server{
+	port := 8080
+	addr := fmt.Sprintf(":%d", port)
+	httpServer := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           rootRouter,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 10 * time.Second,
-		WriteTimeout:      300 * time.Second,
+		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       10 * time.Second,
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	// Channel to listen for interrupt signals
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	// Start the server in a goroutine so it doesn't block
-	go func() {
-		// Start the server
-		logger.Info().Msg(fmt.Sprintf("Server listening on port %d", port))
-		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal().Err(err).Msg("http server exited")
-		}
-	}()
-
-	// Wait for interrupt signal
-	<-stop
-
-	// Shutdown the server
-	logger.Info().Msg("Shutting down server...")
-	ctxShutdown, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelShutdown()
-	if err := s.Shutdown(ctxShutdown); err != nil {
-		logger.Fatal().Err(err).Msg("server shutdown failed")
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("error starting http server")
 	}
-	logger.Info().Msg("Server shut down")
+
+	var rg run.Group
+
+	// server http connections
+	rg.Add(func() error {
+		logger.Info().Msgf("starting http server on port %d", port)
+		return httpServer.Serve(listener)
+	}, func(err error) {
+		listener.Close()
+	})
+
+	// graceful shutdown
+	quitC := make(chan os.Signal, 1)
+	rg.Add(func() error {
+		signal.Notify(quitC, os.Interrupt, os.Kill, syscall.SIGTERM)
+		err := <-quitC
+		return fmt.Errorf(err.String())
+	}, func(err error) {
+		shutdownFunc()
+	})
+
+	if err := rg.Run(); err != nil {
+		logger.Err(err).Msg("exiting")
+	}
 }

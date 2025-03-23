@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
