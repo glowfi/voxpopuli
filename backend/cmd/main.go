@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	postsvc "github.com/glowfi/voxpopuli/backend/pkg/service/post"
 	transport "github.com/glowfi/voxpopuli/backend/pkg/transport"
+	"github.com/joho/godotenv"
 	"github.com/oklog/run"
 	"github.com/rs/zerolog"
 	"github.com/uptrace/bun"
@@ -23,6 +26,11 @@ import (
 )
 
 func main() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("error loading .env file")
+	}
+
 	// Initialize logger
 	logger := zerolog.New(os.Stdout)
 
@@ -32,10 +40,10 @@ func main() {
 
 	// Setup database
 	databaseDSN := "postgres://%s:%s@%s/%s?sslmode=disable"
-	dbUsername := "postgres"
-	dbPassword := "postgres"
-	dbHost := "127.0.0.1:5432"
-	dbName := "voxpopuli"
+	dbUsername := os.Getenv("DB_USERNAME")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
 
 	// Connect to the database
 	dsn := fmt.Sprintf(databaseDSN, dbUsername, dbPassword, dbHost, dbName)
@@ -83,7 +91,11 @@ func main() {
 	rootRouter.Handle("/api/", middlewareStack(httpHandler))
 
 	// Create an HTTP server
-	port := 8080
+	portStr := os.Getenv("SERVER_PORT")
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to cast server port from string to integer")
+	}
 	addr := fmt.Sprintf(":%d", port)
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),

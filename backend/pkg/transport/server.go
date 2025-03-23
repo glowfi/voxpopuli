@@ -46,14 +46,7 @@ type Server struct {
 
 // NewServer creates a new server.
 func NewServer(services Services) (*Server, error) {
-	return &Server{
-		services: services,
-	}, nil
-}
-
-// SetupRoutes sets up the routes for the server.
-func (s *Server) SetupRoutes() error {
-	postsTransport := post.NewTransport(s.services.Post)
+	postsTransport := post.NewTransport(services.Post)
 
 	routes := []Route{
 		// posts api
@@ -65,55 +58,44 @@ func (s *Server) SetupRoutes() error {
 		},
 	}
 
-	s.routes = routes
-
-	return nil
+	return &Server{
+		routes:   routes,
+		services: services,
+	}, nil
 }
 
 // HTTPHandler returns the HTTP handler for the server.
 func (s *Server) HTTPHandler(ctx context.Context) (http.Handler, error) {
 	router := http.NewServeMux()
 
-	if err := s.setupHTTPRouter(ctx, router); err != nil {
+	if err := HTTPRouter(ctx, router, s.routes); err != nil {
 		return nil, err
 	}
 
 	return router, nil
 }
 
-func (s *Server) setupHTTPRouter(ctx context.Context, router *http.ServeMux) error {
-	for _, r := range s.routes {
-		if err := s.validateRoute(r); err != nil {
-			return err
+func HTTPRouter(ctx context.Context, router *http.ServeMux, routes []Route) error {
+	for _, r := range routes {
+		if r.Name == "" {
+			return errors.New("empty route name")
 		}
 
-		handlerFunc := r.HttpHandler(ctx, router)
-		router.HandleFunc(r.HttpPath, handlerFunc)
+		if r.HttpPath == "" || r.HttpMethod == "" {
+			continue
+		}
+
+		if r.HttpHandler == nil {
+			return fmt.Errorf("nil http handler factory: %s", r.Name)
+		}
+
+		switch r.HttpMethod {
+		case GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE:
+			handlerFunc := r.HttpHandler(ctx, router)
+			router.HandleFunc(fmt.Sprintf("%s %s", r.HttpMethod, r.HttpPath), handlerFunc)
+		default:
+			return fmt.Errorf("invalid http method: %s", r.HttpMethod)
+		}
 	}
 	return nil
-}
-
-func (s *Server) validateRoute(r Route) error {
-	if r.Name == "" {
-		return errors.New("empty route name")
-	}
-
-	if r.HttpPath == "" {
-		return errors.New("empty HTTP path")
-	}
-
-	if r.HttpMethod == "" {
-		return errors.New("empty HTTP method")
-	}
-
-	if r.HttpHandler == nil {
-		return fmt.Errorf("nil HTTP handler factory: %s", r.Name)
-	}
-
-	switch r.HttpMethod {
-	case GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE:
-		return nil
-	default:
-		return fmt.Errorf("invalid HTTP method: %s", r.HttpMethod)
-	}
 }
