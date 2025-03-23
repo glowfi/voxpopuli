@@ -10,7 +10,6 @@ import (
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
 	tr "github.com/glowfi/voxpopuli/backend/pkg/transport"
-	posttransport "github.com/glowfi/voxpopuli/backend/pkg/transport/post"
 	"github.com/glowfi/voxpopuli/backend/pkg/transport/post/postfakes"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -170,12 +169,9 @@ func TestTransport_PostsPaginated(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fakePostService := postfakes.FakePostService{}
 			fakePostService.PostsPaginatedReturns(tt.mockReturns.posts, tt.mockReturns.postError)
-			transport := posttransport.NewTransport(&fakePostService)
 
 			server, err := tr.NewServer(tr.Services{
 				Post: &fakePostService,
-			}, tr.Transports{
-				Post: transport,
 			})
 			if err != nil {
 				t.Fatalf("error setting up server: %+v", err)
