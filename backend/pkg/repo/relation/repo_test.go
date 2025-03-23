@@ -254,7 +254,7 @@ func TestRepo_LinkUserTrophies(t *testing.T) {
 		}, gotUserTrophies, "expect user trophies to match")
 	})
 
-	t.Run("on deleting user id child refrences gets deleted in user_trophies table :POS", func(t *testing.T) {
+	t.Run("on deleting user id child references gets deleted in user_trophies table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "users.yml", "trophies.yml", "user_trophies.yml")
 		relationPgrepo := relationrepo.NewRepo(db)
 		userPgrepo := userrepo.NewRepo(db)
@@ -269,7 +269,7 @@ func TestRepo_LinkUserTrophies(t *testing.T) {
 		assert.Equal(t, []models.UserTrophy(nil), gotUserTrophies, "expect user trophies to match")
 	})
 
-	t.Run("on deleting trophy id child refrences gets deleted in user_trophies table :POS", func(t *testing.T) {
+	t.Run("on deleting trophy id child references gets deleted in user_trophies table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "users.yml", "trophies.yml", "user_trophies.yml")
 		relationPgrepo := relationrepo.NewRepo(db)
 		userPgrepo := trophyrepo.NewRepo(db)
@@ -393,7 +393,7 @@ func TestRepo_LinkVoxsphereMembers(t *testing.T) {
 		}, gotVoxsphereMembers, "expect voxsphere members to match")
 	})
 
-	t.Run("on deleting voxsphere id child refrences gets deleted in voxsphere_members table :POS", func(t *testing.T) {
+	t.Run("on deleting voxsphere id child references gets deleted in voxsphere_members table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml")
 		voxspherePgrepo := voxsphererepo.NewRepo(db)
 		relationPgrepo := relationrepo.NewRepo(db)
@@ -408,7 +408,7 @@ func TestRepo_LinkVoxsphereMembers(t *testing.T) {
 		assert.Equal(t, []models.VoxsphereMember(nil), gotVoxsphereMembers, "expect voxsphere members to match")
 	})
 
-	t.Run("on deleting member id child refrences gets deleted in voxsphere_members table :POS", func(t *testing.T) {
+	t.Run("on deleting member id child references gets deleted in voxsphere_members table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_members.yml")
 		userPgrepo := userrepo.NewRepo(db)
 		relationPgrepo := relationrepo.NewRepo(db)
@@ -532,7 +532,7 @@ func TestRepo_LinkVoxsphereModerators(t *testing.T) {
 		}, gotVoxsphereModerators, "expect voxsphere moderators to match")
 	})
 
-	t.Run("on deleting voxsphere id child refrences gets deleted in voxsphere_moderators table :POS", func(t *testing.T) {
+	t.Run("on deleting voxsphere id child references gets deleted in voxsphere_moderators table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_moderators.yml")
 		voxspherePgrepo := voxsphererepo.NewRepo(db)
 		relationPgrepo := relationrepo.NewRepo(db)
@@ -547,7 +547,7 @@ func TestRepo_LinkVoxsphereModerators(t *testing.T) {
 		assert.Equal(t, []models.VoxsphereModerator(nil), gotVoxsphereModerators, "expect voxsphere moderators to match")
 	})
 
-	t.Run("on deleting moderator id child refrences gets deleted in voxsphere_moderators table :POS", func(t *testing.T) {
+	t.Run("on deleting moderator id child references gets deleted in voxsphere_moderators table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "voxsphere_moderators.yml")
 		userPgrepo := userrepo.NewRepo(db)
 		relationPgrepo := relationrepo.NewRepo(db)
@@ -847,7 +847,7 @@ func TestRepo_LinkUserFlairEmojis(t *testing.T) {
 		}, gotUserFlairEmojis, "expect user flair emojis to match")
 	})
 
-	t.Run("on deleting user flair child refrences gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting user flair child references gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -879,7 +879,7 @@ func TestRepo_LinkUserFlairEmojis(t *testing.T) {
 		}, gotUserFlairEmojis, "expect user flair emojis to match")
 	})
 
-	t.Run("on deleting emoji child refrences gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting emoji child references gets deleted in user_flair_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1016,7 +1016,7 @@ func TestRepo_LinkUserFlairCustomEmojis(t *testing.T) {
 		}, gotUserFlairCustomEmoji, "expect user flair custom emojis to match")
 	})
 
-	t.Run("on deleting user flair child refrences gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting user flair child references gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1048,7 +1048,7 @@ func TestRepo_LinkUserFlairCustomEmojis(t *testing.T) {
 		}, gotUserFlairCustomEmojis, "expect user flair custom emojis to match")
 	})
 
-	t.Run("on deleting custom emoji child refrences gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting custom emoji child references gets deleted in user_flair_custom_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1158,7 +1158,7 @@ func TestRepo_LinkUserFlairDescriptions(t *testing.T) {
 		}, gotUserFlairDescriptions, "expect user flair descriptions to match")
 	})
 
-	t.Run("on deleting user flair child refrences gets deleted in user_flair_descriptions table :POS", func(t *testing.T) {
+	t.Run("on deleting user flair child references gets deleted in user_flair_descriptions table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1492,7 +1492,7 @@ func TestRepo_LinkPostFlairEmojis(t *testing.T) {
 		}, gotPostFlairEmojis, "expect post flair emojis to match")
 	})
 
-	t.Run("on deleting post flair child refrences gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting post flair child references gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1525,7 +1525,7 @@ func TestRepo_LinkPostFlairEmojis(t *testing.T) {
 		}, gotPostFlairEmojis, "expect post flair emojis to match")
 	})
 
-	t.Run("on deleting emoji child refrences gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting emoji child references gets deleted in post_flair_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1667,7 +1667,7 @@ func TestRepo_LinkPostFlairCustomEmojis(t *testing.T) {
 		}, gotPostFlairCustomEmojis, "expect post flair custom emojis to match")
 	})
 
-	t.Run("on deleting post flair child refrences gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting post flair child references gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1700,7 +1700,7 @@ func TestRepo_LinkPostFlairCustomEmojis(t *testing.T) {
 		}, gotPostFlairCustomEmojis, "expect post flair custom emojis to match")
 	})
 
-	t.Run("on deleting custom emoji child refrences gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
+	t.Run("on deleting custom emoji child references gets deleted in post_flair_custom_emojis table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1814,7 +1814,7 @@ func TestRepo_LinkPostFlairDescriptions(t *testing.T) {
 		}, gotPostFlairDescriptions, "expect post flair descriptions to match")
 	})
 
-	t.Run("on deleting post flair child refrences gets deleted in post_flair_descriptions table :POS", func(t *testing.T) {
+	t.Run("on deleting post flair child references gets deleted in post_flair_descriptions table :POS", func(t *testing.T) {
 		db := setupPostgres(t,
 			"topics.yml",
 			"voxspheres.yml",
@@ -1968,7 +1968,7 @@ func TestRepo_LinkPostAwards(t *testing.T) {
 		}, gotPostAwards, "expect post award to match")
 	})
 
-	t.Run("on deleting post id child refrences gets deleted in post_awards table :POS", func(t *testing.T) {
+	t.Run("on deleting post id child references gets deleted in post_awards table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
 		relationPgrepo := relationrepo.NewRepo(db)
 		postPgrepo := postrepo.NewRepo(db)
@@ -1983,7 +1983,7 @@ func TestRepo_LinkPostAwards(t *testing.T) {
 		assert.Equal(t, []models.PostAward(nil), gotPostAwards, "expect post awards to match")
 	})
 
-	t.Run("on deleting award id child refrences gets deleted in post_awards table :POS", func(t *testing.T) {
+	t.Run("on deleting award id child references gets deleted in post_awards table :POS", func(t *testing.T) {
 		db := setupPostgres(t, "topics.yml", "voxspheres.yml", "users.yml", "awards.yml", "posts.yml", "post_awards.yml")
 		relationPgrepo := relationrepo.NewRepo(db)
 		awardPgrepo := awardrepo.NewRepo(db)
