@@ -236,7 +236,7 @@ func assertPaginatedPosts(t *testing.T, wantPaginatedPost, gotPaginatedPost mode
 	assert.Equal(t, wantPaginatedPost.UpdatedAt, gotPaginatedPost.UpdatedAt, "expect UpdatedAt to match")
 }
 
-func assertPaginatedPostsWithoutTimestampAndMedias(t *testing.T, wantPaginatedPosts, gotPaginatedPosts []models.PostPaginated) {
+func assertPaginatedPostsWithTimestampAndMedias(t *testing.T, wantPaginatedPosts, gotPaginatedPosts []models.PostPaginated) {
 	t.Helper()
 
 	if len(wantPaginatedPosts) != len(gotPaginatedPosts) {
@@ -1316,9 +1316,31 @@ func TestRepo_PostsPaginated(t *testing.T) {
 					MediaType:   models.MediaTypeLink,
 					Medias: []any{
 						models.Link{
-							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-							Link:          "https://example.com/video.mp4",
+							ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+							Link:    "https://example.com/video.mp4",
+							Image: []models.ImageMetadata{
+								{
+									ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+									ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+									Height:        720,
+									Width:         1280,
+									Url:           "https://example.com/image3.jpg",
+									CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+									CreatedAtUnix: 1725091101,
+									UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+								},
+								{
+									ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+									ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+									Height:        1920,
+									Width:         1080,
+									Url:           "https://example.com/image4.jpg",
+									CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+									CreatedAtUnix: 1725091101,
+									UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+								},
+							},
 							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 							CreatedAtUnix: 1725091100,
 							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
@@ -1393,9 +1415,31 @@ func TestRepo_PostsPaginated(t *testing.T) {
 					MediaType:   models.MediaTypeLink,
 					Medias: []any{
 						models.Link{
-							ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-							MediaID:       uuid.MustParse("00000000-0000-0000-0000-000000000005"),
-							Link:          "https://example.com/video.mp4",
+							ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+							MediaID: uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+							Link:    "https://example.com/video.mp4",
+							Image: []models.ImageMetadata{
+								{
+									ID:            uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+									ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+									Height:        720,
+									Width:         1280,
+									Url:           "https://example.com/image3.jpg",
+									CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+									CreatedAtUnix: 1725091101,
+									UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
+								},
+								{
+									ID:            uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+									ImageID:       uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+									Height:        1920,
+									Width:         1080,
+									Url:           "https://example.com/image4.jpg",
+									CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+									CreatedAtUnix: 1725091101,
+									UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
+								},
+							},
 							CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 							CreatedAtUnix: 1725091100,
 							UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
@@ -1454,7 +1498,7 @@ func TestRepo_PostsPaginated(t *testing.T) {
 			gotPostsPaginated, gotErr := pgrepo.PostsPaginated(context.Background(), tt.args.skip, tt.args.limit)
 
 			assert.ErrorIs(t, gotErr, tt.wantErr, "expect error to match")
-			assertPaginatedPostsWithoutTimestampAndMedias(t, tt.wantPostsPaginated, gotPostsPaginated)
+			assertPaginatedPostsWithTimestampAndMedias(t, tt.wantPostsPaginated, gotPostsPaginated)
 		})
 	}
 }

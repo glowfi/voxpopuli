@@ -149,6 +149,7 @@ func TestTransport_PostsPaginated(t *testing.T) {
                         "id": "00000000-0000-0000-0000-000000000001",
                         "media_id": "00000000-0000-0000-0000-000000000005",
                         "link": "https://example.com/video.mp4",
+                        "image": null,
                         "created_at": "2024-10-10T10:10:10Z",
                         "created_at_unix": 1725091100,
                         "updated_at": "2024-10-10T10:10:10Z"

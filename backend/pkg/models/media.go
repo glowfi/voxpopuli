@@ -92,10 +92,11 @@ type Video struct {
 }
 
 type Link struct {
-	ID            uuid.UUID `json:"id"`
-	MediaID       uuid.UUID `json:"media_id"`
-	Link          string    `json:"link"`
-	CreatedAt     time.Time `json:"created_at"`
-	CreatedAtUnix int64     `json:"created_at_unix"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            uuid.UUID       `json:"id"`
+	MediaID       uuid.UUID       `json:"media_id"`
+	Link          string          `json:"link"`
+	Image         []ImageMetadata `json:"image" bun:",scanonly"`
+	CreatedAt     time.Time       `json:"created_at"`
+	CreatedAtUnix int64           `json:"created_at_unix"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }

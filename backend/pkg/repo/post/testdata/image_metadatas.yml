@@ -17,3 +17,21 @@
       created_at: 2024-10-10T10:10:20Z
       created_at_unix: 1725091101
       updated_at: 2024-10-10T10:10:20Z
+
+    - id: 00000000-0000-0000-0000-000000000003
+      image_id: 00000000-0000-0000-0000-000000000002
+      height: 720
+      width: 1280
+      url: https://example.com/image3.jpg
+      created_at: 2024-10-10T10:10:20Z
+      created_at_unix: 1725091101
+      updated_at: 2024-10-10T10:10:20Z
+
+    - id: 00000000-0000-0000-0000-000000000004
+      image_id: 00000000-0000-0000-0000-000000000002
+      height: 1920
+      width: 1080
+      url: https://example.com/image4.jpg
+      created_at: 2024-10-10T10:10:30Z
+      created_at_unix: 1725091101
+      updated_at: 2024-10-10T10:10:30Z
