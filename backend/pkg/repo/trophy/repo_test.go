@@ -71,7 +71,7 @@ func assertTrophies(t *testing.T, wantTrophies, gotTrophies []models.Trophy) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("trophy %v of ID %v is not present in gotTrophies", trophy.Title, trophy.ID))
+			t.Fatalf("trophy %v of ID %v is not present in gotTrophies", trophy.Title, trophy.ID)
 			return
 		}
 		assert.Equal(t, trophy, gotTrophies[idx], "expect trophy to match")

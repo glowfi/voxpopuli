@@ -1,7 +1,6 @@
 package media
 
 import (
-	"fmt"
 	"slices"
 	"testing"
 
@@ -30,7 +29,7 @@ func AssertImageMetadatasWithoutTimestamp(t *testing.T, wantImageMetadatas, gotI
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID))
+			t.Fatalf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID)
 			return
 		}
 		AssertImageMetadataWithoutTimestamp(t, imageMetadata, gotImageMetadatas[idx])
@@ -46,7 +45,7 @@ func AssertImageMetadatasWithTimestamp(t *testing.T, wantImageMetadatas, gotImag
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID))
+			t.Fatalf("image metadata %v of ID %v is not present in gotImageMetadatas", imageMetadata.Url, imageMetadata.ID)
 			return
 		}
 		assert.Equal(t, imageMetadata, gotImageMetadatas[idx], "expected image metadata to match")
@@ -72,7 +71,7 @@ func AssertImages(t *testing.T, wantImages, gotImages []models.Image) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("image %v of ID %v is not present in gotImages", image.MediaID, image.ID))
+			t.Fatalf("image %v of ID %v is not present in gotImages", image.MediaID, image.ID)
 			return
 		}
 		AssertImage(t, image, gotImages[idx])
@@ -100,7 +99,7 @@ func AssertGifMetadatasWithoutTimestamp(t *testing.T, wantGifMetadatas, gotGifMe
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID))
+			t.Fatalf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID)
 			return
 		}
 		AssertGifMetadataWithoutTimestamp(t, gifMetadata, gotGifMetadatas[idx])
@@ -116,7 +115,7 @@ func AssertGifMetadatasWithTimestamp(t *testing.T, wantGifMetadatas, gotGifMetad
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID))
+			t.Fatalf("gif metadata %v of ID %v is not present in gotGifMetadatas", gifMetadata.Url, gifMetadata.ID)
 			return
 		}
 		assert.Equal(t, gifMetadata, gotGifMetadatas[idx], "expected gif metadata to match")
@@ -142,7 +141,7 @@ func AssertGifs(t *testing.T, wantGifs, gotGifs []models.Gif) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gif %v of ID %v is not present in gotGifs", gif.MediaID, gif.ID))
+			t.Fatalf("gif %v of ID %v is not present in gotGifs", gif.MediaID, gif.ID)
 			return
 		}
 		AssertGif(t, gif, gotGifs[idx])
@@ -168,7 +167,7 @@ func AssertLinksWithoutTimestamp(t *testing.T, wantLinks, gotLinks []models.Link
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("link %v of url %v is not present in gotLinks", link.ID, link.Link))
+			t.Fatalf("link %v of url %v is not present in gotLinks", link.ID, link.Link)
 			return
 		}
 		AssertLinkWithoutTimestamp(t, link, gotLinks[idx])
@@ -188,7 +187,7 @@ func AssertLinksWitTimestamp(t *testing.T, wantLinks, gotLinks []models.Link) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("link %v of url %v is not present in gotLinks", link.ID, link.Link))
+			t.Fatalf("link %v of url %v is not present in gotLinks", link.ID, link.Link)
 			return
 		}
 		assert.Equal(t, link, gotLinks[idx], "expect link to match")
@@ -216,7 +215,7 @@ func AssertVideosWithoutTimestamp(t *testing.T, wantVideos, gotVideos []models.V
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("video %v of url %v is not present in gotVideos", video.ID, video.Url))
+			t.Fatalf("video %v of url %v is not present in gotVideos", video.ID, video.Url)
 			return
 		}
 		AssertVideoWithoutTimestamp(t, video, gotVideos[idx])
@@ -236,7 +235,7 @@ func AssertVideosWithTimestamp(t *testing.T, wantVideos, gotVideos []models.Vide
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("video %v of url %v is not present in gotVideos", video.ID, video.Url))
+			t.Fatalf("video %v of url %v is not present in gotVideos", video.ID, video.Url)
 			return
 		}
 		assert.Equal(t, video, gotVideos[idx], "expect video to match")
@@ -265,7 +264,7 @@ func AssertGalleryMetadatasWithoutTimestamp(t *testing.T, wantGalleryMetadatas, 
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
+			t.Fatalf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID)
 			return
 		}
 		AssertGalleryMetadataWithoutTimestamp(t, galleryMetadata, gotGalleryMetadatas[idx])
@@ -281,7 +280,7 @@ func AssertGalleryMetadatasWithTimestamp(t *testing.T, wantGalleryMetadatas, got
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID))
+			t.Fatalf("gallery metadata %v of ID %v is not present in gotGalleryMetadatas", galleryMetadata.Url, galleryMetadata.ID)
 			return
 		}
 		assert.Equal(t, galleryMetadata, gotGalleryMetadatas[idx], "expected gallery metadata to match")
@@ -307,7 +306,7 @@ func AssertGalleries(t *testing.T, wantGalleries, gotGalleries []models.Gallery)
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("gallery %v of ID %v is not present in gotGalleries", gallery.MediaID, gallery.ID))
+			t.Fatalf("gallery %v of ID %v is not present in gotGalleries", gallery.MediaID, gallery.ID)
 			return
 		}
 		AssertGallery(t, gallery, gotGalleries[idx])

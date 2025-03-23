@@ -3,7 +3,6 @@ package relation
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -446,7 +445,7 @@ func (r *Repo) LinkPostFlairEmojis(ctx context.Context, pfes ...models.PostFlair
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, pfe := range pfes {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?)")
 		args = append(args, pfe.EmojiID, pfe.PostFlairID, pfe.OrderIndex)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -498,7 +497,7 @@ func (r *Repo) LinkPostFlairCustomEmojis(ctx context.Context, pfces ...models.Po
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, pfce := range pfces {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?)")
 		args = append(args, pfce.CustomEmojiID, pfce.PostFlairID, pfce.OrderIndex)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -550,7 +549,7 @@ func (r *Repo) LinkPostFlairDescriptions(ctx context.Context, pfds ...models.Pos
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, pfd := range pfds {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?)")
 		args = append(args, pfd.PostFlairID, pfd.OrderIndex, pfd.Description)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -600,7 +599,7 @@ func (r *Repo) LinkPostAwards(ctx context.Context, pas ...models.PostAward) ([]m
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, pa := range pas {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		placeholders = append(placeholders, "(?, ?)")
 		args = append(args, pa.PostID, pa.AwardID)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"

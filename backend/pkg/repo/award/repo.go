@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -94,7 +93,7 @@ func (r *Repo) AddAwards(ctx context.Context, awards ...models.Award) ([]models.
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, award := range awards {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?)")
 		args = append(args, award.ID, award.Title, award.ImageLink)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"

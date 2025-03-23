@@ -76,7 +76,7 @@ func assertRules(t *testing.T, wantRules, gotRules []models.Rule) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("rule %v of ID %v is not present in gotRules", rule.ShortName, rule.ID))
+			t.Fatalf("rule %v of ID %v is not present in gotRules", rule.ShortName, rule.ID)
 			return
 		}
 		assert.Equal(t, rule, gotRules[idx], "expect rule to match")

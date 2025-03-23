@@ -63,9 +63,9 @@ func GetBestGuessedEmojiInfo(emojiStr string) (gomoji.Emoji, error) {
 }
 
 // isStandardEmoji checks if a rune is an emoji
-func isStandardEmoji(r rune) bool {
-	return gomoji.ContainsEmoji(string(r))
-}
+// func isStandardEmoji(r rune) bool {
+// 	return gomoji.ContainsEmoji(string(r))
+// }
 
 // splitByEmoji splits the input string into a slice of strings based on emojis
 func SplitStringIntoStandardEmojisAndWords(input string) []string {

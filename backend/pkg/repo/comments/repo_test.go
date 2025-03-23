@@ -118,7 +118,7 @@ func assertCommentsWithoutTimestamp(t *testing.T, wantComments, gotComments []mo
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("comment of ID %v is not present in gotComments", wantComment.ID))
+			t.Fatalf("comment of ID %v is not present in gotComments", wantComment.ID)
 			return
 		}
 		assertCommentWithoutTimestamp(t, wantComment, gotComments[idx])
@@ -138,7 +138,7 @@ func assertCommentsWithTimestamp(t *testing.T, wantComments, gotComments []model
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("comment of ID %v is not present in gotComments", wantComment.ID))
+			t.Fatalf("comment of ID %v is not present in gotComments", wantComment.ID)
 			return
 		}
 		assert.Equal(t, wantComment, gotComments[idx])

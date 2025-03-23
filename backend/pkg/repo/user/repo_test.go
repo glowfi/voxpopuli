@@ -89,7 +89,7 @@ func assertUsersWithoutTimestamp(t *testing.T, wantUsers, gotUsers []models.User
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("user %v of ID %v is not present in gotUsers", user.Name, user.ID))
+			t.Fatalf("user %v of ID %v is not present in gotUsers", user.Name, user.ID)
 			return
 		}
 		assertUserWithoutTimestamp(t, user, gotUsers[idx])
@@ -583,9 +583,6 @@ func TestRepo_UpdateUser(t *testing.T) {
 }
 
 func TestRepo_DeleteUser(t *testing.T) {
-	type fields struct {
-		db *bun.DB
-	}
 	type args struct {
 		ID uuid.UUID
 	}

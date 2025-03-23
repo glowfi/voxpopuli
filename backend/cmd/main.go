@@ -114,7 +114,7 @@ func main() {
 
 	var rg run.Group
 
-	// server http connections
+	// serve http connections
 	rg.Add(func() error {
 		logger.Info().Msgf("starting http server on port %d", port)
 		return httpServer.Serve(listener)
@@ -125,9 +125,9 @@ func main() {
 	// graceful shutdown
 	quitC := make(chan os.Signal, 1)
 	rg.Add(func() error {
-		signal.Notify(quitC, os.Interrupt, os.Kill, syscall.SIGTERM)
-		err := <-quitC
-		return fmt.Errorf(err.String())
+		signal.Notify(quitC, os.Interrupt, syscall.SIGTERM)
+		sig := <-quitC
+		return fmt.Errorf("received signal %s", sig)
 	}, func(err error) {
 		shutdownFunc()
 	})

@@ -79,7 +79,7 @@ func assertCustomEmojis(t *testing.T, wantCustomEmojis, gotCustomEmojis []models
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("custom emoji %v of ID %v is not present in gotCustomEmojis", customemoji.Title, customemoji.ID))
+			t.Fatalf("custom emoji %v of ID %v is not present in gotCustomEmojis", customemoji.Title, customemoji.ID)
 			return
 		}
 		assert.Equal(t, customemoji, gotCustomEmojis[idx], "expect custom emoji to match")

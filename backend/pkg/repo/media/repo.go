@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -154,7 +153,7 @@ func (r *Repo) AddPostMedias(ctx context.Context, postMedias ...models.PostMedia
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, postMedia := range postMedias {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?)")
 		args = append(args, postMedia.ID, postMedia.PostID, postMedia.MediaType)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -330,7 +329,7 @@ func (r *Repo) AddImages(ctx context.Context, images ...models.Image) ([]models.
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, image := range images {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		placeholders = append(placeholders, "(?, ?)")
 		args = append(args, image.ID, image.MediaID)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -479,7 +478,7 @@ func (r *Repo) AddImageMetadatas(ctx context.Context, imageMetadatas ...models.I
 		imageMetadata.CreatedAt = timestamp
 		imageMetadata.CreatedAtUnix = timestamp.Unix()
 		imageMetadata.UpdatedAt = timestamp
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?)")
 		args = append(args,
 			imageMetadata.ID,
 			imageMetadata.ImageID,
@@ -673,7 +672,7 @@ func (r *Repo) AddGifs(ctx context.Context, gifs ...models.Gif) ([]models.Gif, e
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, gif := range gifs {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		placeholders = append(placeholders, "(?, ?)")
 		args = append(args, gif.ID, gif.MediaID)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -822,7 +821,7 @@ func (r *Repo) AddGifMetadatas(ctx context.Context, gifMetadatas ...models.GifMe
 		gifMetadata.CreatedAt = timestamp
 		gifMetadata.CreatedAtUnix = timestamp.Unix()
 		gifMetadata.UpdatedAt = timestamp
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?)")
 		args = append(args,
 			gifMetadata.ID,
 			gifMetadata.GifID,
@@ -1019,7 +1018,7 @@ func (r *Repo) AddGalleries(ctx context.Context, galleries ...models.Gallery) ([
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, gallery := range galleries {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?)"))
+		placeholders = append(placeholders, "(?, ?)")
 		args = append(args, gallery.ID, gallery.MediaID)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"
@@ -1171,7 +1170,7 @@ func (r *Repo) AddGalleryMetadatas(ctx context.Context, galleryMetadatas ...mode
 		galleryMetadata.CreatedAt = timestamp
 		galleryMetadata.CreatedAtUnix = timestamp.Unix()
 		galleryMetadata.UpdatedAt = timestamp
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 		args = append(args,
 			galleryMetadata.ID,
 			galleryMetadata.GalleryID,
@@ -1342,7 +1341,7 @@ func (r *Repo) AddVideos(ctx context.Context, videos ...models.Video) ([]models.
 		video.CreatedAt = timestamp
 		video.CreatedAtUnix = timestamp.Unix()
 		video.UpdatedAt = timestamp
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?)")
 		args = append(args,
 			video.ID,
 			video.MediaID,

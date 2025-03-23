@@ -79,7 +79,7 @@ func assertUserFlairs(t *testing.T, wantUserFlairs, gotUserFlairs []models.UserF
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("user flair %v of ID %v is not present in gotUserFlairs", userFlair.FullText, userFlair.ID))
+			t.Fatalf("user flair %v of ID %v is not present in gotUserFlairs", userFlair.FullText, userFlair.ID)
 			return
 		}
 		assert.Equal(t, userFlair, gotUserFlairs[idx], "expect user flair to match")

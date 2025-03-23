@@ -83,7 +83,7 @@ func assertPostFlairs(t *testing.T, wantPostFlairs, gotPostFlairs []models.PostF
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("post flair %v of ID %v is not present in gotPostFlairs", wantpostFlair.FullText, wantpostFlair.ID))
+			t.Fatalf("post flair %v of ID %v is not present in gotPostFlairs", wantpostFlair.FullText, wantpostFlair.ID)
 			return
 		}
 		assert.Equal(t, wantpostFlair, gotPostFlairs[idx], "expect post flair to match")

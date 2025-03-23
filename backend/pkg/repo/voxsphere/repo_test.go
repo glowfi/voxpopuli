@@ -109,7 +109,7 @@ func assertVoxspheresWithoutTimestamp(t *testing.T, wantVoxspheres, gotVoxsphere
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("voxsphere %v of ID %v is not present in gotVoxspheres", voxsphere.Title, voxsphere.ID))
+			t.Fatalf("voxsphere %v of ID %v is not present in gotVoxspheres", voxsphere.Title, voxsphere.ID)
 			return
 		}
 		assertVoxsphereWithoutTimestamp(t, voxsphere, gotVoxspheres[idx])
@@ -129,7 +129,7 @@ func assertVoxspheresWithTimestamp(t *testing.T, wantVoxspheres, gotVoxspheres [
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("voxsphere %v of ID %v is not present in gotVoxspheres", voxsphere.Title, voxsphere.ID))
+			t.Fatalf("voxsphere %v of ID %v is not present in gotVoxspheres", voxsphere.Title, voxsphere.ID)
 			return
 		}
 		assert.Equal(t, voxsphere, gotVoxspheres[idx])

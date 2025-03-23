@@ -71,7 +71,7 @@ func assertTopics(t *testing.T, wantTopics, gotTopics []models.Topic) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("topic %v of ID %v is not present in gotTopics", topic.Name, topic.ID))
+			t.Fatalf("topic %v of ID %v is not present in gotTopics", topic.Name, topic.ID)
 			return
 		}
 		assert.Equal(t, topic, gotTopics[idx], "expect topic to match")

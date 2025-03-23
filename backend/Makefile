@@ -7,3 +7,5 @@ migrate-down:
 	GOOSE_DRIVER=postgres GOOSE_DBSTRING=postgres://postgres:postgres@localhost:5432/voxpopuli GOOSE_MIGRATION_DIR=./migrations goose down
 test:
 	go test -timeout 300s -p 1 -race -v -count=1 ./...
+lint:
+	golangci-lint run

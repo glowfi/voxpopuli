@@ -30,7 +30,7 @@ func TestTransport_PostsPaginated(t *testing.T) {
 	}{
 		{
 			name:           "no query paramters :NEG",
-			url:            fmt.Sprintf("/posts"),
+			url:            "/posts",
 			wantStatusCode: http.StatusBadRequest,
 		},
 		{

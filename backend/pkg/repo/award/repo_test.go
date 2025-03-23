@@ -71,7 +71,7 @@ func assertAwards(t *testing.T, wantAwards, gotAwards []models.Award) {
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("award %v of ID %v is not present in gotAwards", award.Title, award.ID))
+			t.Fatalf("award %v of ID %v is not present in gotAwards", award.Title, award.ID)
 			return
 		}
 		assert.Equal(t, award, gotAwards[idx], "expect award to match")

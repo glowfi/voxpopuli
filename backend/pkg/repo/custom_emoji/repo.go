@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/glowfi/voxpopuli/backend/pkg/models"
@@ -98,7 +97,7 @@ func (r *Repo) AddCustomEmojis(ctx context.Context, customEmojis ...models.Custo
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, customEmoji := range customEmojis {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?)")
 		args = append(args, customEmoji.ID, customEmoji.VoxsphereID, customEmoji.Url, customEmoji.Title)
 	}
 	query += strings.Join(placeholders, ", ") + " RETURNING *"

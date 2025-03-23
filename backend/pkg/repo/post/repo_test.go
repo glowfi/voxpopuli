@@ -249,7 +249,7 @@ func assertPaginatedPostsWithoutTimestampAndMedias(t *testing.T, wantPaginatedPo
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("post %v of ID %v is not present in gotPaginatedPosts", wantPaginatedPost.Title, wantPaginatedPost.ID))
+			t.Fatalf("post %v of ID %v is not present in gotPaginatedPosts", wantPaginatedPost.Title, wantPaginatedPost.ID)
 			return
 		}
 		assertPaginatedPosts(t, wantPaginatedPost, gotPaginatedPosts[idx])
@@ -282,7 +282,7 @@ func assertPostsWithoutTimestamp(t *testing.T, wantPosts, gotPosts []models.Post
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("post %v of ID %v is not present in gotPosts", post.Title, post.ID))
+			t.Fatalf("post %v of ID %v is not present in gotPosts", post.Title, post.ID)
 			return
 		}
 		assertPostWithoutTimestamp(t, post, gotPosts[idx])

@@ -137,7 +137,7 @@ func assertPostMedias(t *testing.T, wantPostMedias, gotPostMedias []models.PostM
 		})
 
 		if idx == -1 {
-			t.Fatal(fmt.Sprintf("post media of ID %v is not present in gotPostMedias", postMedia.ID))
+			t.Fatalf("post media of ID %v is not present in gotPostMedias", postMedia.ID)
 			return
 		}
 		assert.Equal(t, postMedia, gotPostMedias[idx], "expect post media to match")

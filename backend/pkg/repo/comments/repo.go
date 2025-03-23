@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -122,7 +121,7 @@ func (r *Repo) AddComments(ctx context.Context, comments ...models.Comment) ([]m
 	args := make([]interface{}, 0)
 	placeholders := make([]string, 0)
 	for _, comment := range comments {
-		placeholders = append(placeholders, fmt.Sprintf("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 		timestamp := time.Now()
 		comment.CreatedAt = timestamp
 		comment.UpdatedAt = timestamp
