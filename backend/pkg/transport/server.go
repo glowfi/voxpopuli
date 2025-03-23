@@ -5,17 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	posttransport "github.com/glowfi/voxpopuli/backend/pkg/transport/post"
+	"github.com/glowfi/voxpopuli/backend/pkg/transport/post"
 )
-
-type HTTPHandlerFunc func(ctx context.Context, h http.Handler) http.HandlerFunc
-
-type Route struct {
-	Name        string
-	HttpMethod  string
-	HttpPath    string
-	HttpHandler HTTPHandlerFunc
-}
 
 // Supported HTTP methods.
 const (
@@ -30,12 +21,17 @@ const (
 	TRACE   = "TRACE"
 )
 
-type Services struct {
-	Post posttransport.PostService
+type HTTPHandlerFunc func(ctx context.Context, h http.Handler) http.HandlerFunc
+
+type Route struct {
+	Name        string
+	HttpMethod  string
+	HttpPath    string
+	HttpHandler HTTPHandlerFunc
 }
 
-type Transports struct {
-	Post *posttransport.Transport
+type Services struct {
+	Post post.PostService
 }
 
 type Server struct {
@@ -43,13 +39,16 @@ type Server struct {
 	services Services
 }
 
-func NewServer(services Services, transports Transports) (*Server, error) {
+func NewServer(services Services) (*Server, error) {
+	postsTransport := post.NewTransport(services.Post)
+
 	routes := []Route{
+		// posts api
 		{
 			Name:        "PaginatedPost",
 			HttpMethod:  GET,
 			HttpPath:    "/posts",
-			HttpHandler: transports.Post.PostsPaginated,
+			HttpHandler: postsTransport.PostsPaginated,
 		},
 	}
 
@@ -57,6 +56,16 @@ func NewServer(services Services, transports Transports) (*Server, error) {
 		routes:   routes,
 		services: services,
 	}, nil
+}
+
+func (s *Server) HTTPHandler(ctx context.Context) (http.Handler, error) {
+	router := http.NewServeMux()
+
+	if err := HTTPRouter(ctx, router, s.routes); err != nil {
+		return nil, err
+	}
+
+	return router, nil
 }
 
 func HTTPRouter(ctx context.Context, router *http.ServeMux, routes []Route) error {
@@ -82,14 +91,4 @@ func HTTPRouter(ctx context.Context, router *http.ServeMux, routes []Route) erro
 		}
 	}
 	return nil
-}
-
-func (s *Server) HTTPHandler(ctx context.Context) (http.Handler, error) {
-	router := http.NewServeMux()
-
-	if err := HTTPRouter(ctx, router, s.routes); err != nil {
-		return nil, err
-	}
-
-	return router, nil
 }

@@ -15,7 +15,6 @@ import (
 	postrepo "github.com/glowfi/voxpopuli/backend/pkg/repo/post"
 	postsvc "github.com/glowfi/voxpopuli/backend/pkg/service/post"
 	transport "github.com/glowfi/voxpopuli/backend/pkg/transport"
-	posttransport "github.com/glowfi/voxpopuli/backend/pkg/transport/post"
 	"github.com/rs/zerolog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
@@ -46,7 +45,7 @@ func main() {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 	db := bun.NewDB(sqldb, pgdialect.New())
 	if err := db.Ping(); err != nil {
-		logger.Fatal().Err(err).Msg("")
+		logger.Fatal().Err(err).Msg("failed to ping database")
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -54,20 +53,16 @@ func main() {
 		}
 	}()
 
-	// Initialize services and transports
+	// Initialize repo and services
 	postRepo := postrepo.NewRepo(db)
 	postSvc := postsvc.NewService(postRepo)
-	postsTransport := posttransport.NewTransport(postSvc)
 
 	services := transport.Services{
 		Post: postSvc,
 	}
-	transports := transport.Transports{
-		Post: postsTransport,
-	}
 
 	// Create a new server
-	server, err := transport.NewServer(services, transports)
+	server, err := transport.NewServer(services)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("server creation failed")
 	}
