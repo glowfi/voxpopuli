@@ -1775,15 +1775,15 @@ func insertFlairs(ctx context.Context, db *bun.DB, postsFilename string, subredd
 		return err
 	}
 
-	postFlairs := make([]models.PostFlair, 0, 0)
-	postFlairEmojis := make([]models.PostFlairEmoji, 0, 0)
-	postFlairCustomEmojis := make([]models.PostFlairCustomEmoji, 0, 0)
-	postFlairDescriptions := make([]models.PostFlairDescription, 0, 0)
+	postFlairs := make([]models.PostFlair, 0)
+	postFlairEmojis := make([]models.PostFlairEmoji, 0)
+	postFlairCustomEmojis := make([]models.PostFlairCustomEmoji, 0)
+	postFlairDescriptions := make([]models.PostFlairDescription, 0)
 
-	userFlairs := make([]models.UserFlair, 0, 0)
-	userFlairEmojis := make([]models.UserFlairEmoji, 0, 0)
-	userFlairCustomEmojis := make([]models.UserFlairCustomEmoji, 0, 0)
-	userFlairDescriptions := make([]models.UserFlairDescription, 0, 0)
+	userFlairs := make([]models.UserFlair, 0)
+	userFlairEmojis := make([]models.UserFlairEmoji, 0)
+	userFlairCustomEmojis := make([]models.UserFlairCustomEmoji, 0)
+	userFlairDescriptions := make([]models.UserFlairDescription, 0)
 
 	for _, subreddits := range subredditJson {
 		for _, subreddit := range subreddits {
@@ -2337,8 +2337,8 @@ func insertFlairs(ctx context.Context, db *bun.DB, postsFilename string, subredd
 		return err
 	}
 
-	user_user_flairs := make([]models.UserUserFlair, 0, 0)
-	post_post_flairs := make([]models.PostPostFlair, 0, 0)
+	user_user_flairs := make([]models.UserUserFlair, 0)
+	post_post_flairs := make([]models.PostPostFlair, 0)
 
 	for _, post := range postsJson {
 		if post.LinkFlairText == "Moderator" {
