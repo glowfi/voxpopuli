@@ -8,4 +8,4 @@ migrate-down:
 test:
 	go test -timeout 300s -p 1 -race -v -count=1 ./...
 lint:
-	golangci-lint run &&misspell .
+	golangci-lint run && misspell .

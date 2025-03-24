@@ -945,6 +945,35 @@ func insertPostMedias(
 			if err != nil {
 				return fmt.Errorf("Error casting to link for post id %v %v", postID, err)
 			}
+
+			imageID := uuid.New()
+			newImage := models.Image{
+				ID:      imageID,
+				MediaID: postMediaID,
+			}
+			images = append(images, newImage)
+
+			// Determine the type of each resolution
+			for _, res := range link.Image.Resolutions {
+				var r ImageResolution
+				if err := mapToStruct(res, &r); err != nil {
+					return fmt.Errorf("Error casting image resolutions of links for post id %v %v", postID, err)
+				}
+
+				newImageMetadata := models.ImageMetadata{
+					ID:            uuid.New(),
+					ImageID:       imageID,
+					Height:        int32(r.Height),
+					Width:         int32(r.Width),
+					Url:           r.URL,
+					CreatedAt:     time.Now(),
+					CreatedAtUnix: time.Now().Unix(),
+					UpdatedAt:     time.Now(),
+				}
+				imageMetadatas = append(imageMetadatas, newImageMetadata)
+
+			}
+
 			linkID := uuid.New()
 			newLink := models.Link{
 				ID:            linkID,

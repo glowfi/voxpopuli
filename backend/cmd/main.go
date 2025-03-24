@@ -96,7 +96,6 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("failed to cast server port from string to integer")
 	}
-	addr := fmt.Sprintf(":%d", port)
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           rootRouter,
@@ -107,19 +106,16 @@ func main() {
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error starting http server")
-	}
-
 	var rg run.Group
 
-	// serve http connections
+	// start http server
 	rg.Add(func() error {
 		logger.Info().Msgf("starting http server on port %d", port)
-		return httpServer.Serve(listener)
+		return httpServer.ListenAndServe()
 	}, func(err error) {
-		listener.Close()
+		if err != nil && err != http.ErrServerClosed {
+			logger.Fatal().Err(err).Msg("http server exited")
+		}
 	})
 
 	// graceful shutdown
@@ -128,7 +124,7 @@ func main() {
 		signal.Notify(quitC, os.Interrupt, syscall.SIGTERM)
 		sig := <-quitC
 		return fmt.Errorf("received signal %s", sig)
-	}, func(err error) {
+	}, func(error) {
 		shutdownFunc()
 	})
 

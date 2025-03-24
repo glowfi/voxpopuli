@@ -134,9 +134,10 @@ type Gallery struct {
 
 // Link represents a link
 type Link struct {
-	ID   string `json:"id"`
-	Link string `json:"link"`
-	Type string `json:"_type"`
+	ID    string `json:"id"`
+	Link  string `json:"link"`
+	Image Image  `json:"image"`
+	Type  string `json:"_type"`
 }
 
 // MediaContent represents media content
