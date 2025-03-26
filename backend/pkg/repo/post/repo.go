@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,6 +43,7 @@ func NewRepo(db *bun.DB) *Repo {
 }
 
 func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.PostPaginated, error) {
+	fmt.Println(skip, limit)
 	var posts []models.PostPaginated
 
 	query := `
@@ -319,7 +321,7 @@ func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Po
           END AS medias
         FROM
           ps
-          JOIN post_medias m ON ps.id = m.post_id;
+          LEFT JOIN post_medias m ON ps.id = m.post_id;
     `
 
 	_, err := r.db.NewRaw(query, limit, skip).Exec(ctx, &posts)
