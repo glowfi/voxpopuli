@@ -6,7 +6,17 @@ const nextConfig: NextConfig = {
         APP_NAME: process.env.APP_NAME,
         APP_MOTTO: process.env.APP_MOTTO
     },
-    devIndicators: false
+    devIndicators: false,
+    images: {
+        remotePatterns: [
+            {
+                hostname: 'preview.redd.it'
+            },
+            {
+                hostname: 'external-preview.redd.it'
+            }
+        ]
+    }
 };
 
 export default nextConfig;

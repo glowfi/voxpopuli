@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Avatar } from './ui/avatar';
 import { AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
+import { ModeToggle } from './theme-switcher';
 
 export function SiteHeader() {
     const { toggleSidebar } = useSidebar();
@@ -200,7 +201,7 @@ export function SiteHeader() {
     };
 
     return (
-        <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
+        <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b border-border/40 backdrop-blur">
             <div className="flex h-(--header-height) w-full items-center gap-2 px-4">
                 <Button
                     className="h-8 w-8"
@@ -212,9 +213,15 @@ export function SiteHeader() {
                 </Button>
                 {/* Logo */}
                 <Link href="#" className="flex items-center gap-2">
-                    <span className="text-xl font-bold hidden sm:inline">
-                        VoxPopuli
-                    </span>
+                    <Image
+                        src="/icon.svg"
+                        width={100}
+                        height={100}
+                        alt="Not Found"
+                    />
+                    {/* <span className="text-xl font-bold hidden sm:inline"> */}
+                    {/*     VoxPopuli */}
+                    {/* </span> */}
                 </Link>
 
                 {/* Search */}
@@ -368,6 +375,7 @@ export function SiteHeader() {
                         </div>
                     )}
                 </div>
+                <ModeToggle />
             </div>
         </header>
     );

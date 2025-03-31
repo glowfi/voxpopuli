@@ -1,13 +1,14 @@
-enum MediaType {
+export enum MediaType {
     Image = 'image',
     Gif = 'gif',
     Video = 'video',
     Gallery = 'gallery',
     Link = 'link',
-    Multi = 'multi'
+    Multi = 'multi',
+    Text = 'text'
 }
 
-interface ImageMetadata {
+export interface ImageMetadata {
     id: string;
     image_id: string;
     height: number;
@@ -18,7 +19,7 @@ interface ImageMetadata {
     updated_at: Date;
 }
 
-interface GifMetadata {
+export interface GifMetadata {
     id: string;
     gif_id: string;
     height: number;
@@ -29,7 +30,7 @@ interface GifMetadata {
     updated_at: Date;
 }
 
-interface GalleryMetadata {
+export interface GalleryMetadata {
     id: string;
     gallery_id: string;
     order_index: number;
@@ -41,7 +42,7 @@ interface GalleryMetadata {
     updated_at: Date;
 }
 
-interface Video {
+export interface Video {
     id: string;
     media_id: string;
     url: string;
@@ -52,7 +53,7 @@ interface Video {
     updated_at: Date;
 }
 
-interface Link {
+export interface LinkType {
     id: string;
     media_id: string;
     link: string;
@@ -62,11 +63,18 @@ interface Link {
     updated_at: Date;
 }
 
-type PostMedia = ImageMetadata | GifMetadata | GalleryMetadata | Video | Link;
+type PostMedia =
+    | ImageMetadata
+    | GifMetadata
+    | GalleryMetadata
+    | Video
+    | LinkType;
 
-interface Post {
+export interface Post {
     id: string;
+    author: string;
     author_id: string;
+    voxsphere: string;
     voxsphere_id: string;
     title: string;
     text: string;
@@ -74,6 +82,8 @@ interface Post {
     media_type: MediaType;
     medias: PostMedia[];
     ups: number;
+    num_comments: number;
+    num_awards: number;
     over18: boolean;
     spoiler: boolean;
     created_at: Date;

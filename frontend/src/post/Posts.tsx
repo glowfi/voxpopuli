@@ -1,5 +1,7 @@
+'use client';
 import React from 'react';
 import PostCard from './PostCard';
+import { Post } from './post';
 
 interface PostsProps {
     posts: Post[];
