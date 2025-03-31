@@ -176,6 +176,10 @@ func connectPostgres(user, password, address, dbName string) (*bun.DB, error) {
 	return db, nil
 }
 
+func ptrof[T comparable](v T) *T {
+	return &v
+}
+
 func insertTopics(ctx context.Context, db *bun.DB, filename string) error {
 	var topicsJson map[string][]string
 
@@ -392,12 +396,12 @@ func insertUsers(ctx context.Context, db *bun.DB, usersFilename string) error {
 			newUser := models.User{
 				ID:                userID,
 				Name:              user.Name,
-				PublicDescription: &user.PublicDescription,
-				AvatarImg:         &user.AvatarImg,
-				BannerImg:         &user.BannerImg,
-				Iconcolor:         &user.IconColor,
-				Keycolor:          &user.KeyColor,
-				Primarycolor:      &user.PrimaryColor,
+				PublicDescription: ptrof(user.PublicDescription),
+				AvatarImg:         ptrof(user.AvatarImg),
+				BannerImg:         ptrof(user.BannerImg),
+				Iconcolor:         ptrof(user.IconColor),
+				Keycolor:          ptrof(user.KeyColor),
+				Primarycolor:      ptrof(user.PrimaryColor),
 				Over18:            user.Over18,
 				Suspended:         user.Suspended,
 				CreatedAt:         time.Unix(int64(user.CakeDayUTC), 0),
@@ -570,12 +574,12 @@ func insertVoxspheres(ctx context.Context, db *bun.DB, subredditsFilename string
 					ID:                    voxsphereID,
 					TopicID:               topic.ID,
 					Title:                 subreddit.Title,
-					PublicDescription:     &subreddit.PublicDescription,
-					CommunityIcon:         &subreddit.CommunityIcon,
-					BannerBackgroundImage: &subreddit.BannerBackgroundImage,
-					BannerBackgroundColor: &subreddit.BannerBackgroundColor,
-					KeyColor:              &subreddit.KeyColor,
-					PrimaryColor:          &subreddit.PrimaryColor,
+					PublicDescription:     ptrof(subreddit.PublicDescription),
+					CommunityIcon:         ptrof(subreddit.CommunityIcon),
+					BannerBackgroundImage: ptrof(subreddit.BannerBackgroundImage),
+					BannerBackgroundColor: ptrof(subreddit.BannerBackgroundColor),
+					KeyColor:              ptrof(subreddit.KeyColor),
+					PrimaryColor:          ptrof(subreddit.PrimaryColor),
 					Over18:                subreddit.Over18,
 					SpoilersEnabled:       subreddit.SpoilersEnabled,
 					CreatedAt:             time.Unix(int64(subreddit.CreatedUTC), 0),
