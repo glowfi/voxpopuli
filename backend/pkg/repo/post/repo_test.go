@@ -59,6 +59,7 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 	db.RegisterModel((*models.GalleryMetadata)(nil))
 	db.RegisterModel((*models.Video)(nil))
 	db.RegisterModel((*models.Link)(nil))
+	db.RegisterModel((*models.Comment)(nil))
 
 	// drop all rows of the topics,voxspheres table
 	_, err := db.NewTruncateTable().Cascade().Model((*models.Topic)(nil)).Exec(context.Background())
@@ -99,6 +100,9 @@ func setupPostgres(t *testing.T, fixtureFiles ...string) *bun.DB {
 		t.Fatal("truncate table failed:", err)
 	}
 	if _, err := db.NewTruncateTable().Cascade().Model((*models.Link)(nil)).Exec(context.Background()); err != nil {
+		t.Fatal("truncate table failed:", err)
+	}
+	if _, err := db.NewTruncateTable().Cascade().Model((*models.Comment)(nil)).Exec(context.Background()); err != nil {
 		t.Fatal("truncate table failed:", err)
 	}
 
@@ -1138,6 +1142,7 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				"image_metadatas.yml",
 				"links.yml",
 				"videos.yml",
+				"comments.yml",
 			},
 			args: args{
 				skip:  0,
@@ -1146,7 +1151,9 @@ func TestRepo_PostsPaginated(t *testing.T) {
 			wantPostsPaginated: []models.PostPaginated{
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Author:      "John Doe",
 					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Voxsphere:   "v/foo",
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Title:       "Example Post Title 1",
 					Text:        "This is an example post text 1.",
@@ -1175,6 +1182,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           10,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        false,
 					Spoiler:       false,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
@@ -1183,7 +1192,9 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				},
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Author:      "Jane Doe",
 					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Voxsphere:   "v/bar",
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Title:       "Example Post Title 2",
 					Text:        "This is an example post text 2.",
@@ -1212,6 +1223,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           20,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        true,
 					Spoiler:       true,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 20, 0, time.UTC),
@@ -1220,7 +1233,9 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				},
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000003"),
+					Author:      "Jane Doe",
 					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Voxsphere:   "v/bar",
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Title:       "Example Post Title 3",
 					Text:        "This is an example post text 3.",
@@ -1273,6 +1288,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           30,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        false,
 					Spoiler:       false,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 30, 0, time.UTC),
@@ -1281,7 +1298,9 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				},
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+					Author:      "John Doe",
 					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Voxsphere:   "v/foo",
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					Title:       "Example Post Title 4",
 					Text:        "This is an example post text 4.",
@@ -1300,6 +1319,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           40,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        true,
 					Spoiler:       false,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 40, 0, time.UTC),
@@ -1308,7 +1329,9 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				},
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+					Author:      "Jane Doe",
 					AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+					Voxsphere:   "v/bar",
 					VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Title:       "Example Post Title 5",
 					Text:        "This is an example post text 5.",
@@ -1347,6 +1370,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           50,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        false,
 					Spoiler:       true,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 50, 0, time.UTC),
@@ -1372,6 +1397,7 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				"image_metadatas.yml",
 				"links.yml",
 				"videos.yml",
+				"comments.yml",
 			},
 			args: args{
 				skip:  3,
@@ -1446,6 +1472,8 @@ func TestRepo_PostsPaginated(t *testing.T) {
 						},
 					},
 					Ups:           50,
+					NumComments:   0,
+					NumAwards:     0,
 					Over18:        false,
 					Spoiler:       true,
 					CreatedAt:     time.Date(2024, 10, 10, 10, 10, 50, 0, time.UTC),
@@ -1471,6 +1499,7 @@ func TestRepo_PostsPaginated(t *testing.T) {
 				"image_metadatas.yml",
 				"links.yml",
 				"videos.yml",
+				"comments.yml",
 			},
 			args: args{
 				skip:  100,

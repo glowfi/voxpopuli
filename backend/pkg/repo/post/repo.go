@@ -73,7 +73,11 @@ func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Po
           )
         SELECT
           ps.*,
-          m.media_type as media_type,
+          (SELECT v.title FROM voxspheres v WHERE v.id=ps.voxsphere_id) as voxsphere,
+          (SELECT u.name FROM users u WHERE u.id=ps.author_id) as author,
+          (SELECT count(*) FROM comments WHERE comments.post_id=ps.id) as num_comments,
+          (SELECT count(*) FROM post_awards WHERE post_awards.post_id=ps.id) as num_awards,
+          COALESCE(m.media_type,'text') as media_type,
           CASE
             WHEN m.media_type = 'image' THEN (
               SELECT
@@ -321,7 +325,7 @@ func (r *Repo) PostsPaginated(ctx context.Context, skip, limit int) ([]models.Po
           END AS medias
         FROM
           ps
-          LEFT JOIN post_medias m ON ps.id = m.post_id;
+        LEFT JOIN post_medias m ON ps.id = m.post_id;
     `
 
 	_, err := r.db.NewRaw(query, limit, skip).Exec(ctx, &posts)

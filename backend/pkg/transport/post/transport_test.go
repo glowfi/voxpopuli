@@ -53,7 +53,9 @@ func TestTransport_PostsPaginated(t *testing.T) {
 				posts: []models.PostPaginated{
 					{
 						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000004"),
+						Author:      "John Doe",
 						AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+						Voxsphere:   "v/foo",
 						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 						Title:       "Example Post Title 4",
 						Text:        "This is an example post text 4.",
@@ -72,6 +74,8 @@ func TestTransport_PostsPaginated(t *testing.T) {
 							},
 						},
 						Ups:           40,
+						NumComments:   10,
+						NumAwards:     10,
 						Over18:        true,
 						Spoiler:       false,
 						CreatedAt:     time.Date(2024, 10, 10, 10, 10, 40, 0, time.UTC),
@@ -80,7 +84,9 @@ func TestTransport_PostsPaginated(t *testing.T) {
 					},
 					{
 						ID:          uuid.MustParse("00000000-0000-0000-0000-000000000005"),
+						Author:      "Jane Doe",
 						AuthorID:    uuid.MustParse("00000000-0000-0000-0000-000000000002"),
+						Voxsphere:   "v/bar",
 						VoxsphereID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 						Title:       "Example Post Title 5",
 						Text:        "This is an example post text 5.",
@@ -96,6 +102,8 @@ func TestTransport_PostsPaginated(t *testing.T) {
 								UpdatedAt:     time.Date(2024, 10, 10, 10, 10, 10, 0, time.UTC),
 							},
 						},
+						NumComments:   20,
+						NumAwards:     10,
 						Ups:           50,
 						Over18:        false,
 						Spoiler:       true,
@@ -111,7 +119,9 @@ func TestTransport_PostsPaginated(t *testing.T) {
                 [
                   {
                     "id": "00000000-0000-0000-0000-000000000004",
+                    "author":"John Doe",
                     "author_id": "00000000-0000-0000-0000-000000000001",
+                    "voxsphere":"v/foo",
                     "voxsphere_id": "00000000-0000-0000-0000-000000000001",
                     "title": "Example Post Title 4",
                     "text": "This is an example post text 4.",
@@ -130,6 +140,8 @@ func TestTransport_PostsPaginated(t *testing.T) {
                       }
                     ],
                     "ups": 40,
+                    "num_comments":10,
+                    "num_awards":10,
                     "over18": true,
                     "spoiler": false,
                     "created_at": "2024-10-10T10:10:40Z",
@@ -138,7 +150,9 @@ func TestTransport_PostsPaginated(t *testing.T) {
                   },
                   {
                     "id": "00000000-0000-0000-0000-000000000005",
+                    "author":"Jane Doe",
                     "author_id": "00000000-0000-0000-0000-000000000002",
+                    "voxsphere":"v/bar",
                     "voxsphere_id": "00000000-0000-0000-0000-000000000002",
                     "title": "Example Post Title 5",
                     "text": "This is an example post text 5.",
@@ -156,6 +170,8 @@ func TestTransport_PostsPaginated(t *testing.T) {
                       }
                     ],
                     "ups": 50,
+                    "num_comments":20,
+                    "num_awards":10,
                     "over18": false,
                     "spoiler": true,
                     "created_at": "2024-10-10T10:10:50Z",

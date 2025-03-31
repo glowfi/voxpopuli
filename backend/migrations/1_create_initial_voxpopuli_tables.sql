@@ -173,7 +173,8 @@ create type media_type as enum (
   'video',
   'gallery',
   'link',
-  'multi'
+  'multi',
+  'text'
 );
 
 

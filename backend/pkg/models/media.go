@@ -16,6 +16,7 @@ const (
 	MediaTypeGallery MediaType = "gallery"
 	MediaTypeLink    MediaType = "link"
 	MediaTypeMulti   MediaType = "multi"
+	MediaTypeText    MediaType = "text"
 )
 
 type PostMedia struct {
