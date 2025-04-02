@@ -85,7 +85,7 @@ const Gif: React.FunctionComponent<GifProps> = ({ data }) => {
 
     return (
         <div className="relative overflow-hidden rounded-md my-2">
-            <div className="relative aspect-[16/9] w-full bg-slate-100 dark:bg-slate-800">
+            <div className="relative aspect-[16/9] w-full">
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-6 h-6 border-3 border-t-primary rounded-full animate-spin"></div>
