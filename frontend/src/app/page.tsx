@@ -15,7 +15,7 @@ import {
     CardTitle
 } from '@/components/ui/card';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import useInfiniteScroll from '@/hooks/useInfiniteScroll';
 import { Post } from '@/post/post';
 import Posts from '@/post/Posts';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
@@ -24,7 +24,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Page() {
-    const { data, next, hasMore, loading } = useInfiniteScroll<Post>(
+    const { data, loading, hasNextPage } = useInfiniteScroll<Post>(
         postApi.posts,
         10
     );
@@ -66,18 +66,16 @@ export default function Page() {
                         <div className="container mx-auto grid grid-cols-1 md:grid-cols-12 m-3 p-3 gap-6 items-start justify-center">
                             <div className="col-span-1 md:col-span-8">
                                 <Posts posts={data} />
-                                <InfiniteScroll
-                                    hasMore={hasMore}
-                                    isLoading={loading}
-                                    next={next}
-                                    threshold={1}
-                                >
-                                    {hasMore && (
-                                        <div className="m-auto flex justify-center items-center justify-items-center">
-                                            <LoadingSpinner title="posts" />
-                                        </div>
-                                    )}
-                                </InfiniteScroll>
+                                {(loading || hasNextPage) && (
+                                    <div
+                                        style={{
+                                            textAlign: 'center',
+                                            padding: '20px'
+                                        }}
+                                    >
+                                        <LoadingSpinner title="posts" />
+                                    </div>
+                                )}
                             </div>
                             <div className="hidden md:block col-span-1 md:col-span-4 sticky top-20 -mt-6">
                                 <div className="space-y-4">

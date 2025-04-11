@@ -1,28 +1,25 @@
 'use client';
-import React, { useState } from 'react';
 
-export function useInfiniteScroll<T>(
-    queryfn: (skip: number, limit: number) => Promise<T[]>,
+import { useState, useEffect } from 'react';
+
+const useInfiniteScroll = <T,>(
+    queryFn: (skip: number, limit: number) => Promise<T[]>,
     offset: number
-) {
-    const [page, setPage] = React.useState(0);
-    const [loading, setLoading] = React.useState(false);
-    const [hasMore, setHasMore] = React.useState(true);
+) => {
     const [data, setData] = useState<T[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [hasNextPage, setHasNextPage] = useState(true);
+    const [skip, setSkip] = useState(0);
 
-    const next = async () => {
-        if (loading) return;
+    const fetchMoreData = async () => {
+        if (loading || !hasNextPage) return;
         setLoading(true);
-
         try {
-            const newData = await queryfn(page * offset, offset);
-
-            setData((olddata) => [...olddata, ...newData]);
-            setPage((prev) => prev + 1);
-
-            if (newData.length < offset) {
-                setHasMore(false);
-            }
+            // await new Promise((r) => setTimeout(r, 500));
+            const newData = await queryFn(skip, offset);
+            setData([...data, ...newData]);
+            setHasNextPage(newData.length === offset);
+            setSkip(skip + offset);
         } catch (error) {
             console.error(error);
         } finally {
@@ -30,5 +27,26 @@ export function useInfiniteScroll<T>(
         }
     };
 
-    return { data, loading, hasMore, next };
-}
+    const handleScroll = () => {
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const height = document.body.offsetHeight;
+        if (scrollPosition >= height * 0.9) {
+            fetchMoreData();
+        }
+    };
+
+    useEffect(() => {
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [hasNextPage, loading, skip, offset]);
+
+    useEffect(() => {
+        fetchMoreData();
+    }, []);
+
+    return { data, loading, hasNextPage };
+};
+
+export default useInfiniteScroll;
