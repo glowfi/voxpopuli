@@ -22,15 +22,12 @@ const (
 	TRACE   = "TRACE"
 )
 
-// HTTPHandlerFactory creates an HTTP handler function.
-type HTTPHandlerFactory func(ctx context.Context, h http.Handler) http.HandlerFunc
-
 // Route represents an HTTP route.
 type Route struct {
 	Name        string
 	HttpMethod  string
 	HttpPath    string
-	HttpHandler HTTPHandlerFactory
+	HttpHandler http.Handler
 }
 
 // Services represents the services used by the server.
@@ -54,7 +51,7 @@ func NewServer(services Services) (*Server, error) {
 			Name:        "PaginatedPost",
 			HttpMethod:  GET,
 			HttpPath:    "/posts",
-			HttpHandler: postsTransport.PostsPaginated,
+			HttpHandler: http.HandlerFunc(postsTransport.PostsPaginated),
 		},
 	}
 
@@ -91,8 +88,7 @@ func HTTPRouter(ctx context.Context, router *http.ServeMux, routes []Route) erro
 
 		switch r.HttpMethod {
 		case GET, HEAD, POST, PUT, PATCH, DELETE, CONNECT, OPTIONS, TRACE:
-			handlerFunc := r.HttpHandler(ctx, router)
-			router.HandleFunc(fmt.Sprintf("%s %s", r.HttpMethod, r.HttpPath), handlerFunc)
+			router.HandleFunc(fmt.Sprintf("%s %s", r.HttpMethod, r.HttpPath), r.HttpHandler.ServeHTTP)
 		default:
 			return fmt.Errorf("invalid http method: %s", r.HttpMethod)
 		}

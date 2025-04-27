@@ -30,46 +30,44 @@ func NewTransport(service PostService) *Transport {
 	}
 }
 
-func (t *Transport) PostsPaginated(ctx context.Context, h http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := r.Context().Err(); err != nil {
-			writeResponseError(w, http.StatusInternalServerError, "request context error")
-			return
-		}
+func (t *Transport) PostsPaginated(w http.ResponseWriter, r *http.Request) {
+	if err := r.Context().Err(); err != nil {
+		writeResponseError(w, http.StatusInternalServerError, "request context error")
+		return
+	}
 
-		skipStr := r.URL.Query().Get("skip")
-		if len(skipStr) == 0 {
-			writeResponseError(w, http.StatusBadRequest, "add a valid skip number")
-			return
-		}
-		skip, err := parseIntParam(skipStr, "skip")
-		if err != nil {
-			writeResponseError(w, http.StatusBadRequest, err.Error())
-			return
-		}
+	skipStr := r.URL.Query().Get("skip")
+	if len(skipStr) == 0 {
+		writeResponseError(w, http.StatusBadRequest, "add a valid skip number")
+		return
+	}
+	skip, err := parseIntParam(skipStr, "skip")
+	if err != nil {
+		writeResponseError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-		limitStr := r.URL.Query().Get("limit")
-		if len(limitStr) == 0 {
-			writeResponseError(w, http.StatusBadRequest, "add a valid limit")
-			return
-		}
-		limit, err := parseIntParam(limitStr, "limit")
-		if err != nil {
-			writeResponseError(w, http.StatusBadRequest, err.Error())
-			return
-		}
+	limitStr := r.URL.Query().Get("limit")
+	if len(limitStr) == 0 {
+		writeResponseError(w, http.StatusBadRequest, "add a valid limit")
+		return
+	}
+	limit, err := parseIntParam(limitStr, "limit")
+	if err != nil {
+		writeResponseError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-		posts, err := t.service.PostsPaginated(ctx, skip, limit)
-		if err != nil {
-			writeResponseError(w, http.StatusInternalServerError, "failed to fetch posts")
-			return
-		}
+	posts, err := t.service.PostsPaginated(r.Context(), skip, limit)
+	if err != nil {
+		writeResponseError(w, http.StatusInternalServerError, "failed to fetch posts")
+		return
+	}
 
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(posts); err != nil {
-			log.Println("json encode error while fetching posts:", err)
-		}
-	})
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(posts); err != nil {
+		log.Println("json encode error while fetching posts:", err)
+	}
 }
 
 func writeResponseError(w http.ResponseWriter, statusCode int, errMsgs ...string) {
